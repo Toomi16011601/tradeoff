@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>@@TITLE@@</title>
+  <style>@@CSS@@</style>
+</head>
+<body class="@@BODY_CLASS@@">
+  <a class="skip-link" href="#main">Skip to report</a>
+  <div class="page-shell">
+    <header class="masthead">
+      <a class="wordmark" href="#overview" aria-label="BacktestWitness, report overview">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 3h12c6 0 9 3 9 7 0 3-2 5-4 6 3 1 5 3 5 6 0 5-4 8-10 8H5V3zm6 5v6h5c3 0 4-1 4-3s-1-3-4-3h-5zm0 11v6h6c3 0 4-1 4-3s-1-3-4-3h-6z" fill="currentColor"/></svg>
+        <span>BacktestWitness<span class="brand-period">.</span></span>
+      </a>
+      <p class="brand-description">An evidence lab for<br>trading decisions</p>
+      <div class="masthead-meta"><span class="local-mark">LOCAL · OFFLINE</span><span>@@HEADER_META@@</span></div>
+    </header>
+    @@NAV@@
+    <main id="main" tabindex="-1">@@CONTENT@@</main>
+    <footer class="site-footer"><span>BacktestWitness <span class="mono">@@VERSION@@</span> · unreleased</span><span>Evidence first. Assumptions visible.</span><span class="mono">@@FOOTER_META@@</span></footer>
+  </div>
+  <script id="report-data" type="application/json">@@DATA@@</script>
+  <script>@@JS@@</script>
+</body>
+</html>

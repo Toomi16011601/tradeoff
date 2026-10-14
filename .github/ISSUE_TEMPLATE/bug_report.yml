@@ -1,0 +1,24 @@
+name: Reproducible bug
+description: Report a detector, adapter, accounting or interface defect.
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and observed behavior
+      description: Include the finding state and why it is surprising.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal synthetic reproducer
+      description: Include callback, bar fixture and command. Do not include proprietary data or credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Python/BacktestWitness/engine versions, OS, browser if relevant.
+    validations:
+      required: true

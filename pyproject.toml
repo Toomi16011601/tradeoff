@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=83", "wheel"]
+build-backend = "_build_backend"
+backend-path = ["."]
+
+[project]
+name = "backtest-witness"
+version = "0.3.0"
+description = "Strategy failure lab for trading bots. Stress real engine costs and delays, investigate failures, and export replayable regression tests."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "BacktestWitness contributors"}]
+keywords = ["trading", "backtesting", "stress-testing", "lookahead-bias", "quantitative-finance", "regression-testing", "debugging", "reproducibility"]
+classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Topic :: Software Development :: Testing"]
+
+[project.optional-dependencies]
+dev = ["pytest>=9.0.3", "build>=1.2"]
+adapters = ["pandas>=2.2", "backtrader==1.9.78.123", "backtesting>=0.6,<0.7"]
+lab = ["backtesting==0.6.6", "pandas>=2.2"]
+cases = ["backtesting==0.6.6", "pandas==2.2.3", "numpy==2.3.5"]
+
+[project.scripts]
+backtest-witness = "backtest_witness.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"backtest_witness.report" = ["*.html", "assets/*.css", "assets/*.js"]
+"backtest_witness.cases" = ["sources/*.py", "sources/*_LICENSE", "sources/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+addopts = "-ra"

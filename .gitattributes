@@ -1,0 +1,2 @@
+# Keep SHA-pinned third-party source bytes intact, including upstream formatting.
+src/backtest_witness/cases/sources/* -text -whitespace

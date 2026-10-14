@@ -1,0 +1,7 @@
+# Repository instructions
+
+BacktestWitness is a local strategy failure lab with a separate future-data audit workflow. Keep proprietary trading code, credentials and real account data outside this repository. Use synthetic fixtures. Do not claim profitability, global leak-free status or globally smallest counterexamples.
+
+Read the callback/execution contracts and methodology before changing detector/ledger semantics. Native execution failure reports must use actual Backtesting.py 0.6.6 reruns, never the temporal audit projection. Delay discretionary market entries/manual closes; preserve native protective SL/TP timing and reject unsupported delayed execution. Retain pending tail orders and open terminal holdings. Apply explicit user policy and preserve unavailable/incomplete evidence. Keep the core standard-library only, optional engine imports lazy, and output offline. For temporal audits, compare paired traces on the original tape. For execution reduction/replay, retain every original bar and saved policy; call budgets include repeatability and final verification. Public causal variants repair future-data dependencies, not execution resilience; synthetic casebooks cannot establish alpha or profitability. Preserve availability timestamps, cutoff and input history during reduction.
+
+Run meaningful behavioral tests and the whole suite before completion. Optional integrations need actual framework tests. Report changes require desktop/mobile and keyboard inspection. Install/build locally; do not push, publish or deploy without explicit authorization.

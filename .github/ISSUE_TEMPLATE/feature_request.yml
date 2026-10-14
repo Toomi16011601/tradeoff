@@ -1,0 +1,15 @@
+name: Workflow improvement
+description: Describe a real debugging workflow BacktestWitness could support.
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Current workflow and obstacle
+      description: Which engine, trace semantics and asset model do you use?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior and evidence
+      description: Give a concrete before/after example and how it could be verified.

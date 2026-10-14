@@ -1,0 +1,36 @@
+{
+  "schema_version": "backtest-witness.launch.v1",
+  "status": "prepared-local",
+  "owner": null,
+  "name": "backtest-witness",
+  "display_name": "BacktestWitness",
+  "description": "Strategy failure lab for trading bots. Stress real engine costs and delays, investigate failures, and export replayable regression tests.",
+  "visibility": "public",
+  "topics": [
+    "trading",
+    "backtesting",
+    "stress-testing",
+    "lookahead-bias",
+    "algorithmic-trading",
+    "quantitative-finance",
+    "python",
+    "pytest",
+    "backtesting-py",
+    "backtrader",
+    "regression-testing",
+    "debugging",
+    "reproducibility"
+  ],
+  "availability_check": {
+    "date": "2026-10-14",
+    "github_name_search_matches": 0,
+    "pypi_json_status": 404,
+    "reserved": false
+  },
+  "publication": {
+    "repository_created": false,
+    "remote_added": false,
+    "pushed": false,
+    "package_published": false
+  }
+}
