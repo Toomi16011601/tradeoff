@@ -1,5 +1,11 @@
 # Changelog
 
+## Agent onboarding — unreleased
+
+- Explain the strategy-testing workflow and the roles of the trading agent, native simulator and coding agent.
+- Add a runnable agent decision function, native strategy adapter and machine-readable check with replayable failure evidence.
+- Document the first-use install/run/replay path and check it separately from the optional public-strategy casebook in CI.
+
 ## Privacy and security hardening — unreleased
 
 - Remove identifying launch/session/history metadata from the publication snapshot and normalize source archive ownership/timestamps.

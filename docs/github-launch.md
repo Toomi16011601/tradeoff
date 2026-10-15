@@ -21,7 +21,7 @@ The selected identity is **BacktestWitness**. This is a local, unreleased 0.3.0 
 
 **README tagline:**
 
-> Find what breaks your strategy. Keep a test for the fix.
+> Crash-test a trading strategy before you deploy it. Keep a test for the fix.
 
 **GitHub topics:**
 

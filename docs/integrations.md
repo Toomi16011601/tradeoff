@@ -1,11 +1,15 @@
-# Engine integrations
+# Strategy and engine integrations
+
+BacktestWitness checks a strategy you already provide. A trading agent supplies the decisions; Backtesting.py executes its native orders; BacktestWitness reruns it under execution stress and reports policy violations. A coding agent can run the same CLI or Python calls and read structured JSON to guide a repair. The browser is an offline report of a completed run.
+
+Start with the [runnable agent integration](agent-integration.md) for a small decision function, native adapter and local tool wrapper, or the [quickstart](quickstart.md) for the install/run/replay flow. There is no agent SDK, MCP server or live broker connection in this release.
 
 Execution failure investigation and future-data invariance use separate runner contracts. Backtesting.py 0.6.6 is the first native execution backend; Backtrader, pandas and numeric targets retain their future-data audit scope.
 
 ## Native strategy execution
 
 ```bash
-python -m pip install -e ".[dev,lab]"
+python -m pip install '.[lab]'
 backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
   --engine-settings '{"cash": 10000, "commission": 0.001}' \
   --data bars.csv --requirements requirements.json --output failure-output
@@ -26,6 +30,8 @@ report = run_failure_lab(
     strategy_ref="my_strategy:MyStrategy",
 )
 ```
+
+Use an installed or otherwise importable strategy module. Run checkout examples and their generated tests/replays from the repository root; `examples/` is not included in the installed package.
 
 `rows` must satisfy the [data contract](callback-contract.md); config maps to `Backtest.run` strategy parameters. The API accepts `scenarios`, `seed`, `max_calls` and optional provenance. Its report exposes requirements, coverage, unavailable reasons and full native observations. [Runnable example](../examples/failure_lab.py), [failure lab guide](failure-lab.md), [execution contract](execution-contract.md).
 
@@ -49,7 +55,7 @@ The assertion repeats current baseline and saved stress, requires the saved engi
 Install extras from this checkout:
 
 ```bash
-python -m pip install -e ".[dev,adapters]"
+python -m pip install '.[adapters]'
 ```
 
 The future-data integration tests execute **Backtrader 1.9.78.123** and **Backtesting.py 0.6.6**, with pandas 2.2.3 and NumPy 2.3.5 in the local Python 3.12 build environment. Compatibility with other versions is not implied. The core works without these optional dependencies.
@@ -102,7 +108,7 @@ backtest-witness audit --adapter examples.backtesting_demo:leaky_run \
   --data bars.json --output backtesting-report --trace-kind observed_position
 ```
 
-Both files also expose `clean_run` for comparison. Findings return exit code 1, so shell pipelines must treat that as a finding rather than a crash. `pytest tests/test_adapters.py` runs actual engine controls. These examples are checkout files, not package-shipped modules.
+Both files also expose `clean_run` for comparison. Findings return exit code 1, so shell pipelines must treat that as a finding rather than a crash. For integration development, install `'.[dev,adapters]'` with pip, then run `python -m pytest tests/test_adapters.py` for actual engine controls. These examples are checkout files, not package-shipped modules.
 
 ## What future-data adapters record
 

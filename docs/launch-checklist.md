@@ -9,6 +9,7 @@ The current 0.3.0 alpha build is local and unreleased. [Copy-ready GitHub metada
 - [x] Verify complete invocation accounting, visible unsupported/budget-limited scenarios and unchanged full history during reduction.
 - [x] Inspect desktop/mobile/keyboard report flows and sibling artifact targets; verify installed wheel/sdist behavior. Browser download-event handling remains unverified as recorded in acceptance evidence.
 - [x] Review tracked artifacts for private code/data and credential patterns; preserve pinned public source bytes and bundled MIT notices.
+- [x] Explain the decision-agent/coding-agent roles; verify the simple adapter, fresh regular install, structured tool output and replay from a separate project.
 - [ ] Recheck candidate name availability immediately before creation; checks do not reserve names.
 - [ ] Choose the public hosting account or organization; its identity will be visible.
 - [ ] Create the public repository, apply the saved description/topics and push only when authorized.

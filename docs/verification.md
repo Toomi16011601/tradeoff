@@ -1,6 +1,14 @@
 # Verification
 
-BacktestWitness 0.3.0 is an unreleased alpha. Hosted CI and publication remain pending. The checks below are local acceptance evidence, not a security or profitability certificate. The final privacy/security build passes **482 tests** in 29.02 seconds on Python 3.12.14.
+BacktestWitness 0.3.0 is an unreleased alpha. Hosted CI and publication remain pending. The checks below are local acceptance evidence, not a security or profitability certificate. The agent-onboarding build passes **492 tests** on Python 3.12.14, including the updated replay instructions and agent integration.
+
+## First-use agent integration
+
+A fresh downloaded snapshot was installed with the documented regular `pip install '.[lab]'` command in a new virtual environment with no inherited packages and `PYTHONPATH` unset. Imports resolve to the installed wheel, including privacy guards. The resolver selected Backtesting.py 0.6.6, pandas 3.0.6, NumPy 2.5.4 and Bokeh 3.10.1 on Python 3.12.14.
+
+The example completes all 12 scenarios in 30 native invocations. Its single closed baseline trade returns 1.5%; the saved additional 100-bps commission case returns 0.879%, a 0.621-percentage-point drop exceeding the explicit 0.5-point teaching limit. The plain command and documented coding-agent JSON wrapper work. CLI replay and the generated pytest reproduce the expected `ResilienceError`; these intentional policy failures are separate from the passing repository test suite.
+
+The same synthetic decision function and adapter were then placed in a separate project folder. The installed `lab --adapter demo_agent.strategy:AgentStrategy` command, saved-case replay and generated pytest all work there without the repository on the import path. No private trading code or credentials were used. The first-use CI job is configured but has not run on a hosting platform. Desktop (1440 × 1000) and mobile (390 × 844) browser checks cover scenario changes, keyboard bar inspection and contained page width, with no console warnings/errors. The same synthetic agent case is shown in the [desktop capture](assets/agent-integration-desktop.jpg) and [mobile capture](assets/agent-integration-mobile.jpg).
 
 ## Strategy execution and replay
 
