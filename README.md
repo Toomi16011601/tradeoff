@@ -31,6 +31,8 @@ python -m pip install '.[lab]'
 
 On Windows PowerShell, activate with `.\.venv\Scripts\Activate.ps1`.
 
+**Upgrading from BacktestWitness?** In the same environment, run `python -m pip uninstall backtest-witness` before installing Tradeoff. The new package includes the old command and import aliases; removing the old distribution first avoids overlapping package files.
+
 Run the included small agent example. It uses synthetic prices so you can try the full workflow before connecting your own strategy:
 
 ```bash

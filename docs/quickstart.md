@@ -19,6 +19,17 @@ python -m pip install '.[lab]'
 
 On Windows PowerShell, replace the activation command with `.\.venv\Scripts\Activate.ps1`. The `lab` extra installs the pinned native execution engine. The example uses synthetic prices and needs no data download, credentials or AI API keys.
 
+### Upgrading an existing environment
+
+If this environment already contains the former `backtest-witness` distribution, remove it before installing from the Tradeoff checkout:
+
+```bash
+python -m pip uninstall backtest-witness
+python -m pip install '.[lab]'
+```
+
+Tradeoff provides the legacy command and Python imports itself. Remove the old distribution first so the two packages do not share installed files. Saved fixtures and generated tests need no edits.
+
 ## 2. Run the small agent example
 
 ```bash
