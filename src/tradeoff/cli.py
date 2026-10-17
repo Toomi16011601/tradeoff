@@ -192,13 +192,13 @@ def _demo(args):
     for slug, name, callback, description in scenarios:
         scenario_folder = folder / slug
         scenario_folder.mkdir()
-        reference = f"backtest_witness.demos:{callback.__name__}"
+        reference = f"tradeoff.demos:{callback.__name__}"
         result = save_audit(callback, rows, {}, scenario_folder, reference, args)
         entries.append({"name": name, "status": result["status"],
                         "path": f"{slug}/index.html", "description": description})
         print(f"{slug:8} {result['status']}")
     index = write_gallery(folder, entries)
-    print(f"\nOpen: {index}\nPreview: backtest-witness serve --directory {folder}")
+    print(f"\nOpen: {index}\nPreview: tradeoff serve --directory {folder}")
     return 0
 
 
@@ -279,7 +279,7 @@ def _cases(args):
     (folder / "case-results.json").write_text(json.dumps({"schema_version": "edgelab.public-cases.v1",
         "cases": summaries}, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     index = write_gallery(folder, entries, collection="public")
-    print(f"\nOpen: {index}\nPreview: backtest-witness serve --directory {folder}")
+    print(f"\nOpen: {index}\nPreview: tradeoff serve --directory {folder}")
     return 0 if all(s["original_status"] == "FOUND" and s["fixed_status"] == "NO_DEPENDENCY_OBSERVED"
                     and s["repair_replay"] == "PASS" for s in summaries) else 2
 
@@ -350,9 +350,9 @@ def _audit_options(parser):
 def main(argv=None):
     arguments = list(sys.argv[1:] if argv is None else argv)
     as_json = '--json' in arguments
-    parser = _ArgumentParser(prog="backtest-witness", description="Find what breaks a strategy and keep a reproducible test.",
+    parser = _ArgumentParser(prog="tradeoff", description="Find what breaks a strategy and keep a reproducible test.",
                              json_errors=as_json)
-    parser.add_argument("--version", action="version", version=f"BacktestWitness {__version__}")
+    parser.add_argument("--version", action="version", version=f"Tradeoff {__version__}")
     sub = parser.add_subparsers(dest="command", required=True,
                                parser_class=partial(_ArgumentParser, json_errors=as_json))
     from .failure_cli import add_failure_commands

@@ -7,7 +7,7 @@ import pytest
 
 def api():
     try:
-        module = importlib.import_module('backtest_witness.failure_lab')
+        module = importlib.import_module('tradeoff.failure_lab')
     except ModuleNotFoundError:
         pytest.fail('failure lab public API is not implemented')
     return module.run_failure_lab
@@ -96,7 +96,7 @@ def test_budget_omissions_are_visible_and_inconclusive():
 
 
 def test_failure_remains_available_with_unsupported_other_scenario():
-    from backtest_witness.privacy import ExecutionUnavailable
+    from tradeoff.privacy import ExecutionUnavailable
     def unsupported(rows, config, seed, stress):
         if stress['delay_bars']:
             raise ExecutionUnavailable('unsupported stop entry delay')

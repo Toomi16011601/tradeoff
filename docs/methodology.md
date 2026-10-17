@@ -1,6 +1,6 @@
 # Methodology and limits
 
-BacktestWitness has two assertions: execution resilience under declared simulation assumptions, and future-data invariance at a fixed cutoff. They use separate observations, schemas and replay tests.
+Tradeoff has two assertions: execution resilience under declared simulation assumptions, and future-data invariance at a fixed cutoff. They use separate observations, schemas and replay tests.
 
 ## Native execution failure procedure
 
@@ -32,7 +32,7 @@ Native execution support is gated to Backtesting.py 0.6.6. Explicit four-argumen
 
 ## Future-data invariant
 
-BacktestWitness tests a temporal invariant: changing records unavailable at a fixed cutoff should not change targets already produced at or before that cutoff. It is an intervention test of a local callback, not an economic certification.
+Tradeoff tests a temporal invariant: changing records unavailable at a fixed cutoff should not change targets already produced at or before that cutoff. It is an intervention test of a local callback, not an economic certification.
 
 ## Future-data audit procedure
 
@@ -80,4 +80,4 @@ Content hashes detect accidental changes to saved inputs/configuration. They are
 
 ## Prior art
 
-[Freqtrade](https://www.freqtrade.io/en/stable/lookahead-analysis/) already tests lookahead through reruns and comparison. [SharpeBench](https://github.com/general-liquidity/sharpebench) covers framework-neutral audit/stress workflows. BacktestWitness focuses on bounded failure investigation, saved evidence and portable regression tests around existing engines; it makes no first-ever stress-testing or detector claim. Optional engine behavior follows the public [Backtesting.py API](https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html) and [Backtrader analyzer hooks](https://www.backtrader.com/docu/analyzers/analyzers/).
+[Freqtrade](https://www.freqtrade.io/en/stable/lookahead-analysis/) already tests lookahead through reruns and comparison. [SharpeBench](https://github.com/general-liquidity/sharpebench) covers framework-neutral audit/stress workflows. Tradeoff focuses on bounded failure investigation, saved evidence and portable regression tests around existing engines; it makes no first-ever stress-testing or detector claim. Optional engine behavior follows the public [Backtesting.py API](https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html) and [Backtrader analyzer hooks](https://www.backtrader.com/docu/analyzers/analyzers/).

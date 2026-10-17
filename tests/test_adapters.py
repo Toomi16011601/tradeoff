@@ -30,9 +30,9 @@ def require(engine):
 
 def test_importing_adapters_keeps_optional_engines_unloaded():
     code = """import sys
-import backtest_witness.economics
-import backtest_witness.adapters.backtrader
-import backtest_witness.adapters.backtesting
+import tradeoff.economics
+import tradeoff.adapters.backtrader
+import tradeoff.adapters.backtesting
 assert not any(name in sys.modules for name in ('backtrader', 'backtesting', 'pandas', 'numpy'))
 """
     env = {**os.environ, "PYTHONPATH": str(Path(__file__).parents[1] / "src")}
@@ -42,7 +42,7 @@ assert not any(name in sys.modules for name in ('backtrader', 'backtesting', 'pa
 
 def test_backtrader_captures_each_real_position_and_rebuilds_strategy():
     bt = require("backtrader")
-    from backtest_witness.adapters.backtrader import make_backtrader_runner
+    from tradeoff.adapters.backtrader import make_backtrader_runner
 
     class Once(bt.Strategy):
         params = (("size", 1),)
@@ -68,7 +68,7 @@ def test_backtrader_captures_each_real_position_and_rebuilds_strategy():
 
 def test_backtrader_captures_multi_unit_shorts_increases_and_reversals():
     bt = require("backtrader")
-    from backtest_witness.adapters.backtrader import make_backtrader_runner
+    from tradeoff.adapters.backtrader import make_backtrader_runner
 
     class Rebalance(bt.Strategy):
         def next(self):
@@ -82,7 +82,7 @@ def test_backtrader_captures_multi_unit_shorts_increases_and_reversals():
 
 def test_backtesting_captures_complete_real_positions_including_warmup():
     api = require("backtesting")
-    from backtest_witness.adapters.backtesting import make_backtesting_runner
+    from tradeoff.adapters.backtesting import make_backtesting_runner
 
     class Once(api.Strategy):
         size = 1
@@ -111,7 +111,7 @@ def test_backtesting_captures_complete_real_positions_including_warmup():
 def test_backtesting_does_not_drop_indicator_warmup_bars():
     api = require("backtesting")
     np = require("numpy")
-    from backtest_witness.adapters.backtesting import make_backtesting_runner
+    from tradeoff.adapters.backtesting import make_backtesting_runner
 
     class Warmup(api.Strategy):
         def init(self):
@@ -132,7 +132,7 @@ def test_backtesting_does_not_drop_indicator_warmup_bars():
 def test_backtesting_matches_upstream_accumulation_partial_cover_and_reversal(exclusive):
     api = require("backtesting")
     pd = require("pandas")
-    from backtest_witness.adapters.backtesting import make_backtesting_runner
+    from tradeoff.adapters.backtesting import make_backtesting_runner
 
     class Rebalance(api.Strategy):
         def init(self):
@@ -174,7 +174,7 @@ def test_backtesting_matches_upstream_accumulation_partial_cover_and_reversal(ex
 
 @pytest.mark.parametrize("exclusive", [0, 1, "false", None])
 def test_backtesting_exclusive_orders_requires_an_explicit_boolean(exclusive):
-    from backtest_witness.adapters import make_backtesting_runner
+    from tradeoff.adapters import make_backtesting_runner
     with pytest.raises(ValueError, match="exclusive_orders"):
         make_backtesting_runner(object, engine_settings={"exclusive_orders": exclusive})
 
@@ -182,7 +182,7 @@ def test_backtesting_exclusive_orders_requires_an_explicit_boolean(exclusive):
 @pytest.mark.parametrize("engine,setting", [("backtrader", {"leverage": 2}), ("backtesting", {"margin": 0.5})])
 def test_engine_leverage_settings_are_applied_to_actual_broker(engine, setting):
     api = require(engine)
-    adapter = importlib.import_module(f"backtest_witness.adapters.{engine}")
+    adapter = importlib.import_module(f"tradeoff.adapters.{engine}")
 
     class Leveraged(api.Strategy):
         def init(self):
@@ -205,14 +205,14 @@ def test_engine_leverage_settings_are_applied_to_actual_broker(engine, setting):
     ("backtesting", {"margin": float("nan")}), ("backtesting", {"margin": "0.5"}),
 ])
 def test_engine_rejects_invalid_exposure_setting_before_running(engine, setting):
-    adapter = importlib.import_module(f"backtest_witness.adapters.{engine}")
+    adapter = importlib.import_module(f"tradeoff.adapters.{engine}")
     with pytest.raises(ValueError, match="leverage|margin"):
         getattr(adapter, f"make_{engine}_runner")(object, engine_settings=setting)
 
 
 def test_position_target_normalizes_numpy_holdings_without_coercing_strings_or_booleans():
     np = require("numpy")
-    from backtest_witness.adapters._shared import position_target
+    from tradeoff.adapters._shared import position_target
     assert position_target(np.int64(-12)) == -12
     assert position_target(np.float32(-0.25)) == -0.25
     assert type(position_target(np.float64(-0.0))) is int
@@ -223,7 +223,7 @@ def test_position_target_normalizes_numpy_holdings_without_coercing_strings_or_b
 
 def test_backtesting_prepares_extra_feature_columns_afresh_inside_seeded_run():
     api = require("backtesting")
-    from backtest_witness.adapters import make_backtesting_runner
+    from tradeoff.adapters import make_backtesting_runner
 
     class FeatureStrategy(api.Strategy):
         def init(self):
@@ -253,7 +253,7 @@ def test_backtesting_prepares_extra_feature_columns_afresh_inside_seeded_run():
 @pytest.mark.parametrize("mode", ["drop", "reindex", "price", "wrong_type"])
 def test_backtesting_preparation_cannot_change_original_market_tape(mode):
     api = require("backtesting")
-    from backtest_witness.adapters import make_backtesting_runner
+    from tradeoff.adapters import make_backtesting_runner
 
     class Flat(api.Strategy):
         def init(self):
@@ -281,7 +281,7 @@ def test_backtesting_preparation_cannot_change_original_market_tape(mode):
 def test_seeded_engine_run_preserves_callers_random_state(engine):
     api = require(engine)
     np = require("numpy")
-    adapter = importlib.import_module(f"backtest_witness.adapters.{engine}")
+    adapter = importlib.import_module(f"tradeoff.adapters.{engine}")
     base = api.Strategy
 
     class RandomChoice(base):
@@ -315,7 +315,7 @@ def test_seeded_engine_run_preserves_callers_random_state(engine):
 @pytest.mark.parametrize("engine", ["backtrader", "backtesting"])
 def test_real_engine_examples_prove_clean_and_leaky_controls(engine):
     require(engine)
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
 
     example = importlib.import_module(f"examples.{engine}_demo")
     data = rows()
@@ -332,8 +332,8 @@ def test_real_engine_examples_prove_clean_and_leaky_controls(engine):
 @pytest.mark.parametrize("engine", ["backtrader", "backtesting"])
 def test_leaky_engine_example_also_reproduces_on_default_synthetic_tape(engine):
     require(engine)
-    from backtest_witness.audit import audit
-    from backtest_witness.demos import synthetic_rows
+    from tradeoff.audit import audit
+    from tradeoff.demos import synthetic_rows
 
     example = importlib.import_module(f"examples.{engine}_demo")
     report = audit(example.leaky_run, synthetic_rows(), min_history=3,

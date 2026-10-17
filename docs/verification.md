@@ -1,6 +1,12 @@
 # Verification
 
-BacktestWitness 0.3.0 is a public source alpha. The checks below are local acceptance evidence, not a security or profitability certificate. [Hosted CI results](https://github.com/Toomi16011601/backtest-witness/actions/workflows/tests.yml) record runs for published commits. The data-import and integration-check build passes **621 tests** on Python 3.12.14, including native execution, input validation, replay and private diagnostics.
+Tradeoff 0.3.0 is a public source alpha. The checks below are local acceptance evidence, not a security or profitability certificate. [Hosted CI results](https://github.com/Toomi16011601/tradeoff/actions/workflows/tests.yml) record runs for published commits. The data-import and integration-check build, recorded before the Tradeoff rename, passed **621 tests** on Python 3.12.14, including native execution, input validation, replay and private diagnostics. The renamed source passes **627 tests** locally; hosted results are recorded separately.
+
+The linked screenshots are earlier-version captures and still show BacktestWitness branding. They document the synthetic report flows inspected before the rename.
+
+## Tradeoff rename — 17 October 2026
+
+A fresh wheel installation verifies both command names, installed report assets, the native agent example and saved-failure replay. Earlier `backtest_witness` callback references and generated pytest files still reproduce their expected failure; the same old fixture passes with the causal callback and keeps identical bytes. Compatibility imports share exception classes and local diagnostic state without loading optional trading frameworks. Serialized schema IDs and receipt keys remain unchanged. These checks cover naming compatibility, not new strategy capabilities.
 
 ## Final release audit — 17 October 2026
 

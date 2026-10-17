@@ -7,7 +7,7 @@ import pytest
 
 def importer():
     # Import inside each test so a missing feature produces a behavioral failure.
-    from backtest_witness.data import load_data, inspect_data
+    from tradeoff.data import load_data, inspect_data
     return load_data, inspect_data
 
 

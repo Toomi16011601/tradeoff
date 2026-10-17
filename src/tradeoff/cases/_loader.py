@@ -43,7 +43,7 @@ def strategy_namespace(source, filename, *, extra=None, prepare_sentiment=False)
         from backtesting.test import SMA
     except ImportError as exc:
         raise ImportError("Public cases require pip install '.[cases]'") from exc
-    namespace = {"__name__": "backtest_witness.cases._loaded_strategy", "np": np,
+    namespace = {"__name__": "tradeoff.cases._loaded_strategy", "np": np,
                  "pd": pd, "Strategy": Strategy, "crossover": crossover, "SMA": SMA}
     namespace.update(extra or {})
     tree = ast.parse(source, filename)
@@ -69,7 +69,7 @@ def strategy_namespace(source, filename, *, extra=None, prepare_sentiment=False)
 
 def riskkit_sizing(source, filename):
     """Execute the exact dependency-free upstream sizing module, including dataclasses."""
-    name = "backtest_witness.cases._loaded_riskkit_sizing"
+    name = "tradeoff.cases._loaded_riskkit_sizing"
     module = types.ModuleType(name)
     module.__file__ = filename
     sys.modules[name] = module

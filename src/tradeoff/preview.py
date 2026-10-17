@@ -29,7 +29,7 @@ def require_secure_preview_support():
 
 def preview_content_security_policy():
     """Authorize the packaged inline assets, never scripts from report contents."""
-    assets = files("backtest_witness.report").joinpath("assets")
+    assets = files("tradeoff.report").joinpath("assets")
 
     def hashes(names):
         return " ".join("'sha256-" + base64.b64encode(hashlib.sha256(
@@ -50,7 +50,7 @@ class PreviewHTTPRequestHandler(SimpleHTTPRequestHandler):
     Platforms without these secure-open primitives fail closed.
     """
 
-    server_version = "BacktestWitnessPreview"
+    server_version = "TradeoffPreview"
     sys_version = ""
 
     def __init__(self, *args, directory, **kwargs):

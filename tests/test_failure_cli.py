@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def invoke(*args, cwd=ROOT):
-    return subprocess.run([sys.executable, '-m', 'backtest_witness', *args],
+    return subprocess.run([sys.executable, '-m', 'tradeoff', *args],
         cwd=cwd, env={**os.environ, 'PYTHONPATH': str(ROOT / 'src')},
         capture_output=True, text=True)
 
@@ -60,8 +60,8 @@ def test_native_lab_honors_policy_and_writes_replayable_artifacts(tmp_path):
     requirements.write_text(json.dumps({'min_return_pct': None, 'max_return_drop_pct': 0.05,
                                        'min_closed_trades': 1}))
     output = tmp_path / 'lab'
-    result = invoke('lab', '--adapter', 'backtest_witness.cases.coinglass:fixed_execution',
-                    '--engine', 'callback', '--data', str(ROOT / 'src/backtest_witness/cases/sources/coinglass_rows.json'),
+    result = invoke('lab', '--adapter', 'tradeoff.cases.coinglass:fixed_execution',
+                    '--engine', 'callback', '--data', str(ROOT / 'src/tradeoff/cases/sources/coinglass_rows.json'),
                     '--requirements', str(requirements), '--output', str(output), '--json')
     assert result.returncode == 1, result.stderr
     assert json.loads(result.stdout)['status'] == 'FAILURE_FOUND'

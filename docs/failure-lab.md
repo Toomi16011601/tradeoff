@@ -6,7 +6,7 @@ The lab runs on your own computer and reruns a strategy in Backtesting.py 0.6.6 
 
 ```bash
 python -m pip install '.[lab]'
-backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
+tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
   --engine-settings '{"cash": 10000, "commission": 0.001}' \
   --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
   --requirements requirements.json --output failure-output --json
@@ -35,7 +35,7 @@ For the pinned public strategies:
 ```bash
 # Public case pins require Python 3.11+; locally tested on Python 3.12.
 python -m pip install -e ".[dev,cases]"
-backtest-witness lab-cases --output failure-public-output
+tradeoff lab-cases --output failure-public-output
 # Expected exit 1: the casebook reproduces its declared policy failures.
 ```
 
@@ -88,13 +88,13 @@ A verified failure exports:
 - `report.json` and `index.html`: machine-readable evidence and the offline interface.
 
 ```bash
-backtest-witness replay-failure failure-output/failure-fixture.json
+tradeoff replay-failure failure-output/failure-fixture.json
 # Exit 1: saved policy failure reproduced; 2: uncomparable/invalid.
 
 python -m pytest failure-output/test_failure_resilience.py
 # Expected to fail while the policy breach remains.
 
-backtest-witness replay-failure failure-output/failure-fixture.json \
+tradeoff replay-failure failure-output/failure-fixture.json \
   --adapter my_strategy:RepairedStrategy --config repaired-parameters.json
 ```
 
@@ -107,8 +107,8 @@ Reduction lowers scenario dimensions over declared tested levels while keeping e
 ## Python and agent integration
 
 ```python
-from backtest_witness.execution import resolve_execution_runner
-from backtest_witness.failure_lab import run_failure_lab
+from tradeoff.execution import resolve_execution_runner
+from tradeoff.failure_lab import run_failure_lab
 
 run = resolve_execution_runner("my_strategy:MyStrategy", engine="backtesting",
                                engine_settings={"cash": 10000}, integration={})

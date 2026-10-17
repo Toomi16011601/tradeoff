@@ -1,12 +1,12 @@
 """Real optional engine controls: audit clean_run or planted leaky_run.
 
 Install: pip install -e '.[adapters]'
-Run: backtest-witness audit --adapter examples.backtesting_demo:leaky_run --data bars.json --output backtesting-report
+Run: tradeoff audit --adapter examples.backtesting_demo:leaky_run --data bars.json --output backtesting-report
 """
 
 from backtesting import Strategy
 
-from backtest_witness.adapters.backtesting import make_backtesting_runner
+from tradeoff.adapters.backtesting import make_backtesting_runner
 
 
 class CleanStrategy(Strategy):

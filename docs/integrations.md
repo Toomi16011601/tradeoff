@@ -1,6 +1,6 @@
 # Strategy and engine integrations
 
-BacktestWitness checks a strategy you already provide. A trading agent supplies the decisions; Backtesting.py executes its native orders; BacktestWitness reruns it under execution stress and reports policy violations. A coding agent can run the same CLI or Python calls and read structured JSON to guide a repair. The browser is an offline report of a completed run.
+Tradeoff checks a strategy you already provide. A trading agent supplies the decisions; Backtesting.py executes its native orders; Tradeoff reruns it under execution stress and reports policy violations. A coding agent can run the same CLI or Python calls and read structured JSON to guide a repair. The browser is an offline report of a completed run.
 
 Start with the [runnable agent integration](agent-integration.md) for a small decision function, native adapter and local tool wrapper, or the [quickstart](quickstart.md) for the install/run/replay flow. There is no agent SDK, MCP server or live broker connection in this release.
 
@@ -10,7 +10,7 @@ Execution failure investigation and future-data invariance use separate runner c
 
 ```bash
 python -m pip install '.[lab]'
-backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
+tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
   --engine-settings '{"cash": 10000, "commission": 0.001}' \
   --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
   --requirements requirements.json --output failure-output --json
@@ -21,9 +21,9 @@ This command accepts provider-style `Date,Open,High,Low,Close,Volume` data with 
 Each scenario creates fresh strategy and native broker state. Additional commission/spread feed into native fees, affordability and sizing; the output records native equity, signed positions, closed trades, open trades and pending orders. Positive delay postpones discretionary market entries and manual closes beyond native next-open execution. Protective SL/TP keeps native timing. Delayed standalone stop/limit orders, market orders created in `Strategy.init`, and `trade_on_close` refuse comparison. No terminal liquidation is added: the native adapter fixes `finalize_trades=False`, and `finalize_trades=True` is unsupported. Other Backtesting.py versions refuse execution, because the delay hook depends on the tested broker implementation.
 
 ```python
-from backtest_witness.data import load_data, inspect_data
-from backtest_witness.execution import resolve_execution_runner
-from backtest_witness.failure_lab import run_failure_lab
+from tradeoff.data import load_data, inspect_data
+from tradeoff.execution import resolve_execution_runner
+from tradeoff.failure_lab import run_failure_lab
 
 rows = load_data("daily.csv", symbol="DEMO", timezone="America/New_York",
                  session_close="16:00")
@@ -47,7 +47,7 @@ Use an installed or otherwise importable strategy module. Run checkout examples 
 Native input inspection covers direct strategy-method data attributes and function-global loads, without invoking strategy methods or descriptors. It can reject missing extra columns, referenced globals still set to `None` and all-zero volume used by the strategy. Helpers, dynamic access and arbitrary initialization are not fully inspectable. Declare additional prerequisites through the resolver's integration options:
 
 ```python
-from backtest_witness.execution import companion_manifest
+from tradeoff.execution import companion_manifest
 
 integration = {
     "required_columns": ["Time"],
@@ -66,7 +66,7 @@ Custom preprocessing uses `make_backtesting_execution_runner(MyStrategy, prepare
 For an alternative repair runner from Python:
 
 ```python
-from backtest_witness.failure_reproduce import load_failure_fixture, assert_failure_resilience
+from tradeoff.failure_reproduce import load_failure_fixture, assert_failure_resilience
 
 fixture = load_failure_fixture("failure-output/failure-fixture.json")
 repair = resolve_execution_runner("my_strategy:RepairedStrategy",
@@ -76,7 +76,7 @@ assert_failure_resilience(repair, fixture, config={"lookback": 30})
 
 The assertion repeats current baseline and saved stress, requires the saved engine/version and unchanged policy, and raises `ResilienceError` for a comparable policy failure. Invalid/nonrepeatable executions raise `ValueError`. Historical observations remain evidence of the original failure; repairs need not reproduce their returns. Generated pytest uses the sibling fixture and saved runner. Run both from the strategy project root so companion paths resolve. [Report/artifact schema](report-schema.md).
 
-`lab --json` and `audit --json` expose safe command errors through `status`, `phase` and `error.code`. For private raw exception traces, those commands support `--diagnostics` with a new file outside the report directory. Python tools can opt into `backtest_witness.diagnostics.local_diagnostics(path)` around execution; callers must keep that file outside exported artifacts. Traces may contain source lines, private paths and exception messages. Portable reports keep sanitized reasons. [Troubleshooting](data-import.md#read-errors-without-sharing-private-traces).
+`lab --json` and `audit --json` expose safe command errors through `status`, `phase` and `error.code`. For private raw exception traces, those commands support `--diagnostics` with a new file outside the report directory. Python tools can opt into `tradeoff.diagnostics.local_diagnostics(path)` around execution; callers must keep that file outside exported artifacts. Traces may contain source lines, private paths and exception messages. Portable reports keep sanitized reasons. [Troubleshooting](data-import.md#read-errors-without-sharing-private-traces).
 
 ## Future-data audit integrations
 
@@ -92,7 +92,7 @@ The future-data integration tests execute **Backtrader 1.9.78.123** and **Backte
 
 ```python
 import backtrader as bt
-from backtest_witness.adapters.backtrader import make_backtrader_runner
+from tradeoff.adapters.backtrader import make_backtrader_runner
 
 class MyStrategy(bt.Strategy):
     def next(self):
@@ -108,7 +108,7 @@ Each callback call creates a new Cerebro, feed, broker, strategy and analyzer. P
 
 ```python
 from backtesting import Strategy
-from backtest_witness.adapters.backtesting import make_backtesting_runner
+from tradeoff.adapters.backtesting import make_backtesting_runner
 
 class MyStrategy(Strategy):
     def init(self):
@@ -129,10 +129,10 @@ The public [Backtesting.py API](https://kernc.github.io/backtesting.py/doc/backt
 Create input bars from the bundled synthetic dataset:
 
 ```bash
-python -c "import json; from backtest_witness.demos import synthetic_rows; print(json.dumps(synthetic_rows()))" > bars.json
-backtest-witness audit --adapter examples.backtrader_demo:leaky_run \
+python -c "import json; from tradeoff.demos import synthetic_rows; print(json.dumps(synthetic_rows()))" > bars.json
+tradeoff audit --adapter examples.backtrader_demo:leaky_run \
   --data bars.json --output backtrader-report --trace-kind observed_position
-backtest-witness audit --adapter examples.backtesting_demo:leaky_run \
+tradeoff audit --adapter examples.backtesting_demo:leaky_run \
   --data bars.json --output backtesting-report --trace-kind observed_position
 ```
 
@@ -149,14 +149,14 @@ Build an integration for another engine by honoring the [callback contract](call
 ## Audit a class without writing a callback
 
 ```bash
-backtest-witness audit --adapter my_strategy:MyStrategy --engine backtesting \
+tradeoff audit --adapter my_strategy:MyStrategy --engine backtesting \
   --engine-settings '{"cash": 10000, "margin": 0.5}' \
   --data bars.json --output strategy-report --initial-cash 10000 --max-leverage 2
 ```
 
-The engine settings describe the actual engine run; projection settings independently describe the conditional ledger. Backtesting.py `margin` is the required fraction of position value (0.5 permits 2× engine leverage). Backtrader accepts `cash`, `commission` and `leverage`; Backtesting.py accepts `cash`, `commission`, `spread`, `trade_on_close`, `margin` and boolean `exclusive_orders`. The latter defaults to upstream's `False`, allowing position accumulation; use `True` for order replacement behavior, including compatibility with BacktestWitness 0.1.0. Engines impose their own sizing and broker rules. Backtesting.py's standard engine fills whole units; its fractional order argument is a fraction of available equity, not fractional shares. Core target/signal adapters accept fractional quantities.
+The engine settings describe the actual engine run; projection settings independently describe the conditional ledger. Backtesting.py `margin` is the required fraction of position value (0.5 permits 2× engine leverage). Backtrader accepts `cash`, `commission` and `leverage`; Backtesting.py accepts `cash`, `commission`, `spread`, `trade_on_close`, `margin` and boolean `exclusive_orders`. The latter defaults to upstream's `False`, allowing position accumulation; use `True` for order replacement behavior, including compatibility with Tradeoff 0.1.0. Engines impose their own sizing and broker rules. Backtesting.py's standard engine fills whole units; its fractional order argument is a fraction of available equity, not fractional shares. Core target/signal adapters accept fractional quantities.
 
-Saved fixtures preserve the selected adapter and effective engine options. `backtest-witness reproduce fixture.json` and the generated pytest reconstruct the same runner. Override a repaired class with `--adapter fixed_strategy:MyStrategy`; use `--engine callback` when the override is a raw callback instead of a class.
+Saved fixtures preserve the selected adapter and effective engine options. `tradeoff reproduce fixture.json` and the generated pytest reconstruct the same runner. Override a repaired class with `--adapter fixed_strategy:MyStrategy`; use `--engine callback` when the override is a raw callback instead of a class.
 
 ## Numeric or pandas signals
 

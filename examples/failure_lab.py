@@ -8,10 +8,10 @@ from pathlib import Path
 
 
 def main():
-    from backtest_witness.cases import get_case
-    from backtest_witness.failure_lab import run_failure_lab
-    from backtest_witness.failure_reproduce import export_failure_reproducer
-    from backtest_witness.report import write_failure_report
+    from tradeoff.cases import get_case
+    from tradeoff.failure_lab import run_failure_lab
+    from tradeoff.failure_reproduce import export_failure_reproducer
+    from tradeoff.report import write_failure_report
     case = get_case('riskkit')
     report = run_failure_lab(case['fixed_execution'], case['execution_rows'](),
         requirements={'min_return_pct': None, 'max_return_drop_pct': 0.05, 'min_closed_trades': 1},

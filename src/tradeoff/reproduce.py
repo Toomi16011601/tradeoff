@@ -159,10 +159,10 @@ def export_reproducer(report, output_dir, strategy_ref):
         receipt["runner_spec"] = deepcopy(fixture["runner_spec"])
     if "provenance" in fixture:
         receipt["provenance"] = deepcopy(fixture["provenance"])
-    generated = '''"""Regression test exported by BacktestWitness. Keep the fixture beside this file."""
+    generated = '''"""Regression test exported by Tradeoff. Keep the fixture beside this file."""
 from pathlib import Path
-from backtest_witness.adapters import resolve_runner
-from backtest_witness.reproduce import load_fixture, assert_future_invariance
+from tradeoff.adapters import resolve_runner
+from tradeoff.reproduce import load_fixture, assert_future_invariance
 
 
 def test_future_invariance():

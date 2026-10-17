@@ -21,7 +21,7 @@ def signals(rows, targets):
 
 
 def test_round_trip_uses_next_open_and_per_fill_costs():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([10, 20, 30, 40], [10, 25, 35, 45])
     result = project(rows, signals(rows, [1, 1, 0, 0]), initial_cash=1000,
@@ -42,7 +42,7 @@ def test_round_trip_uses_next_open_and_per_fill_costs():
 
 
 def test_terminal_holding_marks_close_without_inventing_sale():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([10, 20, 30], [10, 25, 35])
     result = project(rows, signals(rows, [1, 1, 1]), initial_cash=100,
@@ -57,7 +57,7 @@ def test_terminal_holding_marks_close_without_inventing_sale():
 
 
 def test_rejected_buy_retries_persistent_target_when_affordable():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([10, 101, 99, 98])
     result = project(rows, signals(rows, [1, 1, 1, 1]), initial_cash=100,
@@ -71,7 +71,7 @@ def test_rejected_buy_retries_persistent_target_when_affordable():
 
 
 def test_risk_reducing_close_settles_fee_debt_instead_of_trapping_holding():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([10, 10, 2])
     result = project(rows, signals(rows, [1, 0, 0]), initial_cash=110,
@@ -85,7 +85,7 @@ def test_risk_reducing_close_settles_fee_debt_instead_of_trapping_holding():
 
 
 def test_pending_final_signal_does_not_trade_and_drawdown_uses_initial_equity():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([10, 10, 10], [10, 8, 10])
     pending = project(rows, signals(rows, [0, 0, 1]))
@@ -99,7 +99,7 @@ def test_pending_final_signal_does_not_trade_and_drawdown_uses_initial_equity():
 
 
 def test_lag_two_suppresses_first_two_fills_and_input_is_unchanged():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([10, 20, 30, 40])
     trace = signals(rows, [1, 0, 1, 0])
@@ -122,7 +122,7 @@ def test_lag_two_suppresses_first_two_fills_and_input_is_unchanged():
     ("short_borrow_bps_annual", float("nan")),
 ])
 def test_invalid_model_setting_is_rejected(setting, value):
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([10, 20])
     with pytest.raises(ValueError):
@@ -130,7 +130,7 @@ def test_invalid_model_setting_is_rejected(setting, value):
 
 
 def test_invalid_trace_does_not_silently_change_accounting():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([10, 20])
     with pytest.raises(ValueError):
@@ -140,7 +140,7 @@ def test_invalid_trace_does_not_silently_change_accounting():
 
 
 def test_compare_uses_original_prices_for_both_traces_and_literal_sensitivities():
-    from backtest_witness.economics import compare_economics
+    from tradeoff.economics import compare_economics
 
     rows = tape([10, 20, 30, 40])
     result = compare_economics(rows, signals(rows, [1, 1, 0, 0]),
@@ -162,7 +162,7 @@ def test_compare_uses_original_prices_for_both_traces_and_literal_sensitivities(
 
 
 def test_absent_intervention_is_unpaired_through_every_sensitivity():
-    from backtest_witness.economics import compare_economics
+    from tradeoff.economics import compare_economics
 
     rows = tape([10, 20])
     result = compare_economics(rows, signals(rows, [0, 0]))
@@ -173,7 +173,7 @@ def test_absent_intervention_is_unpaired_through_every_sensitivity():
 
 
 def test_derived_return_overflow_is_rejected_instead_of_emitting_nonfinite_json():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([1e-300, 1e-300, 1e308])
     rows[0]["low"] = rows[1]["low"] = 1e-300
@@ -183,7 +183,7 @@ def test_derived_return_overflow_is_rejected_instead_of_emitting_nonfinite_json(
 
 
 def test_multiple_round_trips_and_open_cost_basis_reconcile():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([10, 10, 20, 15, 25, 10], [10, 10, 20, 15, 25, 12])
     result = project(rows, signals(rows, [1, 0, 1, 0, 1, 1]), initial_cash=100,
@@ -198,7 +198,7 @@ def test_multiple_round_trips_and_open_cost_basis_reconcile():
 
 
 def test_unknown_comparison_settings_are_rejected():
-    from backtest_witness.economics import compare_economics
+    from tradeoff.economics import compare_economics
 
     rows = tape([10, 20])
     with pytest.raises(ValueError, match="unknown"):
@@ -211,7 +211,7 @@ def test_unknown_comparison_settings_are_rejected():
 ])
 def test_unrepresentable_doubled_cost_sensitivity_preserves_valid_main_projection(setting, value):
     import json
-    from backtest_witness.economics import compare_economics
+    from tradeoff.economics import compare_economics
 
     rows = tape([10, 20, 30])
     result = compare_economics(rows, signals(rows, [1, 1, 1]), **{setting: value})
@@ -225,7 +225,7 @@ def test_unrepresentable_doubled_cost_sensitivity_preserves_valid_main_projectio
     assert "unavailable" in result["explanation"].lower()
     json.dumps(result, allow_nan=False)
 def test_unrepresentable_cash_precision_is_rejected_instead_of_false_reconciliation():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
     import pytest
     rows = [dict(timestamp=f"2026-01-01T0{i}:00:00+00:00", symbol="SYN",
                  open=price, high=price, low=price, close=price, volume=100)
@@ -238,8 +238,8 @@ def test_unrepresentable_cash_precision_is_rejected_instead_of_false_reconciliat
 @pytest.mark.parametrize("offset", ["Z", "+01:00"])
 def test_equivalent_aware_source_and_trace_timestamps_are_accepted(offset):
     from datetime import datetime, timedelta, timezone
-    from backtest_witness.demos import synthetic_rows
-    from backtest_witness.economics import project, compare_economics
+    from tradeoff.demos import synthetic_rows
+    from tradeoff.economics import project, compare_economics
     rows = synthetic_rows(4)
     for row in rows:
         for key in ("timestamp", "available_at"):
@@ -252,7 +252,7 @@ def test_equivalent_aware_source_and_trace_timestamps_are_accepted(offset):
 
 
 def test_long_increase_and_partial_close_allocate_average_basis_and_fees():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([90, 100, 120, 130], [90, 100, 120, 140])
     result = project(rows, signals(rows, [2, 3, 1, 1]), fee_fixed=2,
@@ -271,7 +271,7 @@ def test_long_increase_and_partial_close_allocate_average_basis_and_fees():
 
 
 def test_short_add_and_partial_cover_allocate_average_proceeds_and_fees():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([110, 100, 80, 70], [110, 100, 80, 60])
     result = project(rows, signals(rows, [-2, -3, -1, -1]), fee_fixed=2,
@@ -295,7 +295,7 @@ def test_short_add_and_partial_cover_allocate_average_proceeds_and_fees():
 ])
 def test_reversal_is_one_delta_fill_and_splits_fixed_and_notional_fee(
         targets, opens, closes, cash, realized, open_pnl, net, fees):
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape(opens, closes)
     result = project(rows, signals(rows, targets), fee_fixed=2, fee_bps=100,
@@ -310,7 +310,7 @@ def test_reversal_is_one_delta_fill_and_splits_fixed_and_notional_fee(
 
 
 def test_fractional_hold_marks_only_held_quantity_and_does_not_repeat_fees():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([90, 100, 110], [90, 100, 120])
     result = project(rows, signals(rows, [0.25, 0.25, 0.25]), fee_fixed=1,
@@ -326,7 +326,7 @@ def test_fractional_hold_marks_only_held_quantity_and_does_not_repeat_fees():
 
 @pytest.mark.parametrize("target", [2, -2])
 def test_exposure_cap_rejects_whole_target_including_short_sale_proceeds(target):
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([100, 100, 100])
     result = project(rows, signals(rows, [target, target, target]),
@@ -339,7 +339,7 @@ def test_exposure_cap_rejects_whole_target_including_short_sale_proceeds(target)
 
 
 def test_explicit_leverage_allows_funded_fractional_exposure():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([100, 100])
     result = project(rows, signals(rows, [1.5, 1.5]), initial_cash=100,
@@ -351,7 +351,7 @@ def test_explicit_leverage_allows_funded_fractional_exposure():
 
 
 def test_insolvent_short_cover_is_allowed_and_no_forced_exit_is_invented():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([100, 100, 300], [100, 300, 300])
     result = project(rows, signals(rows, [-1, 0, 0]), initial_cash=100,
@@ -373,7 +373,7 @@ def test_insolvent_short_cover_is_allowed_and_no_forced_exit_is_invented():
 
 
 def test_market_move_records_cap_breach_without_liquidating():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([100, 100, 150])
     result = project(rows, signals(rows, [-1, -1, -1]), initial_cash=100,
@@ -386,7 +386,7 @@ def test_market_move_records_cap_breach_without_liquidating():
 
 
 def test_short_borrow_uses_elapsed_year_previous_quantity_and_previous_close():
-    from backtest_witness.economics import project, compare_economics
+    from tradeoff.economics import project, compare_economics
 
     rows = tape([100, 100, 80, 60])
     for row, timestamp in zip(rows, ["2024-12-31T00:00:00+00:00",
@@ -415,7 +415,7 @@ def test_short_borrow_uses_elapsed_year_previous_quantity_and_previous_close():
 
 
 def test_open_short_marks_market_without_hypothetical_exit_or_borrow_after_end():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([110, 100, 90], [110, 100, 80])
     result = project(rows, signals(rows, [-0.5, -0.5, -0.5]), fee_fixed=1,
@@ -430,7 +430,7 @@ def test_open_short_marks_market_without_hypothetical_exit_or_borrow_after_end()
 
 @pytest.mark.parametrize("target,slippage", [(-1, 9999), (-0.25, 0)])
 def test_fill_underflow_is_rejected_instead_of_creating_zero_value_trade(target, slippage):
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = [{"timestamp": f"2026-01-0{index + 1}T00:00:00+00:00", "symbol": "TEST",
              "open": 5e-324, "high": 5e-324, "low": 5e-324,
@@ -441,7 +441,7 @@ def test_fill_underflow_is_rejected_instead_of_creating_zero_value_trade(target,
 
 
 def test_paired_delta_overflow_is_rejected_even_when_both_ledgers_are_finite():
-    from backtest_witness.economics import project, compare_economics
+    from tradeoff.economics import project, compare_economics
 
     rows = tape([1e307, 1e307, 1e308])
     short, long = signals(rows, [-1, -1, -1]), signals(rows, [1, 1, 1])
@@ -455,7 +455,7 @@ def test_paired_delta_overflow_is_rejected_even_when_both_ledgers_are_finite():
 
 @pytest.mark.parametrize("direction", [-1, 1])
 def test_derived_reversal_quantity_overflow_is_a_descriptive_value_error(direction):
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = [{"timestamp": f"2026-01-0{index + 1}T00:00:00+00:00", "symbol": "TEST",
              "open": 1e-300, "high": 1e-300, "low": 1e-300,
@@ -467,7 +467,7 @@ def test_derived_reversal_quantity_overflow_is_a_descriptive_value_error(directi
 
 
 def test_finite_target_price_product_overflow_is_checked_before_balance_conversion():
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = tape([10, 10])
     with pytest.raises(ValueError, match="finite"):
@@ -477,7 +477,7 @@ def test_finite_target_price_product_overflow_is_checked_before_balance_conversi
 
 @pytest.mark.parametrize("reduce", [False, True])
 def test_held_position_price_product_overflow_is_a_value_error_at_close_or_rebalance(reduce):
-    from backtest_witness.economics import project
+    from tradeoff.economics import project
 
     rows = [{"timestamp": f"2026-01-0{index + 1}T00:00:00+00:00", "symbol": "TEST",
              "open": price, "high": price, "low": price,

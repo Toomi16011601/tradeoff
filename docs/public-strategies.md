@@ -6,7 +6,7 @@ The 0.3.0 failure lab reruns both pinned Backtesting.py 0.6.6 examples and their
 
 ```bash
 python -m pip install -e ".[dev,cases]"
-backtest-witness lab-cases --output failure-public-output
+tradeoff lab-cases --output failure-public-output
 # Expected exit 1: at least one variant has a policy failure.
 ```
 
@@ -34,7 +34,7 @@ CoinGlass uses its existing frozen **256-bar** synthetic tape, described below. 
 ### Save and replay the policy failure
 
 ```bash
-backtest-witness replay-failure failure-public-output/riskkit-original/failure-fixture.json
+tradeoff replay-failure failure-public-output/riskkit-original/failure-fixture.json
 # Exit 1: comparable saved stress still breaches its policy.
 python -m pytest failure-public-output/riskkit-original/test_failure_resilience.py
 # Expected to fail until an execution repair meets the saved requirements.
@@ -44,9 +44,9 @@ Use the fixture paths in your generated report. Repair replay repeats both curre
 
 ## Existing future-data casebook
 
-BacktestWitness runs the original trading logic from two public MIT-licensed examples through **Backtesting.py**, retains the actual quantities, and compares decisions before a fixed cutoff. The problems are already present in the pinned source; BacktestWitness does not insert a defect into either original.
+Tradeoff runs the original trading logic from two public MIT-licensed examples through **Backtesting.py**, retains the actual quantities, and compares decisions before a fixed cutoff. The problems are already present in the pinned source; Tradeoff does not insert a defect into either original.
 
-The inputs are frozen **synthetic stress tapes**, chosen to exercise the published logic. These are code-debugging case studies, not historical return studies, profitability evidence, endorsements, or claims that the same defect affects every strategy in either project. The causal repairs are local BacktestWitness variants; they have not been submitted upstream.
+The inputs are frozen **synthetic stress tapes**, chosen to exercise the published logic. These are code-debugging case studies, not historical return studies, profitability evidence, endorsements, or claims that the same defect affects every strategy in either project. The causal repairs are local Tradeoff variants; they have not been submitted upstream.
 
 ## Run both future-data cases
 
@@ -54,7 +54,7 @@ Use Python 3.11 or newer for the pinned numerical dependencies. The full workflo
 
 ```bash
 python -m pip install -e ".[dev,cases]"
-backtest-witness cases --output public-output
+tradeoff cases --output public-output
 ```
 
 Open `public-output/index.html` to view the gallery of original and repaired reports for each example. The original produces a hashed fixture and a runnable failing regression test; the command also verifies that the repair passes that **same fixture**. Choose one example with `--case riskkit` or `--case coinglass`.
@@ -72,7 +72,7 @@ Source: [Backtesting.py integration example](https://github.com/HasibVortex369/r
 
 The example computes a rolling standard deviation and calls `.bfill()`. Its 100-bar baseline fills the first 99 missing values with the first later complete estimate. The strategy can start trading after the 30-bar SMA warms up, so its earlier sizing consumes volatility from bars that have not happened yet.
 
-This is a sizing bug: the original and intervention can both be long while holding different quantities. Reducing every position to a buy/flat boolean would miss it. BacktestWitness runs the exact upstream `PositionSizer` and `SizingInputs` from [sizing.py](https://github.com/HasibVortex369/riskkit/blob/99d1d167dc55c8a564526ef42d87e298f3e74fad/src/riskkit/sizing.py), including its volatility adjustment, risk floors/ceilings and notional cap.
+This is a sizing bug: the original and intervention can both be long while holding different quantities. Reducing every position to a buy/flat boolean would miss it. Tradeoff runs the exact upstream `PositionSizer` and `SizingInputs` from [sizing.py](https://github.com/HasibVortex369/riskkit/blob/99d1d167dc55c8a564526ef42d87e298f3e74fad/src/riskkit/sizing.py), including its volatility adjustment, risk floors/ceilings and notional cap.
 
 The local repair removes `.bfill()` from `rolling_std`. Backtesting.py then waits for the trailing indicators to warm up before calling `next()`. It changes the warmup policy; it does not tune the strategy for returns.
 
@@ -103,18 +103,18 @@ The frozen 256-bar tape uses NumPy seed 73 and normally distributed log returns 
 After generating `public-output`, run an original fixture and then verify the repaired callback against it:
 
 ```bash
-backtest-witness reproduce public-output/riskkit-original/reproducer.json
-backtest-witness reproduce public-output/riskkit-original/reproducer.json \
-  --adapter backtest_witness.cases.riskkit:fixed_run
+tradeoff reproduce public-output/riskkit-original/reproducer.json
+tradeoff reproduce public-output/riskkit-original/reproducer.json \
+  --adapter tradeoff.cases.riskkit:fixed_run
 ```
 
-The original should exit 1 with a reproduced dependency; the repair should exit 0. The precise output paths appear in the command's summary and gallery. The exported pytest test imports `backtest_witness.cases.riskkit:original_run`; switching its callback to the repaired reference verifies the same before/after tape.
+The original should exit 1 with a reproduced dependency; the repair should exit 0. The precise output paths appear in the command's summary and gallery. The exported pytest test imports `tradeoff.cases.riskkit:original_run`; switching its callback to the repaired reference verifies the same before/after tape.
 
 You can also use the same registry from Python:
 
 ```python
-from backtest_witness.audit import audit
-from backtest_witness.cases import get_case
+from tradeoff.audit import audit
+from tradeoff.cases import get_case
 
 case = get_case("riskkit")
 report = audit(
@@ -128,7 +128,7 @@ assert report["status"] == "FOUND"
 
 ## Source integrity and licensing
 
-The source files are bundled unchanged under `src/backtest_witness/cases/sources/`, together with each project's MIT notice. Their bytes are checked before execution. Local repairs are applied only after verifying the original source hash; no patched upstream file is distributed under the original hash.
+The source files are bundled unchanged under `src/tradeoff/cases/sources/`, together with each project's MIT notice. Their bytes are checked before execution. Local repairs are applied only after verifying the original source hash; no patched upstream file is distributed under the original hash.
 
 | Bundled file | Original SHA-256 |
 | --- | --- |
@@ -136,6 +136,6 @@ The source files are bundled unchanged under `src/backtest_witness/cases/sources
 | `riskkit_sizing.py` | `d32d36591d22b5643224075f854385015f01ff9a6a1a19e9169c4e581cd26f95` |
 | `coinglass_strategy.py` | `2c97d75c14f74901493b3bf292d8f8e36787bb52b1c463828f83f60eda67fbd5` |
 
-Riskkit is Copyright (c) 2026 Hasib. CoinGlass example code is Copyright (c) 2026 Aria Tajeri. The original MIT notices apply to those files. The pinned runtime is Backtesting.py 0.6.6, pandas 2.2.3 and NumPy 2.3.5. BacktestWitness does not vendor either trading engine.
+Riskkit is Copyright (c) 2026 Hasib. CoinGlass example code is Copyright (c) 2026 Aria Tajeri. The original MIT notices apply to those files. The pinned runtime is Backtesting.py 0.6.6, pandas 2.2.3 and NumPy 2.3.5. Tradeoff does not vendor either trading engine.
 
-An audit witness establishes a changed historical position under a future-only intervention. Temporal audit economic projections remain BacktestWitness's separately declared model; they are not the original engine's full ledger or causal attribution of profit. Native failure reports use actual engine reruns, as described above.
+An audit witness establishes a changed historical position under a future-only intervention. Temporal audit economic projections remain Tradeoff's separately declared model; they are not the original engine's full ledger or causal attribution of profit. Native failure reports use actual engine reruns, as described above.

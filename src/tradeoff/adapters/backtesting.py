@@ -19,7 +19,7 @@ def make_backtesting_runner(strategy_class, *, engine_settings=None, prepare=Non
     exclusive_orders defaults to False, matching upstream accumulation and
     partial-cover behavior; explicitly True replaces positions on each order.
     Extra row fields are not supplied to the OHLCV feed; availability is audited
-    by BacktestWitness rather than enforced by the engine feed. Optional prepare(frame)
+    by Tradeoff rather than enforced by the engine feed. Optional prepare(frame)
     runs afresh under the seed and may add columns, preserving the input OHLCV
     and index. Its preprocessing is part of the callback being audited.
     """
@@ -82,7 +82,7 @@ def make_backtesting_runner(strategy_class, *, engine_settings=None, prepare=Non
                         "engine_settings": options,
                         "warmup": "First bar and indicator warmup bars are explicitly flat; engine next() begins later.",
                         "timing": "Observed holdings after broker processing and Strategy.next(); not intended targets.",
-                        "economics": "Projecting this trace adds BacktestWitness's declared signal-to-fill lag to engine-observed holdings."}
+                        "economics": "Projecting this trace adds Tradeoff's declared signal-to-fill lag to engine-observed holdings."}
     if prepare is not None:
         run.adapter_info["extra_feature_preparation"] = (
             "Fresh seeded preprocessing adds features while retaining the complete original OHLCV tape.")

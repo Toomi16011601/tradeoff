@@ -1,6 +1,6 @@
 """Translate agent decisions into native Backtesting.py market orders."""
 from backtesting import Strategy
-from backtest_witness.privacy import ExecutionUnavailable
+from tradeoff.privacy import ExecutionUnavailable
 
 from .agent import decide
 

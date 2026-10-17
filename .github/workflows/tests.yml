@@ -18,7 +18,7 @@ jobs:
       - run: python -m pip install -e '.[dev]'
       - run: python -m pytest
       - run: python -m build
-      - run: backtest-witness demo --output demo-output
+      - run: tradeoff demo --output demo-output
   adapters:
     runs-on: ubuntu-latest
     steps:
@@ -30,11 +30,11 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -e '.[dev,adapters,cases]'
       - run: python -m pytest
-      - run: backtest-witness cases --output public-output
+      - run: tradeoff cases --output public-output
       - shell: bash
         run: |
           set +e
-          backtest-witness lab-cases --output failure-public-output
+          tradeoff lab-cases --output failure-public-output
           casebook_status=$?
           test "$casebook_status" -eq 1
   first-use:
@@ -56,6 +56,6 @@ jobs:
           set +e
           python -m examples.agent_integration --output failure-output-agent --json
           example_status=$?
-          backtest-witness replay-failure failure-output-agent/failure-fixture.json
+          tradeoff replay-failure failure-output-agent/failure-fixture.json
           replay_status=$?
           test "$example_status" -eq 1 && test "$replay_status" -eq 1

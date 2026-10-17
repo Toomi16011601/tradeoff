@@ -1,10 +1,10 @@
 # Connect an agent to the local failure lab
 
-BacktestWitness is a crash-test and debugging tool you install and run on your own computer before deploying a strategy. Your copy tests your strategy and saves reports on your device; it does not depend on the publisher's computer being online. The execution path is:
+Tradeoff is a crash-test and debugging tool you install and run on your own computer before deploying a strategy. Your copy tests your strategy and saves reports on your device; it does not depend on the publisher's computer being online. The execution path is:
 
 ```text
 Trading decision function → Backtesting.py Strategy → native simulated orders
-                         → BacktestWitness cost/delay scenarios + your policy
+                         → Tradeoff cost/delay scenarios + your policy
                          → JSON evidence → strategy repair → saved-case replay
 ```
 
@@ -60,7 +60,7 @@ The included wrapper supports long/flat decisions on one instrument. For shorts,
 
 ## Replace the decisions and historical data
 
-Keep real agent code and private prices in a **separate private project**. Install BacktestWitness in that project’s environment and run the CLI from its root, where your strategy module is importable. The repository example is for learning with synthetic inputs.
+Keep real agent code and private prices in a **separate private project**. Install Tradeoff in that project’s environment and run the CLI from its root, where your strategy module is importable. The repository example is for learning with synthetic inputs.
 
 1. Copy the example pattern into your own importable private project module. Replace `decide` with the historical decision logic you want to test, keeping its long/flat contract if you reuse this adapter.
 2. Supply one instrument's complete OHLCV history instead of the bundled synthetic tape. The CLI accepts CSV or JSON through `--data`, including ordinary provider headers with explicit symbol/timezone/session conventions. [Import guide](data-import.md).
@@ -70,7 +70,7 @@ Keep real agent code and private prices in a **separate private project**. Insta
 For example, after saving your class as `my_agent.strategy:AgentStrategy` and your policy as `requirements.json`:
 
 ```bash
-backtest-witness lab --adapter my_agent.strategy:AgentStrategy --engine backtesting \
+tradeoff lab --adapter my_agent.strategy:AgentStrategy --engine backtesting \
   --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
   --requirements requirements.json --output failure-output-my-agent --json
 ```
@@ -85,7 +85,7 @@ The native engine receives the complete input frame. Pass only the information a
 
 If you replay a fixed cache of external decisions, key it by the information actually available at each decision time. That checks the cached decisions under the tested execution assumptions. It does **not** validate that the original agent would adapt to different cash, positions or fills under stress. A fresh API response is not a reproducible historical decision record.
 
-Only import and execute strategy code you trust: adapters are normal, unsandboxed Python code running locally. Keep proprietary code and credentials in your own project, outside this repository. BacktestWitness has no built-in uploads, account or model service. Your chosen agent controls any context it sends to its own provider; a local tool does not make a cloud agent offline.
+Only import and execute strategy code you trust: adapters are normal, unsandboxed Python code running locally. Keep proprietary code and credentials in your own project, outside this repository. Tradeoff has no built-in uploads, account or model service. Your chosen agent controls any context it sends to its own provider; a local tool does not make a cloud agent offline.
 
 ## Let a coding agent read the result
 
@@ -129,7 +129,7 @@ finding = check_strategy("failure-output-agent-tool")  # New/empty directory.
 print(finding)
 ```
 
-For another strategy, make the subprocess call `backtest-witness lab --adapter ... --data ... --requirements ... --json` instead, adding the dataset conventions above. Its command summary stores the report path under `summary["report"]`, rather than the example's `summary["artifacts"]["json"]`. Both point to the same full report schema. The [Python runner API](integrations.md#native-strategy-execution) avoids a subprocess when your agent tool runs in Python.
+For another strategy, make the subprocess call `tradeoff lab --adapter ... --data ... --requirements ... --json` instead, adding the dataset conventions above. Its command summary stores the report path under `summary["report"]`, rather than the example's `summary["artifacts"]["json"]`. Both point to the same full report schema. The [Python runner API](integrations.md#native-strategy-execution) avoids a subprocess when your agent tool runs in Python.
 
 Native `lab --json` and `audit --json` return input errors as `{"status":"ERROR","phase":"data","error":{"code":"...","message":"...","type":"...","hint":"..."}}`. Handle these before opening a report. A completed `INCONCLUSIVE` report instead contains unavailable or unstable evidence and may include a diagnostics hint. The lab summary includes `input_checks`; read its warnings before treating the run as meaningful.
 
@@ -142,7 +142,7 @@ A useful repair loop reads `status`, policy violations, baseline/stress metrics 
 From the repository root, with the example module importable:
 
 ```bash
-backtest-witness replay-failure failure-output-agent/failure-fixture.json
+tradeoff replay-failure failure-output-agent/failure-fixture.json
 # Exit 1 while the saved breach remains; 0 when current baseline and stress pass.
 python -m pip install 'pytest>=9.0.3'
 python -m pytest failure-output-agent/test_failure_resilience.py
@@ -152,10 +152,10 @@ python -m pytest failure-output-agent/test_failure_resilience.py
 An in-place decision-logic change uses the same saved strategy reference. To test an alternative class explicitly:
 
 ```bash
-backtest-witness replay-failure failure-output-agent/failure-fixture.json \
+tradeoff replay-failure failure-output-agent/failure-fixture.json \
   --adapter my_agent.strategy:RepairedStrategy --config repaired-parameters.json
 ```
 
 A real agent project's strategy module must be installed or otherwise importable in the replay/test environment. `examples/` is a checkout example, not an installed package module. Run from the strategy project root so declared companion files remain available under their saved relative paths. Their hashes are checked before runner resolution and execution; the files are not bundled. Source hashes and known runtime versions record provenance without prohibiting code repairs. Replay keeps every saved input bar and the declared policy, repeats the current baseline and saved stress, and refuses engine/version mismatch or unstable observations. A passing repair is evidence for that saved case; use separate reserved cases to assess a broader change.
 
-BacktestWitness records native simulation results, including fees, open holdings and pending orders. OHLC simulations cannot establish live fills or profitability. [Execution semantics](failure-lab.md#cost-and-delay-semantics) · [Execution contract](execution-contract.md) · [Report schema](report-schema.md)
+Tradeoff records native simulation results, including fees, open holdings and pending orders. OHLC simulations cannot establish live fills or profitability. [Execution semantics](failure-lab.md#cost-and-delay-semantics) · [Execution contract](execution-contract.md) · [Report schema](report-schema.md)

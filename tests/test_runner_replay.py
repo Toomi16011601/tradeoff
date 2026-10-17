@@ -11,10 +11,10 @@ import pytest
 
 def test_python_api_audit_exports_actual_engine_replay_with_saved_settings(tmp_path):
     pytest.importorskip("backtesting")
-    from backtest_witness.adapters import resolve_runner
-    from backtest_witness.audit import audit
-    from backtest_witness.demos import synthetic_rows
-    from backtest_witness.reproduce import export_reproducer, load_fixture
+    from tradeoff.adapters import resolve_runner
+    from tradeoff.audit import audit
+    from tradeoff.demos import synthetic_rows
+    from tradeoff.reproduce import export_reproducer, load_fixture
 
     reference = "examples.backtesting_demo:LeakyStrategy"
     runner = resolve_runner(reference, engine="backtesting", engine_settings={"cash": 5000, "margin": 0.5})

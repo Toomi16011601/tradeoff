@@ -2,6 +2,12 @@
 
 ## 0.3.0 — 2026-10-17 · public source alpha
 
+### Tradeoff rename
+
+- Rename the public repository and product to Tradeoff; use `tradeoff` for the distribution, CLI and Python imports.
+- Retain the `backtest-witness` command and `backtest_witness` Python namespace as compatibility aliases.
+- Preserve saved schema IDs, receipt metadata keys and fixture hashes; earlier report screenshots retain their former branding.
+
 ### Hosted compatibility fixes
 
 - Keep report rendering compatible with Python 3.10 by avoiding reused quote delimiters inside an f-string.

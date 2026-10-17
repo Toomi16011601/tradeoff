@@ -33,13 +33,13 @@ def run_example(output, *, config=None):
     Optional config overrides native strategy parameters, e.g. units/lookback.
     New or empty output is checked before loading or executing the strategy.
     """
-    from backtest_witness.cli import prepare_output
+    from tradeoff.cli import prepare_output
 
     folder = prepare_output(output)
-    from backtest_witness.execution import make_backtesting_execution_runner
-    from backtest_witness.failure_lab import run_failure_lab
-    from backtest_witness.failure_reproduce import export_failure_reproducer
-    from backtest_witness.report import write_failure_report
+    from tradeoff.execution import make_backtesting_execution_runner
+    from tradeoff.failure_lab import run_failure_lab
+    from tradeoff.failure_reproduce import export_failure_reproducer
+    from tradeoff.report import write_failure_report
     from .strategy import AgentStrategy
 
     options = {'units': 30, 'lookback': 3}

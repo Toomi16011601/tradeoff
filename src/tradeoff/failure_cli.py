@@ -137,7 +137,7 @@ def lab_cases(args):
     if args.json:
         print(json.dumps({'cases': summaries, 'interface': str(index)}, allow_nan=False))
     else:
-        print(f'\nOpen: {index}\nPreview: backtest-witness serve --directory {folder}')
+        print(f'\nOpen: {index}\nPreview: tradeoff serve --directory {folder}')
     if any(item['status'] == 'INCONCLUSIVE' for item in summaries):
         return 2
     return 1 if any(item['status'] in ('FAILURE_FOUND', 'BASELINE_FAILED') for item in summaries) else 0

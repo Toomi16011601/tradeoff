@@ -19,6 +19,6 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Python/BacktestWitness/engine versions, OS, browser if relevant.
+      description: Python/Tradeoff/engine versions, OS, browser if relevant.
     validations:
       required: true

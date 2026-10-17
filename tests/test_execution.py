@@ -7,7 +7,7 @@ import pytest
 
 backtesting = pytest.importorskip('backtesting')
 from backtesting import Backtest, Strategy
-from backtest_witness.adapters._shared import frame_from_rows
+from tradeoff.adapters._shared import frame_from_rows
 
 
 def tape(prices=None):
@@ -27,7 +27,7 @@ class RoundTrip(Strategy):
 
 
 def runner(cls=RoundTrip, **settings):
-    module = importlib.import_module('backtest_witness.execution')
+    module = importlib.import_module('tradeoff.execution')
     return module.make_backtesting_execution_runner(cls, engine_settings=settings)
 
 
@@ -170,7 +170,7 @@ def test_unsupported_delayed_semantics_refused(cls, settings, message):
 
 
 def test_delay_private_hook_version_gate(monkeypatch):
-    module = importlib.import_module('backtest_witness.execution')
+    module = importlib.import_module('tradeoff.execution')
     monkeypatch.setattr(module, 'engine_version', lambda name: '0.6.7')
     with pytest.raises(ValueError, match='0.6.6'):
         execute(scenario={'delay_bars': 1})
@@ -182,7 +182,7 @@ def test_repeated_runs_preserve_rows_and_preparation():
     def prepare(frame):
         frame['Signal'] = 1
         return frame
-    module = importlib.import_module('backtest_witness.execution')
+    module = importlib.import_module('tradeoff.execution')
     run = module.make_backtesting_execution_runner(RoundTrip, prepare=prepare)
     assert run(rows, {}, 7, {'delay_bars': 1}) == run(rows, {}, 7, {'delay_bars': 1})
     assert rows == original
@@ -199,7 +199,7 @@ def callback(rows, config, seed, scenario):
 
 
 def test_resolver_strategy_and_explicit_four_argument_callback():
-    module = importlib.import_module('backtest_witness.execution')
+    module = importlib.import_module('tradeoff.execution')
     run = module.resolve_execution_runner('test_execution:RoundTrip')
     assert run.runner_spec['engine'] == 'backtesting'
     assert run.adapter_info['version'] == '0.6.6'
@@ -270,7 +270,7 @@ def test_fixed_native_commission_is_retained_with_additional_relative_costs():
 
 def test_callback_resolver_copies_runtime_metadata():
     callback.adapter_info = {'engine': 'backtesting', 'version': '0.6.6'}
-    module = importlib.import_module('backtest_witness.execution')
+    module = importlib.import_module('tradeoff.execution')
     run = module.resolve_execution_runner('test_execution:callback', engine='callback')
     assert run.adapter_info == callback.adapter_info
     run.adapter_info['version'] = 'other'
@@ -279,7 +279,7 @@ def test_callback_resolver_copies_runtime_metadata():
 
 @pytest.mark.parametrize('delay', [0, 1])
 def test_unverified_engine_version_refused_even_for_control(monkeypatch, delay):
-    module = importlib.import_module('backtest_witness.execution')
+    module = importlib.import_module('tradeoff.execution')
     monkeypatch.setattr(module, 'engine_version', lambda name: '0.6.7')
     with pytest.raises(ValueError, match='0.6.6'):
         execute(scenario={'delay_bars': delay})

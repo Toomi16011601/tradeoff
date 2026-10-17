@@ -7,14 +7,14 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from backtest_witness.failure_lab import run_failure_lab
-from backtest_witness.privacy import ExecutionUnavailable, callback_error
+from tradeoff.failure_lab import run_failure_lab
+from tradeoff.privacy import ExecutionUnavailable, callback_error
 from test_failure_lab import bars
 
 
 def test_callback_failure_records_cause_only_in_private_diagnostics(tmp_path, capsys):
     # Losing the callback_error hook would leave the nested missing-column cause hidden.
-    from backtest_witness.diagnostics import local_diagnostics
+    from tradeoff.diagnostics import local_diagnostics
 
     destination = tmp_path / "private.txt"
     def broken(*args):
@@ -40,7 +40,7 @@ def test_callback_failure_records_cause_only_in_private_diagnostics(tmp_path, ca
 
 def test_diagnostics_refuses_existing_files_without_touching_them(tmp_path):
     # Removing O_EXCL would overwrite a private file and make this test fail.
-    from backtest_witness.diagnostics import DiagnosticsError, local_diagnostics
+    from tradeoff.diagnostics import DiagnosticsError, local_diagnostics
 
     destination = tmp_path / "private.txt"
     destination.write_text("keep this existing content")
@@ -53,7 +53,7 @@ def test_diagnostics_refuses_existing_files_without_touching_them(tmp_path):
 @pytest.mark.parametrize("dangling", [False, True])
 def test_diagnostics_refuses_final_symlink_without_following_it(tmp_path, dangling):
     # Following a symlink could disclose raw diagnostics into an unintended file.
-    from backtest_witness.diagnostics import DiagnosticsError, local_diagnostics
+    from tradeoff.diagnostics import DiagnosticsError, local_diagnostics
 
     target = tmp_path / "target.txt"
     if not dangling:
@@ -69,7 +69,7 @@ def test_diagnostics_refuses_final_symlink_without_following_it(tmp_path, dangli
 
 def test_context_restores_prior_recorder_and_does_not_capture_other_threads(tmp_path):
     # A global sink or failure to reset ContextVar would misroute private failures.
-    from backtest_witness.diagnostics import local_diagnostics, record_exception
+    from tradeoff.diagnostics import local_diagnostics, record_exception
 
     outer = tmp_path / "outer.txt"
     inner = tmp_path / "inner.txt"
@@ -95,7 +95,7 @@ def test_context_restores_prior_recorder_and_does_not_capture_other_threads(tmp_
 
 def test_escaping_exception_is_recorded_once_and_not_suppressed(tmp_path):
     # CLI callers can catch/record explicitly; escaping must retain original behavior.
-    from backtest_witness.diagnostics import local_diagnostics, record_exception
+    from tradeoff.diagnostics import local_diagnostics, record_exception
 
     destination = tmp_path / "private.txt"
     with pytest.raises(RuntimeError, match="SYNTHETIC_ESCAPING_FAILURE"):
@@ -109,7 +109,7 @@ def test_escaping_exception_is_recorded_once_and_not_suppressed(tmp_path):
 
 
 def test_success_creates_private_explanatory_file_without_exception(tmp_path):
-    from backtest_witness.diagnostics import local_diagnostics
+    from tradeoff.diagnostics import local_diagnostics
 
     destination = tmp_path / "private.txt"
     with local_diagnostics(destination):
@@ -121,7 +121,7 @@ def test_success_creates_private_explanatory_file_without_exception(tmp_path):
 
 def test_partial_write_failure_removes_diagnostics_and_resets_context(tmp_path, monkeypatch):
     # A write failure must not strand a partial file containing raw exception values.
-    from backtest_witness.diagnostics import DiagnosticsError, local_diagnostics, record_exception
+    from tradeoff.diagnostics import DiagnosticsError, local_diagnostics, record_exception
 
     destination = tmp_path / "private.txt"
     real_write = os.write
@@ -157,7 +157,7 @@ def test_unopted_callback_error_stays_portable_and_does_not_create_files(tmp_pat
 
 def test_non_utf8_exception_text_is_saved_without_losing_diagnostics(tmp_path):
     # Filesystem paths can contain surrogate escapes; a diagnostic must remain readable.
-    from backtest_witness.diagnostics import local_diagnostics, record_exception
+    from tradeoff.diagnostics import local_diagnostics, record_exception
 
     destination = tmp_path / "private.txt"
     with local_diagnostics(destination):
@@ -168,7 +168,7 @@ def test_non_utf8_exception_text_is_saved_without_losing_diagnostics(tmp_path):
 def test_failed_write_clears_partial_text_even_when_unlink_is_unavailable(tmp_path, monkeypatch):
     # Directory permissions may change after open; truncation must precede cleanup.
     from pathlib import Path
-    from backtest_witness.diagnostics import DiagnosticsError, local_diagnostics, record_exception
+    from tradeoff.diagnostics import DiagnosticsError, local_diagnostics, record_exception
 
     destination = tmp_path / "private.txt"
     real_write = os.write
@@ -201,9 +201,9 @@ def test_replay_fixture_symlink_cannot_route_private_diagnostics_into_artifacts(
     from pathlib import Path
     import subprocess
     import sys
-    from backtest_witness.audit import audit
-    from backtest_witness.failure_reproduce import export_failure_reproducer
-    from backtest_witness.reproduce import export_reproducer
+    from tradeoff.audit import audit
+    from tradeoff.failure_reproduce import export_failure_reproducer
+    from tradeoff.reproduce import export_reproducer
     from test_audit import future_last
     from test_failure_lab import execution, scenario
     from test_validation import tape
@@ -230,7 +230,7 @@ def test_replay_fixture_symlink_cannot_route_private_diagnostics_into_artifacts(
         '    Path("callback-ran.txt").write_text("callback ran")\n'
         '    raise RuntimeError("SYNTHETIC_PRIVATE_CALLBACK_DETAIL")\n')
 
-    result = subprocess.run([sys.executable, '-m', 'backtest_witness', command,
+    result = subprocess.run([sys.executable, '-m', 'tradeoff', command,
         str(alias), '--diagnostics', str(private)], cwd=tmp_path,
         env={**os.environ, 'PYTHONPATH': os.pathsep.join([str(root / 'src'), str(tmp_path)])},
         capture_output=True, text=True)

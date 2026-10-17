@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from backtest_witness import cli
+from tradeoff import cli
 
 
 class MemoryConnection:
@@ -163,7 +163,7 @@ def test_preview_csp_allows_only_packaged_inline_assets(monkeypatch, report_root
     policy = response.getheader("Content-Security-Policy")
     assert policy is not None
     for name in ("report.js", "failure.js", "report.css", "failure.css"):
-        content = files("backtest_witness.report").joinpath("assets", name).read_text(encoding="utf-8")
+        content = files("tradeoff.report").joinpath("assets", name).read_text(encoding="utf-8")
         digest = base64.b64encode(hashlib.sha256(content.encode()).digest()).decode()
         assert f"'sha256-{digest}'" in policy
 

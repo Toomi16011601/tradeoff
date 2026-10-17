@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def invoke(*args):
     env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(ROOT / "src"), str(ROOT)]))
-    return subprocess.run([sys.executable, "-m", "backtest_witness", *map(str, args)],
+    return subprocess.run([sys.executable, "-m", "tradeoff", *map(str, args)],
                           cwd=ROOT, env=env, capture_output=True, text=True)
 
 
@@ -31,7 +31,7 @@ def test_demo_produces_three_distinct_honest_states(tmp_path):
 def test_invalid_data_is_a_friendly_error(tmp_path):
     data = tmp_path / "bad.json"
     data.write_text('[{"timestamp":"wrong"}]')
-    result = invoke("audit", "--adapter", "backtest_witness.demos:causal_run", "--data", data,
+    result = invoke("audit", "--adapter", "tradeoff.demos:causal_run", "--data", data,
                     "--output", tmp_path / "audit")
     assert result.returncode == 2
     assert "Error:" in result.stderr
@@ -49,7 +49,7 @@ def test_avoid_overwriting_unrelated_files(tmp_path):
 
 
 def test_csv_callback_audit_and_fixture_replay(tmp_path):
-    from backtest_witness.demos import synthetic_rows
+    from tradeoff.demos import synthetic_rows
     import csv
     rows = synthetic_rows()
     data = tmp_path / "bars.csv"
@@ -58,7 +58,7 @@ def test_csv_callback_audit_and_fixture_replay(tmp_path):
         writer.writeheader()
         writer.writerows(rows)
     folder = tmp_path / "audit"
-    result = invoke("audit", "--adapter", "backtest_witness.demos:leaky_run", "--data", data,
+    result = invoke("audit", "--adapter", "tradeoff.demos:leaky_run", "--data", data,
                     "--output", folder)
     assert result.returncode == 1, result.stderr
     report = json.loads((folder / "report.json").read_text())
@@ -66,7 +66,7 @@ def test_csv_callback_audit_and_fixture_replay(tmp_path):
     assert report["economics"]["original"]["final_equity"] > 0
     failed = invoke("reproduce", folder / "reproducer.json")
     assert failed.returncode == 1, failed.stderr
-    passed = invoke("reproduce", folder / "reproducer.json", "--adapter", "backtest_witness.demos:causal_run")
+    passed = invoke("reproduce", folder / "reproducer.json", "--adapter", "tradeoff.demos:causal_run")
     assert passed.returncode == 0, passed.stderr
 
 
@@ -77,11 +77,11 @@ def test_help_describes_audit_command():
 
 
 def test_projection_precision_does_not_discard_a_verified_witness(tmp_path):
-    from backtest_witness.demos import synthetic_rows
+    from tradeoff.demos import synthetic_rows
     data = tmp_path / "bars.json"
     data.write_text(json.dumps(synthetic_rows()))
     folder = tmp_path / "audit"
-    result = invoke("audit", "--adapter", "backtest_witness.demos:leaky_run", "--data", data,
+    result = invoke("audit", "--adapter", "tradeoff.demos:leaky_run", "--data", data,
                     "--output", folder, "--initial-cash", "1e16", "--fee-fixed", "0",
                     "--spread-bps", "0", "--slippage-bps", "0")
     assert result.returncode == 1, result.stderr
@@ -100,12 +100,12 @@ def test_negative_cost_is_a_friendly_configuration_error(tmp_path):
 
 def local_invoke(folder, *args):
     env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(ROOT / "src"), str(folder)]))
-    return subprocess.run([sys.executable, "-m", "backtest_witness", *map(str, args)],
+    return subprocess.run([sys.executable, "-m", "tradeoff", *map(str, args)],
                           cwd=folder, env=env, capture_output=True, text=True)
 
 
 def test_numeric_signal_function_needs_no_trace_wrapper_and_replays(tmp_path):
-    from backtest_witness.demos import synthetic_rows
+    from tradeoff.demos import synthetic_rows
     data = tmp_path / "bars.json"
     data.write_text(json.dumps(synthetic_rows()))
     source = tmp_path / "signals.py"
@@ -124,7 +124,7 @@ def test_numeric_signal_function_needs_no_trace_wrapper_and_replays(tmp_path):
 
 def test_direct_backtesting_class_fixture_reconstructs_engine_settings(tmp_path):
     pytest.importorskip("backtesting")
-    from backtest_witness.demos import synthetic_rows
+    from tradeoff.demos import synthetic_rows
     data = tmp_path / "bars.json"
     data.write_text(json.dumps(synthetic_rows()))
     source = tmp_path / "strategy.py"
@@ -166,7 +166,7 @@ def test_cli_declares_leverage_and_short_borrow_in_report(tmp_path):
 
 def test_pandas_signals_load_directly_and_export_replayable_descriptor(tmp_path):
     pytest.importorskip("pandas")
-    from backtest_witness.demos import synthetic_rows
+    from tradeoff.demos import synthetic_rows
     data = tmp_path / "bars.json"
     data.write_text(json.dumps(synthetic_rows()))
     source = tmp_path / "pandas_signals.py"

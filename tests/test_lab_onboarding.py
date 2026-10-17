@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def invoke(folder, *args):
-    return subprocess.run([sys.executable, '-m', 'backtest_witness', *map(str, args)],
+    return subprocess.run([sys.executable, '-m', 'tradeoff', *map(str, args)],
         cwd=folder, env={**os.environ, 'PYTHONPATH': os.pathsep.join([str(ROOT / 'src'), str(folder)])},
         capture_output=True, text=True)
 
@@ -182,8 +182,8 @@ def test_unsupported_engine_setting_is_actionable_before_strategy_import(tmp_pat
 
 def test_reproduce_import_valueerror_cannot_echo_arbitrary_private_text(tmp_path):
     # Dispatch must not mistake an unmarked strategy-import error for trusted input validation.
-    from backtest_witness.audit import audit
-    from backtest_witness.reproduce import export_reproducer
+    from tradeoff.audit import audit
+    from tradeoff.reproduce import export_reproducer
     from test_audit import future_last
     from test_validation import tape
 

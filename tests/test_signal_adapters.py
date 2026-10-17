@@ -16,7 +16,7 @@ def rows():
 
 
 def test_targets_runner_accepts_native_and_numpy_signed_fractional_arrays():
-    from backtest_witness.adapters import make_targets_runner
+    from tradeoff.adapters import make_targets_runner
     np = pytest.importorskip("numpy")
     for values in ([-2, 1.5, -0.0, 3.0], (-2, 1.5, -0.0, 3.0), np.array([-2, 1.5, -0.0, 3.0])):
         trace = make_targets_runner(lambda rows, config, seed: values)(rows(), {}, 7)
@@ -30,13 +30,13 @@ def test_targets_runner_accepts_native_and_numpy_signed_fractional_arrays():
     [0, float("inf"), 0, 0], [[0], [0], [0], [0]], "0000", {0: 0, 1: 0, 2: 0, 3: 0},
 ])
 def test_targets_runner_rejects_invalid_quantity_sequences(values):
-    from backtest_witness.adapters import make_targets_runner
+    from tradeoff.adapters import make_targets_runner
     with pytest.raises(ValueError, match="target|sequence|length"):
         make_targets_runner(lambda rows, config, seed: values)(rows(), {}, 7)
 
 
 def test_targets_runner_rebuilds_inputs_and_preserves_seeded_random_state():
-    from backtest_witness.adapters import make_targets_runner
+    from tradeoff.adapters import make_targets_runner
     data = rows()
     config = {"nested": [2]}
     before = deepcopy((data, config))
@@ -56,7 +56,7 @@ def test_targets_runner_rebuilds_inputs_and_preserves_seeded_random_state():
 
 
 def test_targets_runner_works_without_optional_numpy_dependency():
-    from backtest_witness.adapters import make_targets_runner
+    from tradeoff.adapters import make_targets_runner
     # Simulate a core-only installation; the stdlib sequence path needs no array library.
     original = sys.modules.pop("numpy", None)
     sys.modules["numpy"] = None
@@ -70,7 +70,7 @@ def test_targets_runner_works_without_optional_numpy_dependency():
 
 
 def test_targets_runner_keeps_original_alignment_when_strategy_mutates_input_rows():
-    from backtest_witness.adapters import make_targets_runner
+    from tradeoff.adapters import make_targets_runner
 
     def signals(data, config, seed):
         data.pop()
@@ -84,7 +84,7 @@ def test_targets_runner_keeps_original_alignment_when_strategy_mutates_input_row
 
 def test_dataframe_runner_passes_complete_fresh_utc_frame_and_strategy_parameters():
     pd = pytest.importorskip("pandas")
-    from backtest_witness.adapters import make_dataframe_runner
+    from tradeoff.adapters import make_dataframe_runner
     data = rows()
     config = {"size": 2.5}
     before = deepcopy(data)
@@ -105,7 +105,7 @@ def test_dataframe_runner_passes_complete_fresh_utc_frame_and_strategy_parameter
 
 def test_dataframe_runner_reads_selected_target_column_without_positional_reindexing():
     pd = pytest.importorskip("pandas")
-    from backtest_witness.adapters import make_dataframe_runner
+    from tradeoff.adapters import make_dataframe_runner
 
     def signals(frame):
         return pd.DataFrame({"quantity": [-3, 0, 2, 0], "score": [0.1] * 4}, index=frame.index)
@@ -117,7 +117,7 @@ def test_dataframe_runner_reads_selected_target_column_without_positional_reinde
 @pytest.mark.parametrize("mode", ["reversed", "missing", "duplicate", "positional", "timezone", "nonnumeric", "boolean", "nan", "missing_column", "array"])
 def test_dataframe_runner_rejects_ambiguous_or_invalid_output(mode):
     pd = pytest.importorskip("pandas")
-    from backtest_witness.adapters import make_dataframe_runner
+    from tradeoff.adapters import make_dataframe_runner
 
     def signals(frame):
         result = pd.Series([0, 1, -2, 0], index=frame.index)
@@ -148,7 +148,7 @@ def test_dataframe_runner_rejects_ambiguous_or_invalid_output(mode):
 
 
 def test_resolve_runner_imports_project_function_and_preserves_metadata(tmp_path, monkeypatch):
-    from backtest_witness.adapters import resolve_runner
+    from tradeoff.adapters import resolve_runner
     (tmp_path / "local_signals.py").write_text(
         "def target_sequence(rows, config, seed):\n    return [-2, 0, 3, 0]\n"
         "def callback(rows, config, seed):\n    return [{'timestamp': row['timestamp'], 'target': -2} for row in rows]\n"
@@ -168,20 +168,20 @@ def test_resolve_runner_imports_project_function_and_preserves_metadata(tmp_path
 
 @pytest.mark.parametrize("reference,engine,settings", [
     ("../x:run", "callback", None), ("x:run()", "callback", None),
-    ("x:run:other", "callback", None), ("backtest_witness.demos:causal_run", "other", None),
-    ("backtest_witness.demos:causal_run", "callback", {"cash": 10}),
-    ("backtest_witness.demos:causal_run", "targets", {"cash": 10}),
-    ("backtest_witness.demos:causal_run", "pandas", {"cash": 10}),
+    ("x:run:other", "callback", None), ("tradeoff.demos:causal_run", "other", None),
+    ("tradeoff.demos:causal_run", "callback", {"cash": 10}),
+    ("tradeoff.demos:causal_run", "targets", {"cash": 10}),
+    ("tradeoff.demos:causal_run", "pandas", {"cash": 10}),
 ])
 def test_resolve_runner_rejects_malformed_references_and_unsupported_settings(reference, engine, settings):
-    from backtest_witness.adapters import resolve_runner
+    from tradeoff.adapters import resolve_runner
     with pytest.raises(ValueError):
         resolve_runner(reference, engine=engine, engine_settings=settings)
 
 
 def test_resolve_runner_reconstructs_pandas_column_settings(tmp_path, monkeypatch):
     pytest.importorskip("pandas")
-    from backtest_witness.adapters import resolve_runner
+    from tradeoff.adapters import resolve_runner
     (tmp_path / "frame_signals.py").write_text(
         "def signals(frame, size=2):\n    frame['quantity'] = -size\n    return frame\n"
     )
@@ -191,8 +191,8 @@ def test_resolve_runner_reconstructs_pandas_column_settings(tmp_path, monkeypatc
     assert runner.runner_spec == {"engine": "pandas", "engine_settings": {"target_column": "quantity"}}
 
 
-@pytest.mark.parametrize("reference", ["missing_backtest_witness_strategy_module:run", "backtest_witness.demos:missing_strategy"])
+@pytest.mark.parametrize("reference", ["missing_tradeoff_strategy_module:run", "tradeoff.demos:missing_strategy"])
 def test_resolve_runner_missing_module_or_attribute_is_a_friendly_reference_error(reference):
-    from backtest_witness.adapters import resolve_runner
+    from tradeoff.adapters import resolve_runner
     with pytest.raises(ValueError, match=reference):
         resolve_runner(reference)

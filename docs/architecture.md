@@ -1,6 +1,6 @@
 # Architecture
 
-Each installation runs on its user's computer. BacktestWitness runs simulations and writes reports in that user's environment; there is no publisher-hosted backend required to use it.
+Each installation runs on its user's computer. Tradeoff runs simulations and writes reports in that user's environment; there is no publisher-hosted backend required to use it.
 
 ```text
 CSV / JSON → validation → fresh native execution → policy suite + reduced stress

@@ -2,7 +2,7 @@
 
 ## Native execution report
 
-`backtest_witness.report.render_failure_report(report)` returns self-contained HTML. `write_failure_report(report, output_dir)` writes `index.html` and readable `report.json`; fixture/test export belongs to the caller. `write_failure_gallery(output_dir, entries)` links local case reports. Rendering does not execute strategies or manufacture evidence.
+`tradeoff.report.render_failure_report(report)` returns self-contained HTML. `write_failure_report(report, output_dir)` writes `index.html` and readable `report.json`; fixture/test export belongs to the caller. `write_failure_gallery(output_dir, entries)` links local case reports. Rendering does not execute strategies or manufacture evidence.
 
 ### `backtest-witness.failure-lab.v1`
 
@@ -35,13 +35,13 @@ A verified stress failure exports:
 - `failure-receipt.json` (`backtest-witness.failure-receipt.v1`): report identity, runner, hashes, runtime, coverage/reduction scope and optional provenance.
 - `test_failure_resilience.py`: a pytest assertion resolving the saved runner and loading its sibling fixture lazily.
 
-`backtest-witness replay-failure failure-fixture.json` repeats current baseline and saved stress, applying the saved policy. Explicit adapter/config overrides support repair without editing fixture hashes. Historical observations describe the original failure; repair returns need not match them. Both current runs must meet requirements, including minimum closed trades when declared. A runtime engine/version mismatch or nonrepeatable result refuses comparison. Hashes are integrity receipts, not signatures, source-authenticity guarantees or proof of reserved-data custody.
+`tradeoff replay-failure failure-fixture.json` repeats current baseline and saved stress, applying the saved policy. Explicit adapter/config overrides support repair without editing fixture hashes. Historical observations describe the original failure; repair returns need not match them. Both current runs must meet requirements, including minimum closed trades when declared. A runtime engine/version mismatch or nonrepeatable result refuses comparison. Hashes are integrity receipts, not signatures, source-authenticity guarantees or proof of reserved-data custody.
 
 The native interface includes a scenario matrix, keyboard-operable scenario selection, paired native equity/position tables, closed/open trade observations, pending orders, failure reduction and replay downloads. Settings, unavailable reasons, public provenance and scope remain visible. Reports have no remote assets or runtime network calls; keep downloads beside the HTML.
 
 ## Existing temporal audit interface
 
-`backtest_witness.report.render_report(report)` returns a self-contained HTML document.
+`tradeoff.report.render_report(report)` returns a self-contained HTML document.
 `write_report(report, output_dir)` writes `index.html` and an unchanged, readable
 `report.json`, and returns the HTML path. Fixture and test export belongs to the
 caller; rendering does not run a callback or manufacture evidence.
@@ -52,9 +52,9 @@ relative to the gallery, such as `leaky/index.html`.
 
 ## `edgelab.audit.v1`
 
-The wire schema IDs retain their historical `edgelab` prefix after the prepublication rename to BacktestWitness. Stored report/fixture/receipt formats remain readable, and fixture validation and content hashes keep their existing interpretation. Python imports use `backtest_witness`, and the command is `backtest-witness`. Receipt runtime metadata retains `edgelab_version` and adds `backtest_witness_version`.
+Serialized schema IDs retain the historical `edgelab.*` and `backtest-witness.*` prefixes after the Tradeoff rename. Receipt runtime keys remain `edgelab_version` and `backtest_witness_version`. Stored report/fixture/receipt formats, validation and content hashes retain their existing interpretation. Current imports and commands use `tradeoff`; `backtest_witness` imports and `backtest-witness` commands remain compatibility aliases.
 
-There is no automatic alias for the former Python namespace. A saved fixture referring to an old built-in `edgelab.*` callback needs an explicit `--adapter backtest_witness...` override selecting the matching original or repaired callback. Previously exported Python tests need their imports and runner reference updated; do not edit the hashed fixture merely to rename its callback. [Backward replay example](github-launch.md#replaying-earlier-local-artifacts).
+The older `edgelab` Python namespace has no automatic alias. Its saved built-in callback references need an explicit `--adapter tradeoff...` override selecting the matching original or repaired callback. Do not edit a hashed fixture merely to rename its callback. [Backward replay example](github-launch.md#replaying-earlier-local-artifacts).
 
 The report is a plain JSON-compatible dictionary. Its principal fields are:
 

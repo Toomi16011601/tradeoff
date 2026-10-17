@@ -4,7 +4,7 @@ import pytest
 
 @pytest.mark.parametrize('name', ['riskkit', 'coinglass'])
 def test_public_case_has_explicit_original_and_causal_execution_callbacks(name):
-    from backtest_witness.cases import get_case
+    from tradeoff.cases import get_case
     case = get_case(name)
     assert callable(case.get('original_execution')), 'Public original execution boundary missing'
     assert callable(case.get('fixed_execution')), 'Public causal execution boundary missing'
@@ -12,7 +12,7 @@ def test_public_case_has_explicit_original_and_causal_execution_callbacks(name):
 
 def test_causal_riskkit_execution_tape_exercises_actual_roundtrips():
     pytest.importorskip('backtesting')
-    from backtest_witness.cases import get_case
+    from tradeoff.cases import get_case
     case = get_case('riskkit')
     assert callable(case.get('execution_rows')), 'Separate execution stress input missing'
     result = case['fixed_execution'](case['execution_rows'](), {}, 7,
@@ -24,7 +24,7 @@ def test_causal_riskkit_execution_tape_exercises_actual_roundtrips():
 def test_public_execution_reports_native_complete_equity_and_preserves_tape(name):
     pytest.importorskip('backtesting')
     from copy import deepcopy
-    from backtest_witness.cases import get_case
+    from tradeoff.cases import get_case
     case = get_case(name)
     rows = case['rows']()
     before = deepcopy(rows)

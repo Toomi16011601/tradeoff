@@ -2,8 +2,8 @@
   "schema_version": "backtest-witness.launch.v1",
   "status": "public-source-alpha",
   "owner": "Toomi16011601",
-  "name": "backtest-witness",
-  "display_name": "BacktestWitness",
+  "name": "tradeoff",
+  "display_name": "Tradeoff",
   "description": "Strategy failure lab for trading bots. Stress real engine costs and delays, investigate failures, and export replayable regression tests.",
   "visibility": "public",
   "topics": [
@@ -23,9 +23,11 @@
   ],
   "availability_check": {
     "date": "2026-10-17",
-    "github_name_search_matches": 0,
+    "github_account_repository": "Toomi16011601/tradeoff",
+    "github_account_repository_status_before_rename": 404,
     "pypi_json_status": 404,
-    "reserved": false
+    "package_reserved": false,
+    "trademark_clearance": false
   },
   "publication": {
     "repository_created": true,
@@ -33,5 +35,11 @@
     "pushed": true,
     "package_published": false
   },
-  "url": "https://github.com/Toomi16011601/backtest-witness"
+  "url": "https://github.com/Toomi16011601/tradeoff",
+  "compatibility": {
+    "former_display_name": "BacktestWitness",
+    "legacy_command": "backtest-witness",
+    "legacy_python_import": "backtest_witness",
+    "serialized_formats_unchanged": true
+  }
 }

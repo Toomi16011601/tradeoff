@@ -189,10 +189,10 @@ def export_failure_reproducer(report, output_dir, strategy_ref):
                'explanation': 'Content hashes and observations are reproducibility receipts, not signatures or source-authenticity guarantees. This full-tape policy regression covers only the saved simulated execution assumptions; it does not certify performance.'}
     if 'provenance' in fixture:
         receipt['provenance'] = deepcopy(fixture['provenance'])
-    generated = '''"""Execution policy regression exported by BacktestWitness; keep the fixture beside this file."""
+    generated = '''"""Execution policy regression exported by Tradeoff; keep the fixture beside this file."""
 from pathlib import Path
-from backtest_witness.execution import resolve_execution_runner
-from backtest_witness.failure_reproduce import load_failure_fixture, assert_failure_resilience
+from tradeoff.execution import resolve_execution_runner
+from tradeoff.failure_reproduce import load_failure_fixture, assert_failure_resilience
 
 
 def test_failure_resilience():

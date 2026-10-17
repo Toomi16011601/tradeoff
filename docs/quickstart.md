@@ -1,6 +1,6 @@
 # Quickstart
 
-BacktestWitness is a local crash-test and debugging lab for a trading strategy before deployment. Your strategy decides what to trade, Backtesting.py 0.6.6 simulates its orders, and BacktestWitness checks how extra execution costs and delays affect your declared requirements.
+Tradeoff is a local crash-test and debugging lab for a trading strategy before deployment. Your strategy decides what to trade, Backtesting.py 0.6.6 simulates its orders, and Tradeoff checks how extra execution costs and delays affect your declared requirements.
 
 **Install and run your own copy on your own device.** Tests use your computer and save results in a local folder. The project maintainers do not host your runs or need to keep a computer online. Open the saved `index.html` file in your browser to inspect a completed run; no server is needed. Start new runs from the CLI or Python. This alpha installs from a repository checkout; the core requires Python 3.10+.
 
@@ -9,8 +9,8 @@ BacktestWitness is a local crash-test and debugging lab for a trading strategy b
 Clone the repository onto your device, then install from its root folder, where `pyproject.toml` and `examples/` are located:
 
 ```bash
-git clone https://github.com/Toomi16011601/backtest-witness.git
-cd backtest-witness
+git clone https://github.com/Toomi16011601/tradeoff.git
+cd tradeoff
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -59,7 +59,7 @@ The last three files exist only for verified stress failures.
 From the checkout root, with the same environment active:
 
 ```bash
-backtest-witness replay-failure failure-output-agent/failure-fixture.json
+tradeoff replay-failure failure-output-agent/failure-fixture.json
 # Expected exit 1: the saved policy breach is reproduced.
 python -m pip install 'pytest>=9.0.3'
 python -m pytest failure-output-agent/test_failure_resilience.py
@@ -84,7 +84,7 @@ For a native Backtesting.py class, save `requirements.json`:
 These illustrative thresholds are user policy, not a trading recommendation. Return/drawdown are percentages; deterioration is the percentage-point drop from the same strategy's baseline. Set a nullable field to `null` to disable it. The default minimum return is 0%; other limits are disabled and minimum closed trades is zero. A baseline that already fails absolute requirements yields `BASELINE_FAILED`.
 
 ```bash
-backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
+tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
   --engine-settings '{"cash": 10000, "commission": 0.001}' \
   --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
   --requirements requirements.json --output failure-output --json
@@ -92,7 +92,7 @@ backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
 
 Open **`failure-output/index.html`** from your project folder to view this run's report.
 
-Keep real agent code and private prices in a separate private project. Install BacktestWitness into that project's environment and run the CLI from there. Use one instrument's complete OHLCV history. `MyStrategy` must be importable. `--config parameters.json` passes strategy parameters to `Backtest.run`. The native adapter can also handle short orders; the small agent example's decision wrapper is intentionally long/flat.
+Keep real agent code and private prices in a separate private project. Install Tradeoff into that project's environment and run the CLI from there. Use one instrument's complete OHLCV history. `MyStrategy` must be importable. `--config parameters.json` passes strategy parameters to `Backtest.run`. The native adapter can also handle short orders; the small agent example's decision wrapper is intentionally long/flat.
 
 This command accepts an ordinary provider CSV:
 
@@ -117,7 +117,7 @@ Extra stress fields are `commission_bps`, `spread_bps` and integer `delay_bars`;
 Edit the original strategy in place, then rerun the saved fixture or generated test. To check a different class or configuration explicitly:
 
 ```bash
-backtest-witness replay-failure failure-output/failure-fixture.json \
+tradeoff replay-failure failure-output/failure-fixture.json \
   --adapter my_strategy:RepairedStrategy --config repaired-parameters.json
 ```
 
@@ -142,7 +142,7 @@ For an opaque strategy exception, rerun `lab` or `audit` with `--diagnostics pri
 ```bash
 # Public dependency pins require Python 3.11+; tested locally on Python 3.12.
 python -m pip install '.[cases]'
-backtest-witness lab-cases --output failure-public-output
+tradeoff lab-cases --output failure-public-output
 # Expected exit 1: public variants breach their declared stress policy.
 ```
 
@@ -155,16 +155,16 @@ The casebook uses frozen synthetic inputs and pinned public strategies. Its poli
 This separate workflow tests whether changing unavailable future records changes earlier decisions:
 
 ```bash
-backtest-witness demo --output demo-output
+tradeoff demo --output demo-output
 python -m pytest demo-output/leaky/test_future_invariance.py
 # Expected failure: the planted dependency remains.
-backtest-witness reproduce demo-output/leaky/reproducer.json \
-  --adapter backtest_witness.demos:causal_run
+tradeoff reproduce demo-output/leaky/reproducer.json \
+  --adapter tradeoff.demos:causal_run
 # Exit 0: the saved invariant holds with this replacement.
-backtest-witness audit --adapter examples.custom_adapter:run --data bars.csv \
+tradeoff audit --adapter examples.custom_adapter:run --data bars.csv \
   --output audit-output --min-history 5 --max-probes 20 --max-calls 160
 ```
 
 Three-argument audit callbacks return one finite signed target per row. Findings export `reproducer.json`, `receipt.json` and `test_future_invariance.py`. Their curves are illustrative projections on the original tape, separate from native execution reports.
 
-`backtest-witness cases --output public-output` retains the public future-data casebook and same-fixture causal repair checks. [Callback contract](callback-contract.md) · [Engine integrations](integrations.md) · [Position sizing](position-sizing.md). Use each command's `--help` for all options.
+`tradeoff cases --output public-output` retains the public future-data casebook and same-fixture causal repair checks. [Callback contract](callback-contract.md) · [Engine integrations](integrations.md) · [Position sizing](position-sizing.md). Use each command's `--help` for all options.

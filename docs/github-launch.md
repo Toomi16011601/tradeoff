@@ -1,17 +1,17 @@
 # GitHub launch details
 
-The public project is [**BacktestWitness**](https://github.com/Toomi16011601/backtest-witness), version 0.3.0 alpha. Source installation is supported; no PyPI package or tagged GitHub release has been published. [Hosted CI results](https://github.com/Toomi16011601/backtest-witness/actions/workflows/tests.yml) are separate from the recorded local acceptance checks.
+The public project is [**Tradeoff**](https://github.com/Toomi16011601/tradeoff), version 0.3.0 alpha. Source installation is supported; no PyPI package or tagged GitHub release has been published. [Hosted CI results](https://github.com/Toomi16011601/tradeoff/actions/workflows/tests.yml) are separate from the recorded local acceptance checks.
 
 ## Copy-ready metadata
 
 | Field | Value |
 | --- | --- |
 | GitHub owner | `Toomi16011601` |
-| Repository name | `backtest-witness` |
-| Display name | BacktestWitness |
-| Python distribution | `backtest-witness` |
-| Python import | `backtest_witness` |
-| Command | `backtest-witness` |
+| Repository name | `tradeoff` |
+| Display name | Tradeoff |
+| Python distribution | `tradeoff` |
+| Python import | `tradeoff` |
+| Command | `tradeoff` |
 | Version | `0.3.0` — alpha |
 | License | MIT |
 
@@ -33,19 +33,23 @@ The two public strategies run pinned original code and disclosed causal variants
 
 ## Naming checks — 2026-10-17
 
-The former working name was EdgeLab. That name already belongs to a [PyPI trading CLI](https://pypi.org/project/edgelab/) and an [existing trading project](https://github.com/loksundar/edgelab), so it would confuse discovery and package installation.
+The account-specific repository name `Toomi16011601/tradeoff` was absent when checked before renaming the existing repository. The PyPI JSON endpoint for `tradeoff` returned HTTP 404. These checks establish neither worldwide brand availability nor trademark clearance, and do not reserve the package name. Recheck before any package publication.
 
-A global GitHub repository-name search for `backtest-witness` returned no matches. The PyPI JSON endpoint for `backtest-witness` returned HTTP 404. These are availability observations on the stated date, not a reservation, an exhaustive trademark search or a legal claim. The account-specific repository name was rechecked immediately before creation. Recheck the package name before any package publication.
+Tradeoff was previously published as BacktestWitness. The product name, repository, distribution, command and Python imports now use `tradeoff`. Source installation is supported; no published PyPI install is implied.
 
-The local workspace folder remains named `edgelab`; it is not the public repository or package name. Legacy wire schema IDs retain the historical name. Stored artifact formats remain readable and fixture validation/hashes are preserved. The README uses the actual public repository URL. Installation still uses the source checkout; no published PyPI install is implied.
+## Compatibility and earlier artifacts
 
-## Replaying earlier local artifacts
+The former `backtest-witness` command and `backtest_witness` Python namespace remain compatibility aliases, including saved built-in callback references. New integrations should use `tradeoff`.
 
-The former `edgelab` Python namespace is not automatically aliased. Override an old built-in callback reference with its matching new callback. For an earlier **Riskkit** fixture, this checks the local repair against the original saved tapes without changing the fixture or its hashes:
+Serialized `backtest-witness.*` and `edgelab.*` schema IDs, along with receipt runtime keys `backtest_witness_version` and `edgelab_version`, retain their original meanings. Renaming a product does not require editing saved fixtures or their hashes. Existing screenshot assets are earlier-version captures and can show BacktestWitness branding.
+
+### Replaying earlier local artifacts
+
+The older, prepublication `edgelab` Python namespace is not automatically aliased. Override an old built-in callback reference with its matching current callback. For an earlier **Riskkit** fixture, this checks the local repair against the original saved tapes without changing the fixture or its hashes:
 
 ```bash
-backtest-witness reproduce oldfixture.json \
-  --adapter backtest_witness.cases.riskkit:fixed_run
+tradeoff reproduce oldfixture.json \
+  --adapter tradeoff.cases.riskkit:fixed_run
 ```
 
-Use the callback appropriate to the saved case; the Riskkit repair is not a replacement for another strategy. Previously exported Python tests need both their imports and the runner reference updated, or can be regenerated from a new audit.
+Use the callback appropriate to the saved case; the Riskkit repair is not a replacement for another strategy. Python tests exported under the older `edgelab` name need their imports and runner reference updated, or can be regenerated from a new audit. Tests exported under `backtest_witness` retain the compatibility import.

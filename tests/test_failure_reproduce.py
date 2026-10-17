@@ -12,7 +12,7 @@ from test_failure_lab import api as lab_api, bars, execution, scenario
 
 def api():
     try:
-        return importlib.import_module('backtest_witness.failure_reproduce')
+        return importlib.import_module('tradeoff.failure_reproduce')
     except ModuleNotFoundError:
         pytest.fail('failure reproducer public API is not implemented')
 
@@ -130,7 +130,7 @@ def test_export_refuses_nonfinding_report_and_invalid_reference(tmp_path):
 
 def test_actual_native_fixture_replay_repair_and_noop_guard(tmp_path):
     pytest.importorskip('backtesting')
-    from backtest_witness.execution import resolve_execution_runner
+    from tradeoff.execution import resolve_execution_runner
     source = '''from backtesting import Strategy
 class RoundTrip(Strategy):
     exit_after = 4
@@ -182,7 +182,7 @@ class RoundTrip(Strategy):
 
 def test_rehashed_invalid_settings_are_value_error_not_runtime_error(tmp_path):
     module, fixture, _ = exported(tmp_path)
-    from backtest_witness.validation import canonical_hash
+    from tradeoff.validation import canonical_hash
     fixture['settings'] = []
     fixture['content_hashes']['settings'] = canonical_hash([])
     fixture.pop('fixture_hash')
@@ -222,7 +222,7 @@ def test_repair_with_fabricated_closed_trade_is_invalid_not_scoped_pass(tmp_path
 def test_native_repair_cannot_change_saved_engine_settings_before_execution(tmp_path, changed_settings):
     pytest.importorskip('backtesting')
     from backtesting import Strategy
-    from backtest_witness.execution import make_backtesting_execution_runner
+    from tradeoff.execution import make_backtesting_execution_runner
     calls = []
 
     class RoundTrip(Strategy):

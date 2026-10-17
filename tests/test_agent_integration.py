@@ -46,7 +46,7 @@ def test_strategy_calls_agent_with_only_current_native_history(monkeypatch):
     native()
     module = example()
     from examples.agent_integration import strategy
-    from backtest_witness.execution import make_backtesting_execution_runner
+    from tradeoff.execution import make_backtesting_execution_runner
 
     observed = []
     real_decide = strategy.decide
@@ -74,7 +74,7 @@ def test_pending_delayed_orders_do_not_duplicate_agent_entries_or_closes():
     native()
     module = example()
     from examples.agent_integration.strategy import AgentStrategy
-    from backtest_witness.execution import make_backtesting_execution_runner
+    from tradeoff.execution import make_backtesting_execution_runner
 
     result = make_backtesting_execution_runner(AgentStrategy)(
         module.synthetic_rows(), {}, 7, {'delay_bars': 2})
@@ -149,7 +149,7 @@ def test_saved_agent_fixture_replays_in_cli_and_generated_pytest(tmp_path):
     for saved, original in zip(fixture['rows'], original_rows):
         assert original.items() <= saved.items()
         assert saved['available_at'] == saved['timestamp']
-    replay = invoke('backtest_witness', 'replay-failure', str(fixture_path))
+    replay = invoke('tradeoff', 'replay-failure', str(fixture_path))
     assert replay.returncode == 1, replay.stderr
     assert 'FAILURE REPRODUCED' in replay.stdout
     generated = invoke('pytest', '-q', str(output / 'test_failure_resilience.py'))
@@ -163,8 +163,8 @@ def test_saved_agent_fixture_replays_in_cli_and_generated_pytest(tmp_path):
 def test_config_override_can_replay_a_smaller_active_agent_without_changing_fixture(tmp_path):
     native()
     module = example()
-    from backtest_witness.execution import resolve_execution_runner
-    from backtest_witness.failure_reproduce import assert_failure_resilience, load_failure_fixture
+    from tradeoff.execution import resolve_execution_runner
+    from tradeoff.failure_reproduce import assert_failure_resilience, load_failure_fixture
 
     output = tmp_path / 'output'
     module.run_example(output)

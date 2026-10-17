@@ -11,8 +11,8 @@ from test_audit import clean, future_last
 
 
 def test_hashed_fixture_fails_leak_and_passes_after_causal_fix(tmp_path):
-    from backtest_witness.audit import audit
-    from backtest_witness.reproduce import export_reproducer, load_fixture, assert_future_invariance, InvarianceError
+    from tradeoff.audit import audit
+    from tradeoff.reproduce import export_reproducer, load_fixture, assert_future_invariance, InvarianceError
     report = audit(future_last, tape(), {"lookback": 2}, min_history=1)
     artifacts = export_reproducer(report, tmp_path, "adapter:run")
     assert artifacts == {"fixture": "reproducer.json", "test": "test_future_invariance.py", "receipt": "receipt.json"}
@@ -31,8 +31,8 @@ def test_hashed_fixture_fails_leak_and_passes_after_causal_fix(tmp_path):
 
 @pytest.mark.parametrize("field", ["original_rows", "mutated_rows", "config", "cutoff", "expected_prefix_hashes"])
 def test_tampered_fixture_is_rejected(tmp_path, field):
-    from backtest_witness.audit import audit
-    from backtest_witness.reproduce import export_reproducer, load_fixture
+    from tradeoff.audit import audit
+    from tradeoff.reproduce import export_reproducer, load_fixture
     export_reproducer(audit(future_last, tape(), min_history=1), tmp_path, "adapter:run")
     path = tmp_path / "reproducer.json"
     data = json.loads(path.read_text())
@@ -50,8 +50,8 @@ def test_tampered_fixture_is_rejected(tmp_path, field):
 
 
 def test_generated_pytest_executes_adapter_and_switches_fail_to_pass(tmp_path):
-    from backtest_witness.audit import audit
-    from backtest_witness.reproduce import export_reproducer
+    from tradeoff.audit import audit
+    from tradeoff.reproduce import export_reproducer
     export_reproducer(audit(future_last, tape(), min_history=1), tmp_path, "adapter:run")
     adapter = tmp_path / "adapter.py"
     adapter.write_text('def run(rows, config, seed):\n    return [{"timestamp": r["timestamp"], "target": int(rows[-1]["close"] > 20)} for r in rows]\n')
@@ -67,8 +67,8 @@ def test_generated_pytest_executes_adapter_and_switches_fail_to_pass(tmp_path):
 
 
 def test_replay_rejects_stateful_or_failed_callback(tmp_path):
-    from backtest_witness.audit import audit
-    from backtest_witness.reproduce import export_reproducer, load_fixture, assert_future_invariance, UnstableRunError
+    from tradeoff.audit import audit
+    from tradeoff.reproduce import export_reproducer, load_fixture, assert_future_invariance, UnstableRunError
     export_reproducer(audit(future_last, tape(), min_history=1), tmp_path, "adapter:run")
     fixture = load_fixture(tmp_path / "reproducer.json")
     counter = 0
@@ -85,16 +85,16 @@ def test_replay_rejects_stateful_or_failed_callback(tmp_path):
 
 
 def test_reproducer_requires_actual_verified_witness(tmp_path):
-    from backtest_witness.audit import audit
-    from backtest_witness.reproduce import export_reproducer
+    from tradeoff.audit import audit
+    from tradeoff.reproduce import export_reproducer
     with pytest.raises(ValueError, match="FOUND"):
         export_reproducer(audit(clean, tape(), min_history=1), tmp_path, "adapter:run")
 
 
 def test_receipt_records_runtime_and_observed_audit_scope(tmp_path):
-    from backtest_witness import __version__
-    from backtest_witness.audit import audit
-    from backtest_witness.reproduce import export_reproducer
+    from tradeoff import __version__
+    from tradeoff.audit import audit
+    from tradeoff.reproduce import export_reproducer
     report = audit(future_last, tape(), min_history=1, max_calls=8,
                    trace_kind="observed_positions")
     export_reproducer(report, tmp_path, "adapter:run")
@@ -109,9 +109,9 @@ def test_receipt_records_runtime_and_observed_audit_scope(tmp_path):
 
 
 def test_export_keeps_hashed_runner_descriptor_and_receipt(tmp_path):
-    from backtest_witness.audit import audit
-    from backtest_witness.reproduce import export_reproducer, load_fixture
-    from backtest_witness.validation import canonical_hash
+    from tradeoff.audit import audit
+    from tradeoff.reproduce import export_reproducer, load_fixture
+    from tradeoff.validation import canonical_hash
     report = audit(future_last, tape(), min_history=1)
     report["runner_spec"] = {"engine": "backtesting", "engine_settings": {"cash": 5000, "margin": 0.5}}
     export_reproducer(report, tmp_path, "strategy:Example")

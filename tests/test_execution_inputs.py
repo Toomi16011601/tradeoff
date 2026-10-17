@@ -5,13 +5,13 @@ import sys
 
 import pytest
 
-from backtest_witness.demos import synthetic_rows
+from tradeoff.demos import synthetic_rows
 
 
 def test_native_frame_retains_extra_columns_without_relabeling_source_times():
     pytest.importorskip('backtesting')
     from backtesting import Strategy
-    from backtest_witness.execution import make_backtesting_execution_runner
+    from tradeoff.execution import make_backtesting_execution_runner
 
     class UsesClock(Strategy):
         def init(self):
@@ -33,7 +33,7 @@ def test_native_frame_retains_extra_columns_without_relabeling_source_times():
 
 def test_input_checks_happen_before_native_strategy_initialization(tmp_path, monkeypatch):
     pytest.importorskip('backtesting')
-    from backtest_witness.execution import resolve_execution_runner
+    from tradeoff.execution import resolve_execution_runner
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'needs_state.py').write_text(
         'from pathlib import Path\nfrom backtesting import Strategy\nSPY_OK = None\n'
@@ -47,7 +47,7 @@ def test_input_checks_happen_before_native_strategy_initialization(tmp_path, mon
 
 
 def test_companion_input_change_refuses_replay_before_import(tmp_path, monkeypatch):
-    from backtest_witness.execution import companion_manifest, resolve_execution_runner
+    from tradeoff.execution import companion_manifest, resolve_execution_runner
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'spy.csv').write_text('Date,Close\n2024-01-01,100\n')
     manifest = companion_manifest(['spy.csv'])
@@ -63,7 +63,7 @@ def test_companion_input_change_refuses_replay_before_import(tmp_path, monkeypat
 
 
 def test_companion_manifest_rejects_outside_project_without_exporting_paths(tmp_path, monkeypatch):
-    from backtest_witness.execution import companion_manifest
+    from tradeoff.execution import companion_manifest
     project = tmp_path / 'project'
     project.mkdir()
     outside = tmp_path / 'private.csv'
@@ -75,7 +75,7 @@ def test_companion_manifest_rejects_outside_project_without_exporting_paths(tmp_
 
 
 def test_callback_rechecks_companions_before_each_invocation(tmp_path, monkeypatch):
-    from backtest_witness.execution import companion_manifest, resolve_execution_runner
+    from tradeoff.execution import companion_manifest, resolve_execution_runner
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'side.csv').write_text('original')
     (tmp_path / 'guarded_callback.py').write_text(
@@ -90,9 +90,9 @@ def test_callback_rechecks_companions_before_each_invocation(tmp_path, monkeypat
 
 def test_execution_integration_survives_saved_fixture_replay(tmp_path, monkeypatch):
     pytest.importorskip('backtesting')
-    from backtest_witness.execution import companion_manifest, resolve_execution_runner
-    from backtest_witness.failure_lab import run_failure_lab
-    from backtest_witness.failure_reproduce import (export_failure_reproducer, load_failure_fixture,
+    from tradeoff.execution import companion_manifest, resolve_execution_runner
+    from tradeoff.failure_lab import run_failure_lab
+    from tradeoff.failure_reproduce import (export_failure_reproducer, load_failure_fixture,
         assert_failure_resilience, ResilienceError)
 
     monkeypatch.chdir(tmp_path)
@@ -118,7 +118,7 @@ def test_execution_integration_survives_saved_fixture_replay(tmp_path, monkeypat
 def test_prepared_columns_are_checked_after_preparation():
     pytest.importorskip('backtesting')
     from backtesting import Strategy
-    from backtest_witness.execution import make_backtesting_execution_runner
+    from tradeoff.execution import make_backtesting_execution_runner
 
     class PreparedFeature(Strategy):
         def init(self):
@@ -137,15 +137,15 @@ def test_prepared_columns_are_checked_after_preparation():
 
 @pytest.mark.parametrize('commission', [.1, .2, [1, .1]])
 def test_invalid_native_baseline_commission_is_rejected_at_configuration(commission):
-    from backtest_witness.execution import make_backtesting_execution_runner
+    from tradeoff.execution import make_backtesting_execution_runner
     with pytest.raises(ValueError, match='commission'):
         make_backtesting_execution_runner(object, engine_settings={'commission': commission})
 
 
 def test_python_repair_callable_cannot_drop_saved_companion_contract(tmp_path, monkeypatch):
-    from backtest_witness.execution import companion_manifest
-    from backtest_witness.failure_lab import run_failure_lab
-    from backtest_witness.failure_reproduce import (export_failure_reproducer,
+    from tradeoff.execution import companion_manifest
+    from tradeoff.failure_lab import run_failure_lab
+    from tradeoff.failure_reproduce import (export_failure_reproducer,
         load_failure_fixture, assert_failure_resilience)
     from test_failure_lab import bars, execution
     monkeypatch.chdir(tmp_path)
@@ -167,10 +167,10 @@ def test_python_repair_callable_cannot_drop_saved_companion_contract(tmp_path, m
 
 
 def test_cli_companion_change_has_an_actionable_message_before_strategy_import(tmp_path, monkeypatch, capsys):
-    from backtest_witness.cli import main
-    from backtest_witness.execution import companion_manifest
-    from backtest_witness.failure_lab import run_failure_lab
-    from backtest_witness.failure_reproduce import export_failure_reproducer
+    from tradeoff.cli import main
+    from tradeoff.execution import companion_manifest
+    from tradeoff.failure_lab import run_failure_lab
+    from tradeoff.failure_reproduce import export_failure_reproducer
     from test_failure_lab import bars, execution
     monkeypatch.chdir(tmp_path)
     side = tmp_path / 'companion.csv'

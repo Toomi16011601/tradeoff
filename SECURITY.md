@@ -1,6 +1,6 @@
 # Security
 
-BacktestWitness executes the Python callback you supply. Treat it as ordinary local Python execution, and audit simulation entry points before using them. Generated reports are offline; they have no telemetry or built-in broker connection.
+Tradeoff executes the Python callback you supply. Treat it as ordinary local Python execution, and audit simulation entry points before using them. Generated reports are offline; they have no telemetry or built-in broker connection.
 
 The tool has no account service or built-in project upload. Local data import uses the Python standard library and reads only the files you select. Installing dependencies can use your package index; imported strategy code and any agent you connect have their own behavior. A cloud coding agent may transmit the tool output or files you give it to its provider. Local installation alone does not make that agent offline.
 

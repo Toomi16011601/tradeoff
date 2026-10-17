@@ -1,6 +1,6 @@
 """Input limitations must remain visible beside a completed simulation result."""
-from backtest_witness.failure_lab import run_failure_lab
-from backtest_witness.report import write_failure_report
+from tradeoff.failure_lab import run_failure_lab
+from tradeoff.report import write_failure_report
 from test_failure_lab import bars, execution
 
 

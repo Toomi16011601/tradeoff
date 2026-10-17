@@ -3,12 +3,12 @@ from copy import deepcopy
 import traceback
 import pytest
 
-from backtest_witness.audit import audit
-from backtest_witness.failure_lab import run_failure_lab
-from backtest_witness.report.renderer import write_report
-from backtest_witness.report.failure_renderer import write_failure_report
-from backtest_witness.reproduce import export_reproducer
-from backtest_witness.failure_reproduce import export_failure_reproducer
+from tradeoff.audit import audit
+from tradeoff.failure_lab import run_failure_lab
+from tradeoff.report.renderer import write_report
+from tradeoff.report.failure_renderer import write_failure_report
+from tradeoff.reproduce import export_reproducer
+from tradeoff.failure_reproduce import export_failure_reproducer
 from test_audit import clean, future_last
 from test_validation import tape
 from test_failure_lab import bars, execution, scenario
@@ -84,8 +84,8 @@ def test_ordinary_parameters_and_empty_credential_slots_remain_usable():
 
 @pytest.mark.parametrize('lab', [False, True])
 def test_replay_does_not_repeat_private_callback_exception(tmp_path, lab):
-    from backtest_witness.reproduce import load_fixture, assert_future_invariance
-    from backtest_witness.failure_reproduce import load_failure_fixture, assert_failure_resilience
+    from tradeoff.reproduce import load_fixture, assert_future_invariance
+    from tradeoff.failure_reproduce import load_failure_fixture, assert_failure_resilience
     report = (run_failure_lab(execution, bars(), scenarios=[scenario(200)])
               if lab else audit(future_last, tape(), min_history=1))
     (export_failure_reproducer if lab else export_reproducer)(report, tmp_path, 'example:run')
@@ -109,7 +109,7 @@ def test_known_private_warning_does_not_enter_failure_report():
 
 
 def test_safe_backend_limitation_remains_explanatory():
-    from backtest_witness.privacy import ExecutionUnavailable
+    from tradeoff.privacy import ExecutionUnavailable
     def unsupported(*args):
         raise ExecutionUnavailable('delayed stop orders are unsupported')
     report = run_failure_lab(unsupported, bars())
@@ -117,7 +117,7 @@ def test_safe_backend_limitation_remains_explanatory():
 
 
 def test_sensitive_backend_limitation_is_suppressed():
-    from backtest_witness.privacy import ExecutionUnavailable
+    from tradeoff.privacy import ExecutionUnavailable
     def unsupported(*args):
         raise ExecutionUnavailable('Contact example-person@example.invalid')
     report = run_failure_lab(unsupported, bars())
@@ -143,8 +143,8 @@ def test_token_shaped_callback_reference_cannot_be_exported(tmp_path):
 
 @pytest.mark.parametrize('lab', [False, True])
 def test_gallery_does_not_export_recognized_private_names(tmp_path, lab):
-    from backtest_witness.report.renderer import write_gallery
-    from backtest_witness.report.failure_renderer import write_failure_gallery
+    from tradeoff.report.renderer import write_gallery
+    from tradeoff.report.failure_renderer import write_failure_gallery
     destination = tmp_path / 'gallery'
     entries = [dict(status='FAILURE_FOUND' if lab else 'FOUND', path='case/index.html',
                     name='example-person@example.invalid')]
@@ -170,7 +170,7 @@ def test_report_exports_reject_sensitive_fields_nested_in_serializable_sequences
 
 
 def test_privacy_checks_reject_tuple_cycles_and_excessive_nesting():
-    from backtest_witness.privacy import reject_sensitive_data
+    from tradeoff.privacy import reject_sensitive_data
     children = []
     cycle = (children,)
     children.append(cycle)
@@ -184,7 +184,7 @@ def test_privacy_checks_reject_tuple_cycles_and_excessive_nesting():
 
 
 def test_privacy_checks_allow_empty_tuple_credential_slots_and_shared_sequences():
-    from backtest_witness.privacy import reject_sensitive_data
+    from tradeoff.privacy import reject_sensitive_data
     shared = ('ordinary', {'window': 3})
     value = {'api_key': (), 'email': (), 'features': [shared, shared]}
     before = deepcopy(value)

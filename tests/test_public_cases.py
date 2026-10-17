@@ -11,8 +11,8 @@ import pytest
 
 
 def cases_api():
-    assert importlib.util.find_spec("backtest_witness.cases") is not None, "Pinned public strategy cases are missing"
-    return importlib.import_module("backtest_witness.cases")
+    assert importlib.util.find_spec("tradeoff.cases") is not None, "Pinned public strategy cases are missing"
+    return importlib.import_module("tradeoff.cases")
 
 
 def engine_case(name):
@@ -25,7 +25,7 @@ def engine_case(name):
 def test_public_cases_are_importable_without_loading_optional_engines():
     cases_api()
     code = """import sys
-from backtest_witness.cases import CASES, get_case
+from tradeoff.cases import CASES, get_case
 assert set(CASES) == {'riskkit', 'coinglass'}
 get_case('riskkit')
 get_case('coinglass')
@@ -39,8 +39,8 @@ assert not any(name in sys.modules for name in ('backtesting', 'pandas', 'numpy'
 @pytest.mark.parametrize("name", ["riskkit", "coinglass"])
 def test_original_public_strategy_produces_a_reproducible_bug_and_fixed_variant_passes(name, tmp_path):
     case = engine_case(name)
-    from backtest_witness.audit import audit
-    from backtest_witness.reproduce import InvarianceError, assert_future_invariance, export_reproducer, load_fixture
+    from tradeoff.audit import audit
+    from tradeoff.reproduce import InvarianceError, assert_future_invariance, export_reproducer, load_fixture
     report = audit(case["original"], case["rows"](), case["config"],
                    strategy_ref=case["original_ref"], trace_kind="observed_position",
                    **case["audit_settings"])
@@ -87,7 +87,7 @@ def test_coinglass_case_recalculates_original_preprocessing_from_each_raw_tape()
 
 def test_public_case_source_integrity_rejects_tampering(tmp_path):
     cases_api()
-    from backtest_witness.cases._loader import load_source
+    from tradeoff.cases._loader import load_source
     source = tmp_path / "source.py"
     source.write_text("def harmless(): return 1\n")
     with pytest.raises(ValueError, match="hash"):

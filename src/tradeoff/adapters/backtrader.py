@@ -13,7 +13,7 @@ def make_backtrader_runner(strategy_class, *, engine_settings=None):
     config is passed as strategy parameters. Supported engine settings are cash
     proportional commission and leverage (at least one). Feed timestamps are normalized to UTC; the
     returned trace preserves the caller's timestamps and records actual holdings,
-    including prenext warmup. Availability is audited by BacktestWitness, not enforced by
+    including prenext warmup. Availability is audited by Tradeoff, not enforced by
     the engine feed. Extra row fields are not exposed through this OHLCV feed.
     """
     options = settings_dict(engine_settings, {"cash": 10000, "commission": 0, "leverage": 1})
@@ -48,11 +48,11 @@ def make_backtrader_runner(strategy_class, *, engine_settings=None):
             cerebro = bt.Cerebro(stdstats=False)
             cerebro.adddata(bt.feeds.PandasData(dataname=frame_from_rows(rows)))
             cerebro.addstrategy(strategy_class, **config)
-            cerebro.addanalyzer(PositionRecorder, _name="backtest_witness_positions")
+            cerebro.addanalyzer(PositionRecorder, _name="tradeoff_positions")
             cerebro.broker.setcash(options["cash"])
             cerebro.broker.setcommission(commission=options["commission"], leverage=options["leverage"])
             strategies = cerebro.run(runonce=False, preload=True)
-            trace = strategies[0].analyzers.backtest_witness_positions.get_analysis()
+            trace = strategies[0].analyzers.tradeoff_positions.get_analysis()
         return validate_trace(trace, rows)
 
     run.trace_kind = "observed_position"
@@ -60,5 +60,5 @@ def make_backtrader_runner(strategy_class, *, engine_settings=None):
                         "engine_settings": options,
                         "warmup": "Analyzer prenext records positions from the first bar.",
                         "timing": "Observed holdings after broker processing and strategy callbacks; not intended targets.",
-                        "economics": "Projecting this trace adds BacktestWitness's declared signal-to-fill lag to engine-observed holdings."}
+                        "economics": "Projecting this trace adds Tradeoff's declared signal-to-fill lag to engine-observed holdings."}
     return run

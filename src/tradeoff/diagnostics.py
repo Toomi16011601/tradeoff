@@ -29,9 +29,9 @@ class _Recorder:
         self.traces.append(''.join(trace.format(chain=True)))
 
 
-_active_recorder = ContextVar('backtest_witness_local_diagnostics', default=None)
+_active_recorder = ContextVar('tradeoff_local_diagnostics', default=None)
 _HEADER = (
-    'BacktestWitness PRIVATE LOCAL DIAGNOSTICS\n'
+    'Tradeoff PRIVATE LOCAL DIAGNOSTICS\n'
     'May contain private exception messages, source lines and paths.\n'
     'Keep this file local; review it before sharing. No local variables are captured.\n\n'
 )

@@ -1,11 +1,11 @@
 # Position sizing and shorts
 
-A target is the whole desired position, in units. `10 → 6 → -4 → 0` means reduce a long by 4, sell 10 to reverse to a 4-unit short, then buy 4 to flatten. A repeated target holds the position. Finite fractional quantities are valid. BacktestWitness compares exact quantities, so sizing leaks remain visible even without a change in direction.
+A target is the whole desired position, in units. `10 → 6 → -4 → 0` means reduce a long by 4, sell 10 to reverse to a 4-unit short, then buy 4 to flatten. A repeated target holds the position. Finite fractional quantities are valid. Tradeoff compares exact quantities, so sizing leaks remain visible even without a change in direction.
 
 ## Fixed notional
 
 ```python
-from backtest_witness.sizing import size_by_notional
+from tradeoff.sizing import size_by_notional
 
 def positions(rows, config, seed):
     directions = [1 if row['close'] > row['open'] else -1 for row in rows]
@@ -19,7 +19,7 @@ Lot calculations use the decimal representation of the supplied parameters. Retu
 ## Stop-distance risk sizing
 
 ```python
-from backtest_witness.sizing import size_by_risk
+from tradeoff.sizing import size_by_risk
 
 targets = size_by_risk(
     rows, directions, stops,
@@ -35,4 +35,4 @@ For a long at 100 with stop 95, a 100-unit risk budget initially permits 20 unit
 
 Short proceeds remain cash, but new exposure is capped by post-trade equity. At the default 1× cap, an account with 1000 equity cannot establish a 2000-notional short merely because selling it would raise cash. Risk-reducing exits remain allowed after insolvency and can settle debt. Events are recorded without maintenance-margin liquidation. Borrow accrues on previous short units and previous close over actual elapsed intervals, with a 365-day convention. Borrow defaults to zero; financing interest, dividends, recalls and broker-specific margin rules are absent.
 
-The ledger is conditional and separate from each adapter's engine. Use the engine's own sizing policy for actual broker behavior and BacktestWitness to test whether unavailable data changes its observed quantities.
+The ledger is conditional and separate from each adapter's engine. Use the engine's own sizing policy for actual broker behavior and Tradeoff to test whether unavailable data changes its observed quantities.

@@ -1,5 +1,5 @@
 name: Workflow improvement
-description: Describe a real debugging workflow BacktestWitness could support.
+description: Describe a real debugging workflow Tradeoff could support.
 body:
   - type: textarea
     id: workflow

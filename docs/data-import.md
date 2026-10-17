@@ -1,13 +1,13 @@
 # Import your strategy's historical data
 
-Run BacktestWitness from your own project, where the strategy module and any companion inputs are available. The importer reads local files. It does not download prices, scan the project for credentials, initialize your strategy's external state or fill missing observations.
+Run Tradeoff from your own project, where the strategy module and any companion inputs are available. The importer reads local files. It does not download prices, scan the project for credentials, initialize your strategy's external state or fill missing observations.
 
 ## Use an ordinary provider CSV
 
 For daily data with `Date,Open,High,Low,Close,Volume` headers:
 
 ```bash
-backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
+tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
   --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
   --requirements requirements.json --output failure-output --json
 ```
@@ -34,7 +34,7 @@ Fixed durations accept positive integer `s`, `m`, `h` or `d` units. A day means 
 For hourly source labels at bar open:
 
 ```bash
-backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
+tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
   --data hourly.csv --symbol DEMO --timestamp-kind open --bar-duration 1h \
   --requirements requirements.json --output hourly-failure-output --json
 ```
@@ -48,7 +48,7 @@ Original noncanonical time columns, such as `Date` or `Datetime`, remain availab
 Some strategies need the original bar-open clock for a time-of-day filter. Copy that source field with a target-to-source mapping:
 
 ```bash
-backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
+tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
   --data hourly.csv --symbol DEMO --timestamp-kind open --bar-duration 1h \
   --column-map '{"Time":"Datetime"}' --require-column Time \
   --requirements requirements.json --output time-filter-output --json
@@ -65,7 +65,7 @@ Native `lab` preflight inspects direct strategy-method data attributes and modul
 Declare dependencies the bounded inspection may miss:
 
 ```bash
-backtest-witness lab --adapter strategy_adapter:MyStrategy --engine backtesting \
+tradeoff lab --adapter strategy_adapter:MyStrategy --engine backtesting \
   --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
   --require-column Regime --require-global MARKET_FILTER \
   --companion-data data/market.csv \
@@ -110,7 +110,7 @@ Companion contents are **not copied or bundled**. Exported fixtures do not conta
 An `INCONCLUSIVE` report can instead mean a callback failed during the simulation. Its portable evidence omits arbitrary exception text. To inspect the actual exception locally, opt in to a new private trace file outside the report directory:
 
 ```bash
-backtest-witness lab --adapter my_strategy:MyStrategy --data bars.csv \
+tradeoff lab --adapter my_strategy:MyStrategy --data bars.csv \
   --output debug-output --diagnostics private-trace.txt --json
 ```
 
@@ -119,7 +119,7 @@ Add the same data/import and policy flags as your original command. The diagnost
 ## Python import API
 
 ```python
-from backtest_witness.data import load_data, inspect_data
+from tradeoff.data import load_data, inspect_data
 
 rows = load_data("daily.csv", symbol="DEMO", timezone="America/New_York",
                  session_close="16:00")

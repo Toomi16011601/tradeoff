@@ -55,8 +55,8 @@ class Document(HTMLParser):
 
 def renderer():
     # Deleting the report implementation must fail this behavior gate explicitly.
-    assert importlib.util.find_spec("backtest_witness.report") is not None, "offline report API is missing"
-    return importlib.import_module("backtest_witness.report")
+    assert importlib.util.find_spec("tradeoff.report") is not None, "offline report API is missing"
+    return importlib.import_module("tradeoff.report")
 
 
 def report(status="FOUND"):
@@ -85,7 +85,7 @@ def report(status="FOUND"):
             "created_at": "2026-10-13T05:00:00+00:00", "status": status,
             "headline": "An earlier decision depends on unavailable data",
             "reason": "Repeated paired runs changed the target at the fixed cutoff.",
-            "strategy_ref": "backtest_witness.demos:leaky", "trace_kind": "target_units",
+            "strategy_ref": "tradeoff.demos:leaky", "trace_kind": "target_units",
             "config": {}, "dataset": {"symbol": "SYNTH", "row_count": 4,
             "start": timestamps[0], "end": timestamps[-1], "input_hash": "a" * 64},
             "settings": {"seed": 7, "min_history": 3, "max_probes": 12, "max_calls": 96},

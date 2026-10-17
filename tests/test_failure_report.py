@@ -68,7 +68,7 @@ def sample_report():
 
 def render(report):
     # Delayed import makes the initial red run expose the missing implementation.
-    from backtest_witness.report.failure_renderer import render_failure_report
+    from tradeoff.report.failure_renderer import render_failure_report
     return render_failure_report(report)
 
 
@@ -125,7 +125,7 @@ def test_null_results_and_missing_failure_are_explicit(status):
 
 
 def test_offline_artifacts_and_write_preserve_the_report(tmp_path):
-    from backtest_witness.report.failure_renderer import write_failure_report
+    from tradeoff.report.failure_renderer import write_failure_report
     report = sample_report()
     original = copy.deepcopy(report)
     path = write_failure_report(report, tmp_path)
@@ -150,7 +150,7 @@ def test_unsafe_download_paths_are_refused(bad_path):
 
 
 def test_nonfinite_payload_and_unknown_status_are_refused_before_writing(tmp_path):
-    from backtest_witness.report.failure_renderer import write_failure_report
+    from tradeoff.report.failure_renderer import write_failure_report
     report = sample_report()
     report["config"]["bad"] = float("nan")
     with pytest.raises(ValueError):
@@ -163,7 +163,7 @@ def test_nonfinite_payload_and_unknown_status_are_refused_before_writing(tmp_pat
 
 
 def test_failure_gallery_links_reports_with_execution_statuses(tmp_path):
-    from backtest_witness.report.failure_renderer import write_failure_gallery
+    from tradeoff.report.failure_renderer import write_failure_gallery
     path = write_failure_gallery(tmp_path, [{"name": '<script>Strategy</script>', "status": "BASELINE_FAILED",
         "path": "case/index.html", "description": "Synthetic execution case"}])
     markup = path.read_text()

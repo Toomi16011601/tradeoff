@@ -212,7 +212,7 @@ def _method(report):
 
 
 def _document(content, *, title, report=None):
-    resources = files('backtest_witness.report')
+    resources = files('tradeoff.report')
     data = dict(report or {})
     if report:
         position_labels = lambda result: [_quantity(point.get('position')) for point in (result or {}).get('equity') or []]
@@ -250,7 +250,7 @@ def render_failure_report(report: dict) -> str:
     data = report.get('dataset') or {}
     hero = f'''<section class="hero"><div class="report-ribbon"><span class="eyebrow">STRATEGY FAILURE LAB / {_escape(data.get('symbol', 'DATASET'))}</span><span class="mono">{_escape(report.get('report_id'))}</span></div><span class="status {tone}">{_escape(label)}</span><h1>{_escape(title)}</h1><p class="hero-description">{_escape(report.get('headline') or '')}</p><p>{_escape(report.get('reason') or '')}</p><div class="hero-facts">{_facts([('Strategy', report.get('strategy_ref') or 'Local execution callback'), ('Full tape', f"{data.get('row_count', 0)} bars"), ('Period', f"{data.get('start', 'Unavailable')} → {data.get('end', 'Unavailable')}"), ('Created', report.get('created_at'))])}</div></section>'''
     nav = '<nav aria-label="Report sections">' + ''.join(f'<a href="#{key}">{label}</a>' for key, label in [('scenarios', 'Scenarios'), ('comparison', 'Equity'), ('failure', 'Failure'), ('replay', 'Replay'), ('method', 'Scope')]) + '</nav>'
-    return _document(hero + nav + _policy(report) + _input_checks(report) + _matrix(report) + _comparison(report) + _failure(report) + _replay(report, artifacts) + _method(report), title=f'BacktestWitness · {label}', report=report)
+    return _document(hero + nav + _policy(report) + _input_checks(report) + _matrix(report) + _comparison(report) + _failure(report) + _replay(report, artifacts) + _method(report), title=f'Tradeoff · {label}', report=report)
 
 
 def write_failure_report(report: dict, output_dir: str | Path) -> Path:
@@ -274,7 +274,7 @@ def write_failure_gallery(output_dir: str | Path, entries: list[dict]) -> Path:
         path = _safe_path(entry['path'])
         cards += f'<a class="case-card" href="{_escape(path)}"><span class="eyebrow">CASE {index:02d}</span><span class="status {tone}">{_escape(label)}</span><h2>{_escape(entry.get("name"))}</h2><p>{_escape(entry.get("description") or "")}</p><span class="case-open">Inspect execution report ↗</span></a>'
     content = '<section class="hero"><span class="eyebrow">PUBLIC STRATEGY CASEBOOK</span><h1>What breaks<br><em>under stress?</em></h1><p class="hero-description">Pinned public strategy code. Synthetic full tapes. Native execution reruns.</p><p>Inspect the baseline, declared cost and delay scenarios, policy failures and replay evidence. Every outcome remains visible.</p></section><div class="case-grid">' + cards + '</div><section class="panel"><h2>Evidence you can replay.</h2><p>These cases illustrate simulated execution and scoped user requirements. Synthetic inputs do not measure historical or live market performance. A baseline failure is visible as its own outcome.</p></section>'
-    markup = _document(content, title='BacktestWitness · Execution casebook')
+    markup = _document(content, title='Tradeoff · Execution casebook')
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
     page = destination / 'index.html'

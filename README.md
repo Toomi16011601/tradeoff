@@ -1,18 +1,18 @@
-# BacktestWitness
+# Tradeoff
 
 **Crash-test a trading strategy before you deploy it. Keep a test for the fix.**
 
-BacktestWitness is a local debugging lab for strategies you or your agent already wrote. It runs the strategy in **Backtesting.py 0.6.6**, adds fees, spread and market-order delay, and checks the results against a policy you choose. When it verifies a failure, it saves the evidence and a regression test you can replay after a repair.
+Tradeoff is a local debugging lab for strategies you or your agent already wrote. It runs the strategy in **Backtesting.py 0.6.6**, adds fees, spread and market-order delay, and checks the results against a policy you choose. When it verifies a failure, it saves the evidence and a regression test you can replay after a repair.
 
 **Runs on your device.** Every user installs and runs their own copy. Tests run on that user's computer and save reports there; the project maintainers do not host them or need to keep a computer online. To view a result, open the generated report file in your browser. No server is needed.
 
 ```text
 Your agent's decisions → Backtesting.py simulates orders
-                      → BacktestWitness stresses execution and checks your policy
+                      → Tradeoff stresses execution and checks your policy
                       → You or a coding agent reads JSON, repairs the strategy, replays the test
 ```
 
-The browser UI is an interactive report file of a **completed run**. Create new runs with the CLI or Python API. BacktestWitness does not choose trades, connect to a live broker or provide a universal agent connector. It needs no AI API keys; passing a simulation does not establish profitability or live execution quality.
+The browser UI is an interactive report file of a **completed run**. Create new runs with the CLI or Python API. Tradeoff does not choose trades, connect to a live broker or provide a universal agent connector. It needs no AI API keys; passing a simulation does not establish profitability or live execution quality.
 
 **Local • Offline reports • Python 3.10+ • MIT • 0.3.0 alpha**
 
@@ -21,8 +21,8 @@ The browser UI is an interactive report file of a **completed run**. Create new 
 Clone this repository onto your own device, then create an environment and install the execution dependencies:
 
 ```bash
-git clone https://github.com/Toomi16011601/backtest-witness.git
-cd backtest-witness
+git clone https://github.com/Toomi16011601/tradeoff.git
+cd tradeoff
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -44,13 +44,15 @@ The example decision function supplies historical buy/close/hold decisions; its 
 
 ![Synthetic agent example: two extra delay bars change return from 1.50% to -0.60%.](docs/assets/agent-integration-desktop.jpg)
 
+*Earlier-version report capture, before the Tradeoff rename. The screenshot still shows the former BacktestWitness name.*
+
 ## Test your own strategy
 
 Keep real agent code and private prices in your own project on your device. With the environment active, run from your project's root so its strategy module is importable. Save a [requirements policy](docs/quickstart.md#test-your-own-strategy), then use your existing daily CSV:
 
 ```bash
 # CSV headers: Date,Open,High,Low,Close,Volume
-backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
+tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
   --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
   --requirements requirements.json --output failure-output --json
 ```
@@ -73,7 +75,7 @@ Choose the symbol, timezone and closing convention for **your** data; no exchang
 Every run saves `report.json` and an offline `index.html`. A verified stress failure also saves `failure-fixture.json`, `failure-receipt.json` and `test_failure_resilience.py`.
 
 ```bash
-backtest-witness replay-failure failure-output-agent/failure-fixture.json
+tradeoff replay-failure failure-output-agent/failure-fixture.json
 # Expected exit 1 while the saved policy breach remains.
 ```
 
@@ -86,7 +88,7 @@ The public strategy casebook is a larger synthetic debugging example using pinne
 ```bash
 # Public case pins require Python 3.11+.
 python -m pip install '.[cases]'
-backtest-witness lab-cases --output failure-public-output
+tradeoff lab-cases --output failure-public-output
 # Expected exit 1: the variants breach the declared teaching policy.
 ```
 
@@ -106,6 +108,8 @@ python -m build
 
 [Contributing](CONTRIBUTING.md) · [Architecture](docs/architecture.md) · [Local verification](docs/verification.md) · [Release checklist](docs/launch-checklist.md) · [Changelog](CHANGELOG.md)
 
-Prior work includes [Freqtrade lookahead analysis](https://www.freqtrade.io/en/stable/lookahead-analysis/), [SharpeBench](https://github.com/general-liquidity/sharpebench), [QuantStats](https://github.com/ranaroussi/quantstats), [Backtrader](https://www.backtrader.com/) and [Backtesting.py](https://kernc.github.io/backtesting.py/). BacktestWitness focuses on explicit policy, repeatable failures, paired evidence and repair replay; it makes no first-ever detector claim.
+Prior work includes [Freqtrade lookahead analysis](https://www.freqtrade.io/en/stable/lookahead-analysis/), [SharpeBench](https://github.com/general-liquidity/sharpebench), [QuantStats](https://github.com/ranaroussi/quantstats), [Backtrader](https://www.backtrader.com/) and [Backtesting.py](https://kernc.github.io/backtesting.py/). Tradeoff focuses on explicit policy, repeatable failures, paired evidence and repair replay; it makes no first-ever detector claim.
+
+Renamed from BacktestWitness. Existing `backtest-witness` commands and `backtest_witness` Python imports remain compatibility aliases. Saved artifact formats and hashes are unchanged. [Migration details](docs/github-launch.md#compatibility-and-earlier-artifacts).
 
 Licensed under [MIT](LICENSE). Install from this repository; the package has not been published to PyPI.

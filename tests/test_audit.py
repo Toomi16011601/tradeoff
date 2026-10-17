@@ -12,7 +12,7 @@ def future_last(rows, config, seed):
 
 
 def test_future_data_dependency_is_reduced_and_preserves_full_history():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     rows = tape()
     result = audit(future_last, rows, {"nested": [1]}, min_history=1)
     assert result["status"] == "FOUND"
@@ -28,7 +28,7 @@ def test_future_data_dependency_is_reduced_and_preserves_full_history():
 
 
 def test_causal_control_has_only_scoped_no_dependency_verdict():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     result = audit(clean, tape(), min_history=1)
     assert result["status"] == "NO_DEPENDENCY_OBSERVED"
     assert result["witness"] is None
@@ -40,7 +40,7 @@ def test_causal_control_has_only_scoped_no_dependency_verdict():
 
 
 def test_cutoff_limit_and_intervention_counts_use_distinct_units():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     result = audit(clean, tape(), min_history=1, max_probes=1)
     assert result["coverage"]["cutoffs_probed"] == 1
     assert result["coverage"]["eligible_cutoffs"] == 3
@@ -49,7 +49,7 @@ def test_cutoff_limit_and_intervention_counts_use_distinct_units():
 
 
 def test_mutation_can_change_delayed_prior_timestamp_row():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     rows = tape()
     rows[0]["available_at"] = rows[-1]["timestamp"]
     def delayed_leak(rows, config, seed):
@@ -61,7 +61,7 @@ def test_mutation_can_change_delayed_prior_timestamp_row():
 
 
 def test_only_targets_determine_stability_and_equivalence():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     count = 0
     def diagnostics(rows, config, seed):
         nonlocal count
@@ -71,7 +71,7 @@ def test_only_targets_determine_stability_and_equivalence():
 
 
 def test_callback_cannot_mutate_original_tape_config_or_later_runs():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     rows, config = tape(), {"nested": [1]}
     before = copy.deepcopy((rows, config))
     def mutating(rows, config, seed):
@@ -84,7 +84,7 @@ def test_callback_cannot_mutate_original_tape_config_or_later_runs():
 
 
 def test_unstable_callback_is_inconclusive():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     count = 0
     def unstable(rows, config, seed):
         nonlocal count
@@ -98,7 +98,7 @@ def test_unstable_callback_is_inconclusive():
 
 @pytest.mark.parametrize("kind", ["failure", "short", "bad_target"])
 def test_callback_failures_and_incomplete_traces_are_inconclusive(kind):
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     def broken(rows, config, seed):
         if kind == "failure":
             raise RuntimeError("blocked strategy")
@@ -113,7 +113,7 @@ def test_callback_failures_and_incomplete_traces_are_inconclusive(kind):
 
 
 def test_bounded_search_does_not_certify_a_budget_exhausted_result():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     calls = 0
     def counted(rows, config, seed):
         nonlocal calls
@@ -127,7 +127,7 @@ def test_bounded_search_does_not_certify_a_budget_exhausted_result():
 
 
 def test_budget_reserves_final_witness_verification():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     result = audit(future_last, tape(), min_history=1, max_calls=8)
     assert result["status"] == "FOUND"
     assert result["coverage"]["runs"] == 8
@@ -135,7 +135,7 @@ def test_budget_reserves_final_witness_verification():
 
 
 def test_invalid_input_fails_before_strategy_is_called():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     def forbidden(*args):
         pytest.fail("invalid rows reached callback")
     with pytest.raises(ValueError, match="rows"):
@@ -143,7 +143,7 @@ def test_invalid_input_fails_before_strategy_is_called():
 
 
 def test_final_verification_detects_original_state_drift():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     calls = 0
     def drift(rows, config, seed):
         nonlocal calls
@@ -157,8 +157,8 @@ def test_final_verification_detects_original_state_drift():
 
 
 def test_mutation_keeps_available_bars_and_json_extras_unchanged():
-    from backtest_witness.audit import audit
-    from backtest_witness.validation import parse_timestamp
+    from tradeoff.audit import audit
+    from tradeoff.validation import parse_timestamp
     rows = tape()
     result = audit(future_last, rows, min_history=1)
     witness = result["witness"]
@@ -174,7 +174,7 @@ def test_mutation_keeps_available_bars_and_json_extras_unchanged():
 
 
 def test_negative_integer_seed_is_portable_callback_configuration():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     def negative_seed(rows, config, seed):
         assert seed == -4
         return clean(rows, config, seed)
@@ -183,7 +183,7 @@ def test_negative_integer_seed_is_portable_callback_configuration():
 
 @pytest.mark.parametrize("max_calls", range(1, 13))
 def test_every_small_budget_is_respected(max_calls):
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
     calls = 0
     def counted(rows, config, seed):
         nonlocal calls
@@ -200,9 +200,9 @@ def test_every_small_budget_is_respected(max_calls):
 def test_extreme_finite_prices_keep_mutations_inside_valid_bar_contract():
     import math
     import sys
-    from backtest_witness.demos import synthetic_rows
-    from backtest_witness.mutations import mutate_future
-    from backtest_witness.validation import validate_rows
+    from tradeoff.demos import synthetic_rows
+    from tradeoff.mutations import mutate_future
+    from tradeoff.validation import validate_rows
     rows = synthetic_rows(4)
     edge = math.nextafter(sys.float_info.max, 0.0)
     for row in rows:
@@ -215,7 +215,7 @@ def test_extreme_finite_prices_keep_mutations_inside_valid_bar_contract():
 
 
 def test_audit_copies_runner_metadata_and_infers_observed_trace_kind():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
 
     def run(rows, config, seed):
         return clean(rows, config, seed)
@@ -234,7 +234,7 @@ def test_audit_copies_runner_metadata_and_infers_observed_trace_kind():
 
 
 def test_explicit_trace_kind_overrides_metadata_and_raw_callbacks_default_to_targets():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
 
     def run(rows, config, seed):
         return clean(rows, config, seed)
@@ -245,7 +245,7 @@ def test_explicit_trace_kind_overrides_metadata_and_raw_callbacks_default_to_tar
 
 
 def test_report_identity_binds_effective_runner_settings_and_trace_semantics():
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
 
     def run(rows, config, seed):
         return clean(rows, config, seed)
@@ -263,7 +263,7 @@ def test_report_identity_binds_effective_runner_settings_and_trace_semantics():
 
 @pytest.mark.parametrize("attribute", ["runner_spec", "adapter_info"])
 def test_invalid_runner_metadata_fails_before_callback_execution(attribute):
-    from backtest_witness.audit import audit
+    from tradeoff.audit import audit
 
     def forbidden(*args):
         pytest.fail("invalid metadata reached callback")

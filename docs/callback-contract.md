@@ -4,7 +4,7 @@
 run(rows: list[dict], config: dict, seed: int) -> list[dict]
 ```
 
-Each invocation must reconstruct preprocessing, feeds, model state and engine state. BacktestWitness deep-copies rows/config and repeats calls, but cannot force a callback to discard hidden caches, subprocess state or trained weights. Repeatability checks compare decisions; diagnostics may differ without changing the verdict.
+Each invocation must reconstruct preprocessing, feeds, model state and engine state. Tradeoff deep-copies rows/config and repeats calls, but cannot force a callback to discard hidden caches, subprocess state or trained weights. Repeatability checks compare decisions; diagnostics may differ without changing the verdict.
 
 ## Input
 

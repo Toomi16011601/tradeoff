@@ -132,5 +132,5 @@ def test_normalized_sdist_can_build_a_wheel_in_a_clean_directory(tmp_path, monke
     wheels = list(wheel_output.glob("*.whl"))
     assert len(wheels) == 1
     with zipfile.ZipFile(wheels[0]) as archive:
-        assert "backtest_witness/__init__.py" in archive.namelist()
+        assert "tradeoff/__init__.py" in archive.namelist()
         assert any(name.endswith("/licenses/LICENSE") for name in archive.namelist())

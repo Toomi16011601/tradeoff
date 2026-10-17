@@ -46,7 +46,7 @@ def main(argv=None):
             print('   A policy breach is the expected teaching outcome (exit 1).')
         print(f"3. Inspect JSON: {artifacts['json']}\n   Open HTML: {artifacts['html']}")
         if failure:
-            print(f"   Replay: python -m backtest_witness replay-failure {artifacts['fixture']}")
+            print(f"   Replay: python -m tradeoff replay-failure {artifacts['fixture']}")
             print(f"   Regression: python -m pytest {artifacts['test']}")
     return code
 
