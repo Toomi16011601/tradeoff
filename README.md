@@ -114,4 +114,4 @@ Prior work includes [Freqtrade lookahead analysis](https://www.freqtrade.io/en/s
 
 Renamed from BacktestWitness. Existing `backtest-witness` commands and `backtest_witness` Python imports remain compatibility aliases. Saved artifact formats and hashes are unchanged. [Migration details](docs/github-launch.md#compatibility-and-earlier-artifacts).
 
-Licensed under [MIT](LICENSE). Install from this repository; the package has not been published to PyPI.
+Licensed under [MIT](LICENSE). Install from this repository; the package has not been published to PyPI. Good Luck!
