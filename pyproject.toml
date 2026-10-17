@@ -16,7 +16,7 @@ keywords = ["trading", "backtesting", "stress-testing", "lookahead-bias", "quant
 classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Topic :: Software Development :: Testing"]
 
 [project.optional-dependencies]
-dev = ["pytest>=9.0.3", "build>=1.2"]
+dev = ["pytest>=9.0.3", "build>=1.2", "setuptools>=83", "wheel"]
 adapters = ["pandas>=2.2", "backtrader==1.9.78.123", "backtesting>=0.6,<0.7"]
 lab = ["backtesting==0.6.6", "pandas>=2.2"]
 cases = ["backtesting==0.6.6", "pandas==2.2.3", "numpy==2.3.5"]

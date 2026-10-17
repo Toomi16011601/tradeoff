@@ -2,6 +2,11 @@
 
 ## 0.3.0 — 2026-10-17 · public source alpha
 
+### Hosted compatibility fixes
+
+- Keep report rendering compatible with Python 3.10 by avoiding reused quote delimiters inside an f-string.
+- Install the configured build backend with the development extra so archive privacy tests work in clean environments without preinstalled setuptools or wheel.
+
 ### Final release audit
 
 - Reject recognized sensitive fields nested inside Python tuples before serializing reports, with the same cycle/depth checks as lists.
