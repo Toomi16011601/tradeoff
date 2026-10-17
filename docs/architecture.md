@@ -1,5 +1,7 @@
 # Architecture
 
+Each installation runs on its user's computer. BacktestWitness runs simulations and writes reports in that user's environment; there is no publisher-hosted backend required to use it.
+
 ```text
 CSV / JSON → validation → fresh native execution → policy suite + reduced stress
                                               ├→ fixture + pytest + receipt
@@ -16,7 +18,7 @@ Original price tape + paired signed targets ──────────┴→
 
 The existing future-data path remains independent. `validation.py` owns timestamp, JSON, OHLC and trace contracts. `mutations.py` generates future-only interventions. `audit.py` owns repeatability, budget and row-edit reduction. `reproduce.py` exports/replays hashed invariant fixtures. `economics.py` owns illustrative signed ledgers on the original price tape; these do not become native execution accounting. `adapters/` isolates optional engine/dataframe dependencies and resolves saved audit adapter descriptors. `sizing.py` computes causal quantities.
 
-`cases/` loads pinned public source definitions, verifies their bytes and applies disclosed causal patches in memory. Its audit and execution runners use separate contracts; synthetic execution data and provenance are explicit. `report/` renders computed results into self-contained HTML without rerunning strategies or recomputing verdicts. `cli.py` composes local workflows and serves existing files on localhost.
+`cases/` loads pinned public source definitions, verifies their bytes and applies disclosed causal patches in memory. Its audit and execution runners use separate contracts; synthetic execution data and provenance are explicit. `report/` renders computed results into self-contained HTML without rerunning strategies or recomputing verdicts. `cli.py` composes local workflows. Users open the generated `index.html` directly in their browser; the optional file-preview command is separate from testing and is not needed to view reports.
 
 The core uses the Python standard library; optional engines, pandas and NumPy load lazily through extras. Backtesting.py is the first execution backend. Backtrader/pandas/numeric targets retain their future-data scope. Explicit execution callbacks own their claimed simulator accounting.
 

@@ -45,7 +45,7 @@ def reject_sensitive_data(value, *, label='Data'):
         if isinstance(item, str):
             if _PRIVATE_TEXT.search(item):
                 raise SensitiveDataError('Recognized sensitive data; use sanitized simulation inputs')
-        elif isinstance(item, (dict, list)):
+        elif isinstance(item, (dict, list, tuple)):
             if id(item) in ancestors:
                 raise ValueError(f'{label} contains a cycle')
             parents = ancestors | {id(item)}
@@ -54,7 +54,7 @@ def reject_sensitive_data(value, *, label='Data'):
                 if isinstance(key, str):
                     visit(key, parents, depth + 1)
                     normalized = re.sub(r'[^a-z0-9]', '', key.lower())
-                    empty = child is None or (isinstance(child, (str, list, dict)) and len(child) == 0)
+                    empty = child is None or (isinstance(child, (str, list, tuple, dict)) and len(child) == 0)
                     if normalized in _PRIVATE_KEYS and not empty:
                         raise SensitiveDataError('Recognized sensitive field; remove credentials or personal data')
                 visit(child, parents, depth + 1)
@@ -63,6 +63,8 @@ def reject_sensitive_data(value, *, label='Data'):
 
 def callback_error(exc):
     """Keep deliberate safe limitations, omit arbitrary exception messages."""
+    from .diagnostics import record_exception
+    record_exception(exc)
     if isinstance(exc, ExecutionUnavailable):
         try:
             reject_sensitive_data(str(exc))

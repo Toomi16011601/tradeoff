@@ -8,8 +8,9 @@ The 0.3.0 failure lab reruns both pinned Backtesting.py 0.6.6 examples and their
 python -m pip install -e ".[dev,cases]"
 backtest-witness lab-cases --output failure-public-output
 # Expected exit 1: at least one variant has a policy failure.
-backtest-witness serve --directory failure-public-output
 ```
+
+Run these commands on your own computer, then open `failure-public-output/index.html` from your file manager in a browser. The reports are saved on your device and need no server to view.
 
 Choose `--case riskkit` or `--case coinglass`, and `--variant original`, `fixed` or `both`. The default policy disables minimum return, caps deterioration at 0.05 percentage points from each variant's own baseline and requires one closed trade. Losing baselines remain visible; this policy does not establish profitability. Custom `--requirements` and `--scenarios` change the tested scope. A completed casebook returns 1 when any policy fails, 0 only for completed scoped passes, and 2 when any variant is inconclusive.
 
@@ -54,10 +55,9 @@ Use Python 3.11 or newer for the pinned numerical dependencies. The full workflo
 ```bash
 python -m pip install -e ".[dev,cases]"
 backtest-witness cases --output public-output
-backtest-witness serve --directory public-output
 ```
 
-The gallery contains original and repaired reports for each example. The original produces a hashed fixture and a runnable failing regression test; the command also verifies that the repair passes that **same fixture**. Choose one example with `--case riskkit` or `--case coinglass`.
+Open `public-output/index.html` to view the gallery of original and repaired reports for each example. The original produces a hashed fixture and a runnable failing regression test; the command also verifies that the repair passes that **same fixture**. Choose one example with `--case riskkit` or `--case coinglass`.
 
 | Published example | Verified earlier decision | Reduced future edits | Original | Local causal repair |
 | --- | --- | --- | --- | --- |

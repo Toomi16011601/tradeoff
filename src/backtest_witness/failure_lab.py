@@ -45,9 +45,14 @@ def validate_requirements(value=None):
 
 def validate_runner_spec(value):
     spec = validate_config(value)
-    if set(spec) != {'engine', 'engine_settings'} or spec['engine'] not in ('callback', 'backtesting'):
+    if (set(spec) - {'engine', 'engine_settings', 'integration'}
+            or not {'engine', 'engine_settings'} <= set(spec)
+            or spec['engine'] not in ('callback', 'backtesting')):
         raise ValueError('Execution runner_spec must specify callback or backtesting and engine_settings')
     spec['engine_settings'] = validate_config(spec['engine_settings'])
+    if 'integration' in spec:
+        from .execution import validate_integration
+        spec['integration'] = validate_integration(spec['integration'])
     return spec
 
 

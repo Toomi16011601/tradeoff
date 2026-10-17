@@ -6,7 +6,12 @@ matching, protections and sizing remain the engine's responsibility.
 """
 from copy import deepcopy
 from functools import wraps
+import hashlib
+import inspect
 import json
+from pathlib import Path
+import re
+import sys
 import warnings
 
 from .adapters import _import_callable
@@ -19,6 +24,87 @@ from .privacy import ExecutionUnavailable
 _SUPPORTED_VERSION = '0.6.6'
 _DEFAULTS = {'cash': 10000, 'commission': 0, 'spread': 0, 'margin': 1,
              'trade_on_close': False, 'exclusive_orders': False}
+_INPUT_DEFAULTS = {'required_columns': [], 'required_globals': [],
+                   'allow_zero_volume': False, 'allow_uninitialized_globals': [], 'companions': []}
+
+
+def _companion_path(value):
+    if not isinstance(value, str) or not value or Path(value).is_absolute() or '..' in Path(value).parts:
+        raise ValueError('Companion files must use relative paths inside the current project')
+    root = Path.cwd().resolve()
+    path = (root / value).resolve()
+    if not path.is_relative_to(root) or not path.is_file():
+        raise ValueError('Companion file is unavailable inside the current project')
+    return path
+
+
+def _file_hash(path):
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def companion_manifest(paths):
+    """Bind explicitly selected local side inputs; never copy their contents."""
+    result = []
+    for value in paths:
+        # Absolute CLI inputs are accepted only if they resolve in this project.
+        try:
+            relative = Path(value).expanduser().resolve().relative_to(Path.cwd().resolve()).as_posix()
+        except (ValueError, OSError, TypeError):
+            raise ValueError('Companion files must be inside the current project') from None
+        path = _companion_path(relative)
+        result.append({'path': relative, 'sha256': _file_hash(path)})
+    return _validated_companions(result)
+
+
+def _validated_companions(value):
+    if not isinstance(value, list):
+        raise ValueError('companions must be a list of relative file paths and hashes')
+    result = []
+    for item in value:
+        if (not isinstance(item, dict) or set(item) != {'path', 'sha256'}
+                or not isinstance(item['path'], str) or not item['path']
+                or Path(item['path']).is_absolute() or '..' in Path(item['path']).parts
+                or not isinstance(item['sha256'], str) or re.fullmatch(r'[a-f0-9]{64}', item['sha256']) is None):
+            raise ValueError('Companion entries need project-relative path and SHA-256')
+        validate_config(item)
+        result.append(dict(item))
+    return result
+
+
+def validate_integration(value):
+    """Validate the optional replayable native-input declarations."""
+    options = settings_dict(validate_config(value), _INPUT_DEFAULTS)
+    if type(options['allow_zero_volume']) is not bool:
+        raise ValueError('allow_zero_volume must be a boolean')
+    for field in ('required_columns', 'required_globals', 'allow_uninitialized_globals'):
+        if (not isinstance(options[field], list) or any(not isinstance(name, str)
+                or re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', name) is None for name in options[field])):
+            raise ValueError(f'{field} must contain simple identifiers')
+    options['companions'] = _validated_companions(options['companions'])
+    return options
+
+
+def _check_companions(options):
+    for item in options['companions']:
+        if _file_hash(_companion_path(item['path'])) != item['sha256']:
+            raise ValueError('Companion input changed; restore the declared file before replay')
+
+
+def _source_provenance(strategy, reference=None):
+    def source(obj):
+        try:
+            path = Path(inspect.getsourcefile(obj))
+            return {'file': path.name, 'sha256': _file_hash(path)}
+        except (TypeError, OSError, ValueError):
+            return {'available': False}
+    module = sys.modules.get(reference.split(':')[0]) if reference else None
+    return {'strategy_source': source(strategy), 'adapter_source': source(module),
+            'runtime_versions': {name: engine_version(name) for name in ('backtesting', 'pandas', 'numpy')},
+            'source_scope': 'File hashes record provenance; strategy repairs remain allowed. Dependencies and side inputs are not bundled.'}
 
 
 def _scenario(value):
@@ -47,6 +133,9 @@ def _settings(value):
         options['commission'] = [fixed, relative]
     else:
         options['commission'] = numeric_setting(commission, 'commission', minimum=-.1)
+    relative = options['commission'][1] if isinstance(options['commission'], list) else options['commission']
+    if relative >= .1:
+        raise ValueError('native baseline commission must be in [-0.1, 0.1)')
     return options
 
 
@@ -115,7 +204,7 @@ def _trade(trade, *, closed):
     return result
 
 
-def make_backtesting_execution_runner(strategy_class, *, engine_settings=None, prepare=None):
+def make_backtesting_execution_runner(strategy_class, *, engine_settings=None, prepare=None, integration=None):
     """Return run(rows, config, seed, scenario) with fresh native engine state.
 
     Costs add to native relative rates (and retain any fixed commission).
@@ -124,8 +213,17 @@ def make_backtesting_execution_runner(strategy_class, *, engine_settings=None, p
     liquidation is added. prepare may add fields, retaining all original OHLCV.
     """
     options = _settings(engine_settings)
+    inputs = validate_integration(integration) if integration is not None else None
     if prepare is not None and not callable(prepare):
         raise ValueError('prepare must be a callable or None')
+
+    def preflight(rows, available_columns=None):
+        if inputs is None:
+            return {}
+        from .integration import inspect_strategy
+        _check_companions(inputs)
+        return inspect_strategy(strategy_class, rows, available_columns=available_columns,
+                                **{key: value for key, value in inputs.items() if key != 'companions'})
 
     def run(rows, config, seed, scenario):
         rows, config, scenario = validate_rows(rows), validate_config(config), _scenario(scenario)
@@ -187,6 +285,8 @@ def make_backtesting_execution_runner(strategy_class, *, engine_settings=None, p
                 if (not frame.columns.is_unique or not set(fields) <= set(frame.columns)
                         or not frame[fields].equals(original)):
                     raise ValueError('prepare must preserve original OHLCV values and unique columns')
+            checks = preflight(rows, frame.columns.tolist())
+            run.input_checks = checks
             native_options = deepcopy(effective)
             if isinstance(native_options['commission'], list):
                 native_options['commission'] = tuple(native_options['commission'])
@@ -226,7 +326,7 @@ def make_backtesting_execution_runner(strategy_class, *, engine_settings=None, p
                              ' extra bar(s); native protective SL/TP timing; no terminal liquidation.'
                              if not effective['trade_on_close'] else
                              'Native trade_on_close execution; native protective SL/TP timing; no terminal liquidation.'),
-                  'warnings': ([str(item.message) for item in observed] + halt_warnings +
+                  'warnings': ([str(item.message) for item in observed] + halt_warnings + checks.get('warnings', []) +
                                (['Open-trade P&L excludes entry fees; native equity includes charged entry fees.']
                                 if broker.trades else [])),
                   'equity': [{'timestamp': row['timestamp'], 'position': positions[i], 'equity': float(value)}
@@ -238,25 +338,55 @@ def make_backtesting_execution_runner(strategy_class, *, engine_settings=None, p
         return result
 
     run.runner_spec = {'engine': 'backtesting', 'engine_settings': deepcopy(options)}
+    if inputs is not None:
+        run.runner_spec['integration'] = deepcopy(inputs)
+    run.preflight = preflight
+    run.source_provenance = _source_provenance(strategy_class)
     run.adapter_info = {'engine': 'backtesting', 'version': engine_version('backtesting'),
                         'engine_settings': deepcopy(options), 'execution': 'native',
                         'supported_version': _SUPPORTED_VERSION}
     return run
 
 
-def resolve_execution_runner(reference, *, engine='backtesting', engine_settings=None):
+def resolve_execution_runner(reference, *, engine='backtesting', engine_settings=None, integration=None):
     """Resolve a native Strategy class or explicit four-argument callback."""
     if engine not in ('backtesting', 'callback'):
         raise ValueError(f'unsupported execution engine: {engine!r}')
     settings = validate_config(engine_settings)
+    inputs = validate_integration(integration) if integration is not None else None
+    if inputs is not None:
+        _check_companions(inputs)
     fn = _import_callable(reference)
     if engine == 'backtesting':
-        return make_backtesting_execution_runner(fn, engine_settings=settings)
+        run = make_backtesting_execution_runner(fn, engine_settings=settings, integration=inputs)
+        run.source_provenance = _source_provenance(fn, reference)
+        return run
     settings_dict(settings, {})
     @wraps(fn)
     def run(rows, config, seed, scenario):
+        if inputs is not None:
+            _check_companions(inputs)
         return fn(rows, config, seed, scenario)
     if hasattr(fn, 'adapter_info'):
         run.adapter_info = deepcopy(fn.adapter_info)
     run.runner_spec = {'engine': 'callback', 'engine_settings': {}}
+    if inputs is not None:
+        run.runner_spec['integration'] = deepcopy(inputs)
+    def preflight(rows):
+        if inputs is not None:
+            _check_companions(inputs)
+            if inputs['required_globals'] or inputs['allow_uninitialized_globals']:
+                raise ValueError('Global declarations require a native strategy class; validate callback state explicitly')
+            # Callback wrappers own their input semantics; cover declarations
+            # without pretending to inspect the wrapped trading implementation.
+            from .integration import inspect_strategy
+            placeholder = type('CallbackInputs', (), {})
+            result = inspect_strategy(placeholder, rows,
+                required_columns=inputs['required_columns'], allow_zero_volume=inputs['allow_zero_volume'])
+        else:
+            result = {'required_columns': [], 'required_globals': [], 'checks': {}, 'warnings': []}
+        result['warnings'].append('Automatic strategy input inspection is unavailable for callbacks; validate wrapped strategy state explicitly.')
+        return result
+    run.preflight = preflight
+    run.source_provenance = _source_provenance(fn, reference)
     return run

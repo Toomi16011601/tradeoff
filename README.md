@@ -4,50 +4,62 @@
 
 BacktestWitness is a local debugging lab for strategies you or your agent already wrote. It runs the strategy in **Backtesting.py 0.6.6**, adds fees, spread and market-order delay, and checks the results against a policy you choose. When it verifies a failure, it saves the evidence and a regression test you can replay after a repair.
 
+**Runs on your device.** Every user installs and runs their own copy. Tests run on that user's computer and save reports there; the project maintainers do not host them or need to keep a computer online. To view a result, open the generated report file in your browser. No server is needed.
+
 ```text
 Your agent's decisions → Backtesting.py simulates orders
                       → BacktestWitness stresses execution and checks your policy
                       → You or a coding agent reads JSON, repairs the strategy, replays the test
 ```
 
-The browser UI is an interactive report of a **completed run**. Create new runs with the CLI or Python API. BacktestWitness does not choose trades, connect to a live broker or provide a universal agent connector. It needs no AI API keys; passing a simulation does not establish profitability or live execution quality.
+The browser UI is an interactive report file of a **completed run**. Create new runs with the CLI or Python API. BacktestWitness does not choose trades, connect to a live broker or provide a universal agent connector. It needs no AI API keys; passing a simulation does not establish profitability or live execution quality.
 
-**Local • Offline reports • Python 3.10+ • MIT • 0.3.0 unreleased alpha**
+**Local • Offline reports • Python 3.10+ • MIT • 0.3.0 alpha**
 
-## Run your first agent example
+## Install and try it
 
-From the repository checkout root, create an environment and install the execution dependencies:
+Clone this repository onto your own device, then create an environment and install the execution dependencies:
 
 ```bash
+git clone https://github.com/Toomi16011601/backtest-witness.git
+cd backtest-witness
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install '.[lab]'
-python -m examples.agent_integration --output failure-output-agent
-# Expected exit 1: this teaching example deliberately breaches its stress policy.
-backtest-witness serve --directory failure-output-agent
 ```
 
-On Windows PowerShell, activate with `.\.venv\Scripts\Activate.ps1`. Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The preview server supports macOS/Linux; on other platforms, open the trusted generated `failure-output-agent/index.html` directly. Ctrl+C stops the server.
+On Windows PowerShell, activate with `.\.venv\Scripts\Activate.ps1`.
 
-The example uses synthetic prices and a small deterministic decision function. Its Backtesting.py adapter turns those decisions into native orders. Inspect the baseline, select a stressed scenario, then read its policy violation and replay evidence. Use a new or empty output directory for each run. [Step-by-step quickstart](docs/quickstart.md).
+Run the included small agent example. It uses synthetic prices so you can try the full workflow before connecting your own strategy:
+
+```bash
+python -m examples.agent_integration --output failure-output-agent
+# Expected exit 1: this synthetic teaching example breaches its stress policy.
+```
+
+Open the generated **`failure-output-agent/index.html`** file in your browser: find it in Finder or File Explorer and double-click it, or use your browser's Open File command. The interactive report contains its data and works offline. It does not need a running server. Use a new or empty output directory for every run.
+
+The example decision function supplies historical buy/close/hold decisions; its adapter places native simulated orders. For shorts, sizing rules and other order behavior, use the native strategy-class interface. A coding agent can call `lab --json` or Python and inspect evidence before proposing a repair. [Agent integration walkthrough](docs/agent-integration.md) · [Step-by-step quickstart](docs/quickstart.md).
 
 ![Synthetic agent example: two extra delay bars change return from 1.50% to -0.60%.](docs/assets/agent-integration-desktop.jpg)
 
-## Connect your own agent
+## Test your own strategy
 
-Use [`examples/agent_integration/agent.py`](examples/agent_integration/agent.py) to learn the decision interface. Keep your real agent code and private prices in a **separate private project**; install BacktestWitness in that project’s environment and run it there. The example adapter supports long/flat decisions; strategies with other order behavior can use the native Backtesting.py class interface.
-
-A coding agent can call the local CLI with `--json` and read `report.json` as structured tool output. No new SDK or MCP server is required. [Agent integration walkthrough](docs/agent-integration.md) explains the two roles, the runnable files, the data contract and a subprocess tool wrapper.
-
-Already have an importable Backtesting.py strategy? Save your requirements and run:
+Keep real agent code and private prices in your own project on your device. With the environment active, run from your project's root so its strategy module is importable. Save a [requirements policy](docs/quickstart.md#test-your-own-strategy), then use your existing daily CSV:
 
 ```bash
+# CSV headers: Date,Open,High,Low,Close,Volume
 backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
-  --data bars.csv --requirements requirements.json --output failure-output
+  --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
+  --requirements requirements.json --output failure-output --json
 ```
 
-[Native execution guide](docs/failure-lab.md) · [Engine integrations and Python API](docs/integrations.md)
+Open **`failure-output/index.html`** from your project folder in your browser. Occupied outputs are rejected before strategy import or simulation; choose a new or empty output directory for later runs.
+
+Choose the symbol, timezone and closing convention for **your** data; no exchange calendar is inferred. Intraday bar-open labels use `--timestamp-kind open --bar-duration 1h`. Extra feature columns and the original source clock are preserved. Native preflight checks some missing columns, unset globals and unusable volume before reruns. It cannot automatically initialize an arbitrary project or fix third-party dependency bugs.
+
+[CSV import, prerequisites and troubleshooting](docs/data-import.md) · [Step-by-step quickstart](docs/quickstart.md) · [Native execution guide](docs/failure-lab.md)
 
 ## Read, repair and replay
 
@@ -78,6 +90,8 @@ backtest-witness lab-cases --output failure-public-output
 # Expected exit 1: the variants breach the declared teaching policy.
 ```
 
+Open the generated `failure-public-output/index.html` file in your browser.
+
 A separate **future-data audit** changes records unavailable at a fixed cutoff and checks whether earlier decisions change. Its illustrative economic projection is separate from the native execution ledger. Existing Backtrader, pandas and numeric-target integrations retain this audit scope. [Future-data workflow](docs/quickstart.md#future-data-audits) · [Callback contract](docs/callback-contract.md) · [Methodology](docs/methodology.md)
 
 Native execution retains open terminal holdings and pending orders, and preserves native protective SL/TP timing. Some order types are unsupported under added delay. [Execution contract and limits](docs/execution-contract.md).
@@ -94,4 +108,4 @@ python -m build
 
 Prior work includes [Freqtrade lookahead analysis](https://www.freqtrade.io/en/stable/lookahead-analysis/), [SharpeBench](https://github.com/general-liquidity/sharpebench), [QuantStats](https://github.com/ranaroussi/quantstats), [Backtrader](https://www.backtrader.com/) and [Backtesting.py](https://kernc.github.io/backtesting.py/). BacktestWitness focuses on explicit policy, repeatable failures, paired evidence and repair replay; it makes no first-ever detector claim.
 
-Licensed under [MIT](LICENSE). Install from this checkout; no PyPI publication or public repository is implied.
+Licensed under [MIT](LICENSE). Install from this repository; the package has not been published to PyPI.

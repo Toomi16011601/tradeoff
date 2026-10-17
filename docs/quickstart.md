@@ -2,13 +2,15 @@
 
 BacktestWitness is a local crash-test and debugging lab for a trading strategy before deployment. Your strategy decides what to trade, Backtesting.py 0.6.6 simulates its orders, and BacktestWitness checks how extra execution costs and delays affect your declared requirements.
 
-The browser opens a completed run's interactive report. Start new runs from the CLI or Python. This unreleased alpha installs from a repository checkout; the core requires Python 3.10+.
+**Install and run your own copy on your own device.** Tests use your computer and save results in a local folder. The project maintainers do not host your runs or need to keep a computer online. Open the saved `index.html` file in your browser to inspect a completed run; no server is needed. Start new runs from the CLI or Python. This alpha installs from a repository checkout; the core requires Python 3.10+.
 
 ## 1. Install from the checkout
 
-Run these commands from the repository root, where `pyproject.toml` and `examples/` are located:
+Clone the repository onto your device, then install from its root folder, where `pyproject.toml` and `examples/` are located:
 
 ```bash
+git clone https://github.com/Toomi16011601/backtest-witness.git
+cd backtest-witness
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -23,7 +25,7 @@ On Windows PowerShell, replace the activation command with `.\.venv\Scripts\Acti
 python -m examples.agent_integration --output failure-output-agent
 ```
 
-**Expected: `FAILURE_FOUND` and exit code 1.** The example is designed to teach the failure loop. Its baseline makes closed trades; execution stress breaches a declared relative-return policy: at most 0.5 percentage points of deterioration from its own baseline, with at least one closed trade. Minimum return is disabled, so the policy is not a profitability test. A failure is a useful result, not a crashed installation. Use a new or empty output directory; choose another name for later runs.
+**Expected: `FAILURE_FOUND` and exit code 1.** The example is designed to teach the failure loop. Its baseline makes closed trades; execution stress breaches a declared relative-return policy: at most 0.5 percentage points of deterioration from its own baseline, with at least one closed trade. Minimum return is disabled, so the policy is not a profitability test. A failure is a useful result, not a crashed installation. Use a new or empty output directory; choose another name for later runs. The CLI rejects occupied outputs before importing or executing a strategy.
 
 The files separate the decisions from the simulator:
 
@@ -34,13 +36,9 @@ The files separate the decisions from the simulator:
 
 The [agent integration walkthrough](agent-integration.md) explains how to replace each part and let a coding agent consume the results.
 
-## 3. Open and inspect the report
+## 3. Open the report file
 
-```bash
-backtest-witness serve --directory failure-output-agent
-```
-
-Open [http://127.0.0.1:8765](http://127.0.0.1:8765). Ctrl+C stops the loopback server. Secure HTTP preview supports macOS/Linux; on other platforms, open the trusted generated `failure-output-agent/index.html` directly. The HTML contains its data, CSS and JavaScript and works offline.
+Find **`failure-output-agent/index.html`** on your device using Finder or File Explorer and open it in your browser. Double-click the file or use your browser's Open File command. The HTML contains its data, CSS and JavaScript and works offline. You do not need a server, a website address or a process left running after the test finishes.
 
 Start with the baseline and policy, select a stressed scenario in the matrix, then inspect its native equity, positions and trades. Verified failure evidence records the reduced stress and changed observations. Replay & repair points to the fixture, pytest regression and receipt. These are saved results; changing a selection does not run the strategy again.
 
@@ -88,20 +86,29 @@ These illustrative thresholds are user policy, not a trading recommendation. Ret
 ```bash
 backtest-witness lab --adapter my_strategy:MyStrategy --engine backtesting \
   --engine-settings '{"cash": 10000, "commission": 0.001}' \
-  --data bars.csv --requirements requirements.json --output failure-output
+  --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
+  --requirements requirements.json --output failure-output --json
 ```
+
+Open **`failure-output/index.html`** from your project folder to view this run's report.
 
 Keep real agent code and private prices in a separate private project. Install BacktestWitness into that project's environment and run the CLI from there. Use one instrument's complete OHLCV history. `MyStrategy` must be importable. `--config parameters.json` passes strategy parameters to `Backtest.run`. The native adapter can also handle short orders; the small agent example's decision wrapper is intentionally long/flat.
 
-CSV shape:
+This command accepts an ordinary provider CSV:
 
 ```csv
-timestamp,available_at,symbol,open,high,low,close,volume
-2026-01-01T09:30:00+00:00,2026-01-01T09:30:00+00:00,DEMO,100,102,99,101,1200
-2026-01-01T09:35:00+00:00,2026-01-01T09:35:00+00:00,DEMO,101,103,100,102,1400
+Date,Open,High,Low,Close,Volume
+2025-01-02,100,102,99,101,1200
+2025-01-03,101,103,100,102,1400
 ```
 
-Supply enough bars for warmup and trading; these two rows only illustrate the schema. JSON accepts a list of row objects or `{"rows": [...]}`. Timestamps are aware bar-close times, normalized to UTC. `available_at` defaults to `timestamp`. The engine receives the complete table, so your decision logic must respect which records and features were actually available at each decision time. [Data contract](callback-contract.md).
+Supply enough bars for warmup and trading; these two rows only illustrate the schema. Choose the actual instrument, timezone and session-close convention for your dataset. A declared regular close does not account for early closes or an exchange calendar. Symbols and timezones are never inferred from filenames or your computer settings.
+
+For intraday timestamps labeling **bar opens**, use `--timestamp-kind open --bar-duration 1h` for hourly bars. Timestamps then normalize to bar closes; the original `Datetime` column is retained. If your strategy needs `Time`, add `--column-map '{"Time":"Datetime"}' --require-column Time` to copy the original source clock. Naive datetimes need `--timezone`. [Import options and examples](data-import.md).
+
+Already-normalized lowercase CSV remains supported without these conversion flags. JSON accepts a list of row objects or `{"rows": [...]}`. Normalized timestamps are aware UTC bar-close times; `available_at` defaults to `timestamp`. No missing bars or volume values are invented. The engine receives the complete table, so your logic must respect which records and features were actually available at each decision time. [Data contract](callback-contract.md).
+
+Native preflight checks direct data-column reads and referenced module globals still set to `None`. Use `--require-column` and `--require-global` for prerequisites the bounded inspection may miss. If a strategy depends on companion-market data, initialize that state in an importable adapter and declare `--companion-data data/market.csv` to bind its hash for replay. The tool does not initialize state for you. All-zero volume used by a strategy blocks execution unless `--allow-zero-volume` explicitly acknowledges partial validation. [Prerequisites and limitations](data-import.md#check-strategy-prerequisites).
 
 Extra stress fields are `commission_bps`, `spread_bps` and integer `delay_bars`; omitted fields are zero. Pass a JSON suite with `--scenarios scenarios.json`. Positive delay postpones discretionary market entries/manual closes beyond native next-open timing; protective SL/TP retains native timing. Delayed standalone stop/limit orders, market orders from `Strategy.init` and `trade_on_close` are unavailable. [Full execution guide](failure-lab.md).
 
@@ -114,7 +121,7 @@ backtest-witness replay-failure failure-output/failure-fixture.json \
   --adapter my_strategy:RepairedStrategy --config repaired-parameters.json
 ```
 
-Both the current baseline and saved stress must meet the unchanged policy on the full saved tape. Engine/version mismatch or unstable observations refuses comparison. Keep the fixture and receipt unchanged. A passing case is a scoped regression; assess separate reserved cases to see whether the change generalizes. [Python replay API](integrations.md#native-strategy-execution).
+Both the current baseline and saved stress must meet the unchanged policy on the full saved tape. Engine/version mismatch or unstable observations refuses comparison. Declared companion files must remain available under their saved project-relative paths with unchanged hashes; they are not bundled. Run replay from the project root. Keep the fixture and receipt unchanged. A passing case is a scoped regression; assess separate reserved cases to see whether the change generalizes. [Python replay API](integrations.md#native-strategy-execution).
 
 ## Commands and exit codes
 
@@ -126,7 +133,9 @@ Both the current baseline and saved stress must meet the unchanged policy on the
 | `audit` | No dependency observed | Future-data dependency found | Inconclusive / invalid / error |
 | `reproduce` | Tested future-data invariant holds | Dependency reproduced | Unstable / invalid fixture / error |
 
-`--json` on the agent example and `lab` emits a structured command summary pointing to `report.json`; read that file for full metrics and evidence. No cloud upload occurs. [Coding-agent tool wrapper](agent-integration.md#let-a-coding-agent-read-the-result).
+`--json` on the agent example and `lab` emits a structured command summary pointing to `report.json`; read that file for full metrics and evidence. `lab --json` and `audit --json` also return safe command errors with `status: "ERROR"`, a `phase` and `error.code`. A completed `INCONCLUSIVE` report is distinct from an input error. No built-in cloud upload occurs. [Coding-agent tool wrapper](agent-integration.md#let-a-coding-agent-read-the-result).
+
+For an opaque strategy exception, rerun `lab` or `audit` with `--diagnostics private-trace.txt`, using a new file **outside** the report output directory. This opt-in file can contain private source lines, paths and raw exception messages; portable reports and stdout retain safe summaries. Existing diagnostic files are never overwritten. Third-party indicator/helper incompatibilities still need manual investigation and a reviewed repair. [Troubleshooting and privacy](data-import.md#read-errors-without-sharing-private-traces).
 
 ## Larger public strategy casebook
 
@@ -135,8 +144,9 @@ Both the current baseline and saved stress must meet the unchanged policy on the
 python -m pip install '.[cases]'
 backtest-witness lab-cases --output failure-public-output
 # Expected exit 1: public variants breach their declared stress policy.
-backtest-witness serve --directory failure-public-output
 ```
+
+Open the generated `failure-public-output/index.html` file in your browser.
 
 The casebook uses frozen synthetic inputs and pinned public strategies. Its policy disables minimum return, permits at most 0.05 percentage points of deterioration and requires one closed trade. Losing baselines are allowed. `fixed` labels a disclosed causal variant of an independently reproduced future-data defect; it does not mean execution resilience. [Sources and scope](public-strategies.md).
 

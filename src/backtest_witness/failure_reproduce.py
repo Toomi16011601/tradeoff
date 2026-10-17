@@ -97,28 +97,44 @@ def assert_failure_resilience(run, fixture, *, config=None):
 
     Saved observations describe the defect; repairs need not reproduce those
     hashes. Overrides are explicit JSON configuration and never alter the saved
-    hashes. Relative deterioration always uses this runner's current baseline.
+    hashes. The saved runner specification and starting cash preserve the same
+    engine environment; strategy source and configuration repairs remain allowed.
+    Relative deterioration always uses this runner's current baseline.
     """
     data = _validated_fixture(fixture)
     if not callable(run):
         raise ValueError('run must be callable')
     options = validate_config(data['config'] if config is None else config)
+    saved_spec = validate_runner_spec(data['runner_spec'])
+    saved_inputs = saved_spec.get('integration')
+    if saved_inputs is not None:
+        from .execution import _check_companions, validate_integration
+        saved_inputs = validate_integration(saved_inputs)
+        _check_companions(saved_inputs)
+    current_spec = validate_runner_spec(getattr(run, 'runner_spec',
+                                               {'engine': 'callback', 'engine_settings': {}}))
+    if current_spec != saved_spec:
+        raise ValueError('Execution runner_spec differs from saved simulation; comparison refused before execution')
     runtime = data['runtime']
     declared = getattr(run, 'adapter_info', {})
     if isinstance(declared, dict) and declared.get('version') is not None and declared['version'] != runtime['engine_version']:
         raise ValueError('Declared runner engine version mismatch; comparison refused before execution')
     rows = validate_rows(data['rows'])
 
-    def repeated(stress):
+    def repeated(stress, saved):
         results = []
         try:
             for _ in range(2):
+                if saved_inputs is not None:
+                    _check_companions(saved_inputs)
                 try:
                     output = run(deepcopy(rows), deepcopy(options), data['seed'], deepcopy(stress))
                 except Exception as exc:
                     raise ValueError('Failure replay: ' + callback_error(exc)) from None
                 result = validate_execution_result(output, rows, stress)
                 _runtime_matches(result, runtime)
+                if result['initial_cash'] != saved['initial_cash']:
+                    raise ValueError('Execution initial_cash differs from saved simulation; comparison refused')
                 results.append(result)
         except Exception as exc:
             raise ValueError(f'Failure replay is not comparable: {type(exc).__name__}: {exc}') from None
@@ -126,8 +142,8 @@ def assert_failure_resilience(run, fixture, *, config=None):
             raise ValueError('Execution observations are not repeatable on identical failure replay inputs')
         return results[0]
 
-    baseline = repeated(ZERO_SCENARIO)
-    stress = repeated(data['scenario'])
+    baseline = repeated(ZERO_SCENARIO, data['observations']['baseline'])
+    stress = repeated(data['scenario'], data['observations']['stress'])
     _comparable(baseline, stress)
     base_metrics, stress_metrics = execution_metrics(baseline), execution_metrics(stress)
     base_errors = requirement_violations(base_metrics, data['requirements'])

@@ -2,6 +2,14 @@
 
 Scope: publication files and Git history, current package archives and their headers, screenshot pixels/metadata, owned runtime, report export/rendering, local preview, bundled strategy loading, CI and declared dependency versions. Private trading projects were outside scope.
 
+## Refresh — 17 October 2026
+
+The final release audit rechecked all current publication candidates, both reachable commits, fresh source/wheel packages, archive headers, screenshots and bundled notices. It reproduced and fixed a direct Python export gap: tuples serialize as JSON arrays, so recognized sensitive fields now receive the same recursive checks inside tuples as lists. Cycle/depth limits remain enforced before either report writer creates files. Repair replay also now preserves the saved runner settings and starting capital; changing the simulation environment can no longer dilute a percentage-based failure into a passing repair.
+
+Fresh [OSV](https://osv.dev/) API checks returned no matches for 28 public package-version pairs covering the clean lab resolution, pinned optional cases, and relevant build/development versions. Only public package names/versions were submitted. This is a dated advisory result, not a security certificate or complete transitive/native-library audit. The pinned [checkout commit](https://github.com/actions/checkout/commit/11d5960a326750d5838078e36cf38b85af677262) and [setup-python commit](https://github.com/actions/setup-python/commit/a26af69be951a213d495a4c3e4e4022e16d87065) resolve in their official upstream repositories.
+
+Local ignored virtual environments, bytecode and build metadata can contain a local home path. They are excluded from the publication candidates and both archives; do not publish a raw workspace directory or force-add ignored files. Source and archive scans cannot establish globally leak-free status.
+
 ## Findings resolved
 
 - Removed account-specific launch metadata and internal session records. Prepared a neutral publication history; original local history and stale archives are retained in a private backup outside the repository.

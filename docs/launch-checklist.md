@@ -1,6 +1,6 @@
-# Launch checklist — not yet published
+# Publication and follow-up checklist
 
-The current 0.3.0 alpha build is local and unreleased. [Copy-ready GitHub metadata and naming evidence](github-launch.md) are saved; publication remains pending.
+The 0.3.0 alpha source is available on [GitHub](https://github.com/Toomi16011601/backtest-witness). [Repository metadata and naming evidence](github-launch.md) are recorded. Package publication, tags and promotion remain separate follow-up work.
 
 - [x] Select repository/display name, description and topics.
 - [x] Check repository/package naming conflicts and select `backtest-witness` / `BacktestWitness`.
@@ -9,12 +9,14 @@ The current 0.3.0 alpha build is local and unreleased. [Copy-ready GitHub metada
 - [x] Verify complete invocation accounting, visible unsupported/budget-limited scenarios and unchanged full history during reduction.
 - [x] Inspect desktop/mobile/keyboard report flows and sibling artifact targets; verify installed wheel/sdist behavior. Browser download-event handling remains unverified as recorded in acceptance evidence.
 - [x] Review tracked artifacts for private code/data and credential patterns; preserve pinned public source bytes and bundled MIT notices.
+- [x] Complete the 17 October final privacy/engine review; fix tuple-export scanning and repair replay environment binding, with regressions.
 - [x] Explain the decision-agent/coding-agent roles; verify the simple adapter, fresh regular install, structured tool output and replay from a separate project.
-- [ ] Recheck candidate name availability immediately before creation; checks do not reserve names.
-- [ ] Choose the public hosting account or organization; its identity will be visible.
-- [ ] Create the public repository, apply the saved description/topics and push only when authorized.
-- [ ] Run actual hosted CI after the first authorized push.
-- [ ] Add real repository links, a remote CI badge and a tagged release only after they exist.
+- [x] Recheck candidate name availability immediately before creation; checks do not reserve names.
+- [x] Select the authenticated public hosting account; its identity is visible.
+- [x] Publish the audited source in the public repository with the selected description/topics after explicit authorization.
+- [x] Configure hosted CI on pushes; consult the [actual workflow results](https://github.com/Toomi16011601/backtest-witness/actions/workflows/tests.yml) for each commit.
+- [x] Add the actual repository and workflow links.
+- [ ] Create a tagged release only when separately authorized.
 - [ ] Record a short demo: declare policy → native cost/delay failure → paired evidence → saved fixture → failing pytest → repair replay passes. Include the separate future-data workflow when relevant.
 - [ ] Share concrete evidence with backtester/agent developers and ask them to try an adapter.
 - [ ] Collect false positives/negatives and onboarding friction before expanding the feature list.

@@ -151,3 +151,42 @@ def test_gallery_does_not_export_recognized_private_names(tmp_path, lab):
     with pytest.raises(ValueError, match='sensitive'):
         (write_failure_gallery if lab else write_gallery)(destination, entries)
     assert not destination.exists()
+
+
+@pytest.mark.parametrize('lab', [False, True])
+@pytest.mark.parametrize('container', [list, tuple])
+@pytest.mark.parametrize('field', ['api_key', 'email'])
+def test_report_exports_reject_sensitive_fields_nested_in_serializable_sequences(
+        tmp_path, lab, container, field):
+    # JSON serialization accepts tuples, so privacy checks must inspect them
+    # before either writer can put recognized credentials/contact fields on disk.
+    report = (run_failure_lab(execution, bars(), scenarios=[scenario(200)])
+              if lab else audit(future_last, tape(), min_history=1))
+    report['extra_context'] = [container([{'nested': [{field: 'SYNTHETIC_SEQUENCE_SENTINEL'}]}])]
+    destination = tmp_path / 'portable'
+    with pytest.raises(ValueError, match='sensitive'):
+        (write_failure_report if lab else write_report)(report, destination)
+    assert not destination.exists()
+
+
+def test_privacy_checks_reject_tuple_cycles_and_excessive_nesting():
+    from backtest_witness.privacy import reject_sensitive_data
+    children = []
+    cycle = (children,)
+    children.append(cycle)
+    with pytest.raises(ValueError, match='cycle'):
+        reject_sensitive_data(cycle)
+    nested = 'ordinary'
+    for _ in range(258):
+        nested = (nested,)
+    with pytest.raises(ValueError, match='nesting depth'):
+        reject_sensitive_data(nested)
+
+
+def test_privacy_checks_allow_empty_tuple_credential_slots_and_shared_sequences():
+    from backtest_witness.privacy import reject_sensitive_data
+    shared = ('ordinary', {'window': 3})
+    value = {'api_key': (), 'email': (), 'features': [shared, shared]}
+    before = deepcopy(value)
+    reject_sensitive_data(value)
+    assert value == before

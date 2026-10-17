@@ -72,6 +72,22 @@ def _policy(report):
     return f'<article class="panel policy"><span class="eyebrow">YOUR REQUIREMENTS</span><h2>A declared policy.</h2>{_facts(values)}<p class="subtle">A failure is a policy breach under simulated assumptions. A passing result covers only the completed declared scenarios.</p></article>'
 
 
+def _input_checks(report):
+    checks = report.get('input_checks')
+    if not checks:
+        return ''
+    warnings = list(checks.get('warnings') or [])
+    warnings.extend(item.get('message', 'Input limitation recorded')
+                    for item in checks.get('data_warnings') or [])
+    return ('<section id="input-checks" class="panel"><span class="eyebrow">INPUT CHECKS</span>'
+            '<h2>Input limitations and declarations.</h2>'
+            + _list(warnings, 'No input limitations reported by these bounded checks.')
+            + '<p>Direct attribute checks do not verify helper functions, dynamic features or companion-data semantics. '
+              'A completed simulation does not establish faithful strategy integration.</p>'
+            + '<details><summary>Declared fields and static inspection scope</summary>'
+            + _pre(checks) + '</details></section>')
+
+
 def _matrix(report):
     entries = [("Baseline", {"commission_bps": 0, "spread_bps": 0, "delay_bars": 0}, report.get('baseline') or {})]
     entries += [(item.get('name', 'Scenario'), item.get('scenario'), item) for item in report.get('scenarios') or []]
@@ -234,7 +250,7 @@ def render_failure_report(report: dict) -> str:
     data = report.get('dataset') or {}
     hero = f'''<section class="hero"><div class="report-ribbon"><span class="eyebrow">STRATEGY FAILURE LAB / {_escape(data.get('symbol', 'DATASET'))}</span><span class="mono">{_escape(report.get('report_id'))}</span></div><span class="status {tone}">{_escape(label)}</span><h1>{_escape(title)}</h1><p class="hero-description">{_escape(report.get('headline') or '')}</p><p>{_escape(report.get('reason') or '')}</p><div class="hero-facts">{_facts([('Strategy', report.get('strategy_ref') or 'Local execution callback'), ('Full tape', f"{data.get('row_count', 0)} bars"), ('Period', f"{data.get('start', 'Unavailable')} → {data.get('end', 'Unavailable')}"), ('Created', report.get('created_at'))])}</div></section>'''
     nav = '<nav aria-label="Report sections">' + ''.join(f'<a href="#{key}">{label}</a>' for key, label in [('scenarios', 'Scenarios'), ('comparison', 'Equity'), ('failure', 'Failure'), ('replay', 'Replay'), ('method', 'Scope')]) + '</nav>'
-    return _document(hero + nav + _policy(report) + _matrix(report) + _comparison(report) + _failure(report) + _replay(report, artifacts) + _method(report), title=f'BacktestWitness · {label}', report=report)
+    return _document(hero + nav + _policy(report) + _input_checks(report) + _matrix(report) + _comparison(report) + _failure(report) + _replay(report, artifacts) + _method(report), title=f'BacktestWitness · {label}', report=report)
 
 
 def write_failure_report(report: dict, output_dir: str | Path) -> Path:

@@ -1,19 +1,36 @@
 # Changelog
 
-## Agent onboarding — unreleased
+## 0.3.0 — 2026-10-17 · public source alpha
+
+### Final release audit
+
+- Reject recognized sensitive fields nested inside Python tuples before serializing reports, with the same cycle/depth checks as lists.
+- Preserve the saved runner settings and starting capital during repair replay, so changing the simulation environment cannot turn a failed policy into a passing repair. Strategy source and parameter repairs remain supported.
+
+### Data import and integration checks
+
+- Make own-device execution explicit and use direct report-file opening throughout setup; remove local web addresses and server commands from the normal walkthroughs.
+- Accept provider-style CSV headers with explicit symbol, timezone, session-close and bar-open duration conventions; retain source clocks and extra input columns with target-to-source mappings.
+- Reject ambiguous headers, DST-ambiguous naive timestamps, missing volume and conflicting mappings; report zero-volume and irregular-spacing limitations without filling observations.
+- Preflight occupied outputs before strategy import or execution, and return safe structured CLI errors with phase and code.
+- Add bounded native strategy column/global checks, explicit prerequisites, partial-validation acknowledgements and project-local companion path/hash bindings for replay.
+- Record available strategy/adapter source hashes and known runtime package versions without blocking source repairs or claiming a bundled environment.
+- Add opt-in private local diagnostics outside portable reports, using exclusive file creation and owner-only POSIX permissions.
+
+### Agent onboarding
 
 - Explain the strategy-testing workflow and the roles of the trading agent, native simulator and coding agent.
 - Add a runnable agent decision function, native strategy adapter and machine-readable check with replayable failure evidence.
 - Document the first-use install/run/replay path and check it separately from the optional public-strategy casebook in CI.
 
-## Privacy and security hardening — unreleased
+### Privacy and security hardening
 
 - Remove identifying launch/session/history metadata from the publication snapshot and normalize source archive ownership/timestamps.
 - Reject recognized sensitive inputs and exports; omit ordinary callback exception messages from portable evidence and replay errors.
 - Confine HTTP preview to known loopback report artifacts with no-follow filesystem traversal, host/origin checks and CSP.
 - Pin CI action commits, restrict token access, and tighten security-fixed development/build minimums.
 
-## 0.3.0 — unreleased alpha
+### Strategy failure lab
 
 - Native Backtesting.py execution reruns under additional commission, spread and market-order bar delay, with authentic equity, closed/open trades and pending orders.
 - Declared resilience requirements, repeatability gates, bounded scenario reduction, paired observations and hashed failure fixtures with generated pytest replay.
@@ -39,4 +56,4 @@
 - Conditional one-share cost/delay projections and real optional engine adapters.
 - Offline evidence reports and three no-key synthetic demo cases.
 
-The 0.1.0 scope was one instrument, long/flat targets and deterministic callbacks. Both versions remain unpublished.
+The 0.1.0 scope was one instrument, long/flat targets and deterministic callbacks. The earlier 0.1.0 and 0.2.0 versions were local development versions and were not published.

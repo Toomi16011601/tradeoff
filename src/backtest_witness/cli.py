@@ -2,15 +2,36 @@
 from __future__ import annotations
 
 import argparse
-import csv
+from contextlib import nullcontext
 from functools import partial
 from http.server import ThreadingHTTPServer
 import json
 from pathlib import Path
+import re
 import sys
 from types import SimpleNamespace
 
 from . import __version__
+from .data import load_data
+
+
+DIAGNOSTICS_HINT = ('Rerun with --diagnostics <private-file-outside-output> for a private local traceback; '
+                    'review that file before sharing.')
+
+
+class _ArgumentError(ValueError):
+    code = 'INVALID_ARGUMENTS'
+
+
+class _ArgumentParser(argparse.ArgumentParser):
+    def __init__(self, *args, json_errors=False, **kwargs):
+        self.json_errors = json_errors
+        super().__init__(*args, **kwargs)
+
+    def error(self, message):
+        if self.json_errors:
+            raise _ArgumentError('Invalid command arguments; use the command help to check required arguments and options')
+        super().error(message)
 
 
 def import_adapter(reference):
@@ -18,30 +39,98 @@ def import_adapter(reference):
     return resolve_runner(reference)
 
 
-def load_data(path):
-    path = Path(path)
-    if path.suffix.lower() == ".csv":
-        with path.open(encoding="utf-8-sig", newline="") as stream:
-            rows = list(csv.DictReader(stream))
-        for index, row in enumerate(rows):
-            for key in ("open", "high", "low", "close", "volume"):
-                try:
-                    row[key] = float(row[key])
-                except (KeyError, TypeError, ValueError) as exc:
-                    raise ValueError(f"CSV row {index + 2}: {key} must be numeric") from exc
-        return rows
-    if path.suffix.lower() == ".json":
-        content = json.loads(path.read_text(encoding="utf-8"))
-        return content.get("rows") if isinstance(content, dict) else content
-    raise ValueError("Data must be a .csv or .json file")
+def validate_output(path):
+    """Reject occupied outputs before importing or running strategy code."""
+    selected = Path(path).expanduser()
+    if selected.is_symlink():
+        raise ValueError('Output must be a new or empty directory; symbolic links are not supported')
+    folder = selected.resolve()
+    if folder.exists() and (not folder.is_dir() or any(folder.iterdir())):
+        raise ValueError('Output must be a new or empty directory; choose a fresh output location')
+    return folder
 
 
 def prepare_output(path):
-    folder = Path(path).expanduser().resolve()
-    if folder.exists() and (not folder.is_dir() or any(folder.iterdir())):
-        raise ValueError(f"Output must be a new or empty directory: {folder}")
+    folder = validate_output(path)
     folder.mkdir(parents=True, exist_ok=True)
     return folder
+
+
+def data_options(args):
+    """Translate explicit import options shared by audit and the failure lab."""
+    mapping = json.loads(args.column_map) if getattr(args, 'column_map', None) else None
+    return {**{name: getattr(args, name, None) for name in
+               ('symbol', 'timezone', 'timestamp_column', 'bar_duration', 'session_close')},
+            'timestamp_kind': getattr(args, 'timestamp_kind', 'close'), 'column_map': mapping}
+
+
+def add_data_options(parser):
+    parser.add_argument('--symbol', help='Explicit instrument when the data has no Symbol column')
+    parser.add_argument('--timezone', help='IANA timezone for naive source timestamps, such as America/New_York')
+    parser.add_argument('--timestamp-column', help='Source timestamp column when automatic detection is ambiguous')
+    parser.add_argument('--timestamp-kind', choices=['close', 'open'], default='close',
+                        help='Whether source timestamps label bar closes or opens')
+    parser.add_argument('--bar-duration', help='Fixed duration for bar-open labels, such as 15m or 1h')
+    parser.add_argument('--session-close', help='Local HH:MM closing time for date-only session labels')
+    parser.add_argument('--column-map', help='JSON object mapping target columns to source columns; extra features are preserved')
+
+
+def add_diagnostics_option(parser):
+    parser.add_argument('--diagnostics', metavar='PRIVATE_FILE',
+                        help='Opt in to raw local exception traces in a new file outside the report output; may contain private data')
+
+
+def _diagnostics_context(args):
+    from .diagnostics import local_diagnostics
+    path = getattr(args, 'diagnostics', None)
+    if path is None:
+        return nullcontext()
+    private = Path(path).expanduser().resolve()
+    output = getattr(args, 'output', None)
+    protected_folders = []
+    if output is not None:
+        protected_folders.append(Path(output).expanduser().resolve())
+    if output is None and getattr(args, 'command', None) in {'reproduce', 'replay-failure'}:
+        fixture = Path(args.fixture).expanduser()
+        protected_folders.extend((fixture.parent.resolve(), fixture.resolve().parent))
+    for folder in protected_folders:
+        if private == folder or folder in private.parents:
+            exc = ValueError('Private diagnostics must be outside the portable report output directory')
+            exc.code = 'DIAGNOSTICS_LOCATION'
+            raise exc
+    return local_diagnostics(path)
+
+
+def _command_error(exc, args, *, as_json=False):
+    """Return useful trusted input errors without echoing arbitrary strategy text."""
+    from .privacy import reject_sensitive_data
+    phase = getattr(args, '_phase', 'arguments')
+    safe_input = phase in {'arguments', 'diagnostics', 'output', 'data', 'config',
+                          'requirements', 'scenarios', 'settings', 'integration', 'preflight'}
+    code = getattr(exc, 'code', None) if safe_input else None
+    if not isinstance(code, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]{0,63}', code):
+        code = 'INVALID_JSON' if isinstance(exc, json.JSONDecodeError) else (
+            'INVALID_INPUT' if isinstance(exc, (ValueError, OSError, TypeError, KeyError, ImportError))
+            and safe_input else 'EXECUTION_ERROR')
+    message = 'Command failed; exception details are omitted for privacy'
+    if isinstance(exc, OSError):
+        message = 'A local input or output file could not be accessed; check paths and permissions'
+    elif safe_input and isinstance(exc, (ValueError, TypeError, KeyError, ImportError)):
+        try:
+            candidate = str(exc)
+            reject_sensitive_data(candidate)
+            message = candidate[:1000]
+        except Exception:
+            message = 'Input validation failed; sensitive diagnostic details are omitted'
+    hint = DIAGNOSTICS_HINT if hasattr(args, 'diagnostics') else 'Use the command help to check inputs and options.'
+    summary = {'status': 'ERROR', 'phase': phase,
+               'error': {'code': code, 'type': type(exc).__name__, 'message': message,
+                         'hint': hint}}
+    if as_json:
+        print(json.dumps(summary, allow_nan=False))
+    else:
+        print(f'Error: {message}\n{hint}', file=sys.stderr)
+    return 2
 
 
 def save_audit(callback, rows, config, folder, reference, args, *, provenance=None):
@@ -87,7 +176,9 @@ def _demo(args):
     from . import demos
     from .report import write_gallery
 
+    args._phase = 'output'
     folder = prepare_output(args.output)
+    args._phase = 'settings'
     rows = demos.synthetic_rows()
     entries = []
     scenarios = [
@@ -113,16 +204,28 @@ def _demo(args):
 
 def _audit(args):
     from .adapters import resolve_runner
+    args._phase = 'output'
+    validate_output(args.output)
+    args._phase = 'settings'
     engine_settings = json.loads(args.engine_settings) if args.engine_settings else {}
-    callback = resolve_runner(args.adapter, engine=args.engine, engine_settings=engine_settings)
-    rows = load_data(args.data)
+    args._phase = 'data'
+    rows = load_data(args.data, **data_options(args))
+    args._phase = 'config'
     config = json.loads(Path(args.config).read_text(encoding="utf-8")) if args.config else {}
     # Validate before creating output, so malformed data does not leave empty directories.
     from .validation import validate_rows, validate_config
     rows, config = validate_rows(rows), validate_config(config)
+    args._phase = 'strategy_import'
+    callback = resolve_runner(args.adapter, engine=args.engine, engine_settings=engine_settings)
+    args._phase = 'output'
     folder = prepare_output(args.output)
+    args._phase = 'execution'
     report = save_audit(callback, rows, config, folder, args.adapter, args)
-    print(f"{report['status']}: {report['headline']}\nOpen: {folder / 'index.html'}")
+    if args.json:
+        print(json.dumps({'status': report['status'], 'report_id': report['report_id'],
+                          'report': str(folder / 'report.json'), 'interface': str(folder / 'index.html')}, allow_nan=False))
+    else:
+        print(f"{report['status']}: {report['headline']}\nOpen: {folder / 'index.html'}")
     return {"FOUND": 1, "NO_DEPENDENCY_OBSERVED": 0, "INCONCLUSIVE": 2}[report["status"]]
 
 
@@ -131,7 +234,9 @@ def _cases(args):
     from .report import write_gallery, write_report
     from .reproduce import assert_future_invariance, load_fixture, InvarianceError, UnstableRunError
 
+    args._phase = 'output'
     folder = prepare_output(args.output)
+    args._phase = 'execution'
     entries, summaries = [], []
     for name in ([args.case] if args.case else CASES):
         case = get_case(name)
@@ -182,6 +287,7 @@ def _cases(args):
 def _reproduce(args):
     from .reproduce import load_fixture, assert_future_invariance, InvarianceError, UnstableRunError
 
+    args._phase = 'config'
     fixture = load_fixture(args.fixture)
     reference = args.adapter or fixture.get("strategy_ref")
     from .adapters import resolve_runner
@@ -189,7 +295,9 @@ def _reproduce(args):
     engine = args.engine or spec["engine"]
     engine_settings = (json.loads(args.engine_settings) if args.engine_settings is not None
                        else (spec["engine_settings"] if engine == spec["engine"] else {}))
+    args._phase = 'strategy_import'
     callback = resolve_runner(reference, engine=engine, engine_settings=engine_settings)
+    args._phase = 'execution'
     try:
         assert_future_invariance(callback, fixture)
     except UnstableRunError as exc:
@@ -205,6 +313,7 @@ def _reproduce(args):
 def _serve(args):
     from .preview import PreviewHTTPRequestHandler, require_secure_preview_support
 
+    args._phase = 'output'
     folder = Path(args.directory).expanduser().resolve()
     if not folder.is_dir():
         raise ValueError(f"Report directory does not exist: {folder}")
@@ -239,18 +348,24 @@ def _audit_options(parser):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="backtest-witness", description="Find what breaks a strategy and keep a reproducible test.")
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    as_json = '--json' in arguments
+    parser = _ArgumentParser(prog="backtest-witness", description="Find what breaks a strategy and keep a reproducible test.",
+                             json_errors=as_json)
     parser.add_argument("--version", action="version", version=f"BacktestWitness {__version__}")
-    sub = parser.add_subparsers(dest="command", required=True)
+    sub = parser.add_subparsers(dest="command", required=True,
+                               parser_class=partial(_ArgumentParser, json_errors=as_json))
     from .failure_cli import add_failure_commands
     add_failure_commands(sub)
     demo = sub.add_parser("demo", help="Build three offline synthetic reports; no keys required")
     demo.add_argument("--output", default="demo-output")
+    add_diagnostics_option(demo)
     _audit_options(demo)
     demo.set_defaults(handler=_demo)
     cases = sub.add_parser("cases", help="Run pinned public strategies and verify their causal repairs; optional cases dependencies")
     cases.add_argument("--case", choices=["riskkit", "coinglass"], help="Run just one public case")
     cases.add_argument("--output", default="public-output")
+    add_diagnostics_option(cases)
     _audit_options(cases)
     cases.set_defaults(handler=_cases, min_history=None, max_probes=None, max_calls=None, initial_cash=100000)
     audit = sub.add_parser("audit", help="Audit a local callback on CSV or JSON bars")
@@ -261,6 +376,9 @@ def main(argv=None):
     audit.add_argument("--data", required=True)
     audit.add_argument("--config", help="JSON object passed to the callback")
     audit.add_argument("--output", default="audit-output")
+    audit.add_argument('--json', action='store_true', help='Emit a structured command summary')
+    add_data_options(audit)
+    add_diagnostics_option(audit)
     _audit_options(audit)
     audit.set_defaults(handler=_audit)
     reproduce = sub.add_parser("reproduce", help="Assert the saved future-invariance test against a callback")
@@ -269,17 +387,26 @@ def main(argv=None):
     reproduce.add_argument("--engine", choices=["callback", "targets", "pandas", "backtrader", "backtesting"],
                            help="Override adapter type; defaults to the saved fixture")
     reproduce.add_argument("--engine-settings", help="Override saved engine options with a JSON object")
+    add_diagnostics_option(reproduce)
     reproduce.set_defaults(handler=_reproduce)
     serve = sub.add_parser("serve", help="Preview an existing report on localhost")
     serve.add_argument("--directory", default="demo-output")
     serve.add_argument("--port", type=int, default=8765)
     serve.set_defaults(handler=_serve)
-    args = parser.parse_args(argv)
+    args = SimpleNamespace(_phase='arguments')
     try:
-        return args.handler(args)
-    except (ValueError, OSError, TypeError, KeyError, ImportError) as exc:
-        print(f"Error: {exc}", file=sys.stderr)
-        return 2
+        args = parser.parse_args(arguments)
+        args._phase = 'diagnostics'
+        with _diagnostics_context(args):
+            try:
+                args._phase = 'execution'
+                return args.handler(args)
+            except Exception as exc:
+                from .diagnostics import record_exception
+                record_exception(exc)
+                raise
+    except Exception as exc:
+        return _command_error(exc, args, as_json=as_json)
 
 
 if __name__ == "__main__":

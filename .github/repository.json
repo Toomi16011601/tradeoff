@@ -1,7 +1,7 @@
 {
   "schema_version": "backtest-witness.launch.v1",
-  "status": "prepared-local",
-  "owner": null,
+  "status": "public-source-alpha",
+  "owner": "Toomi16011601",
   "name": "backtest-witness",
   "display_name": "BacktestWitness",
   "description": "Strategy failure lab for trading bots. Stress real engine costs and delays, investigate failures, and export replayable regression tests.",
@@ -22,15 +22,16 @@
     "reproducibility"
   ],
   "availability_check": {
-    "date": "2026-10-14",
+    "date": "2026-10-17",
     "github_name_search_matches": 0,
     "pypi_json_status": 404,
     "reserved": false
   },
   "publication": {
-    "repository_created": false,
-    "remote_added": false,
-    "pushed": false,
+    "repository_created": true,
+    "remote_added": true,
+    "pushed": true,
     "package_published": false
-  }
+  },
+  "url": "https://github.com/Toomi16011601/backtest-witness"
 }

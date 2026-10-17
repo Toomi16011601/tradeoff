@@ -212,3 +212,74 @@ def test_repair_with_fabricated_closed_trade_is_invalid_not_scoped_pass(tmp_path
         return result
     with pytest.raises(ValueError, match='trade'):
         module.assert_failure_resilience(fabricated, fixture)
+
+
+@pytest.mark.parametrize('changed_settings', [
+    {'cash': 1000000}, {'cash': 1000, 'commission': .001},
+    {'cash': 1000, 'spread': .001}, {'cash': 1000, 'margin': .5},
+    {'cash': 1000, 'trade_on_close': True}, {'cash': 1000, 'exclusive_orders': True},
+])
+def test_native_repair_cannot_change_saved_engine_settings_before_execution(tmp_path, changed_settings):
+    pytest.importorskip('backtesting')
+    from backtesting import Strategy
+    from backtest_witness.execution import make_backtesting_execution_runner
+    calls = []
+
+    class RoundTrip(Strategy):
+        def init(self):
+            pass
+        def next(self):
+            calls.append(len(self.data))
+            if len(self.data) == 2:
+                self.buy(size=4)
+            if len(self.data) == 3:
+                self.position.close()
+
+    original = make_backtesting_execution_runner(RoundTrip, engine_settings={'cash': 1000})
+    report = lab_api()(original, bars(), scenarios=[scenario(200)],
+                       requirements={'min_return_pct': None, 'max_return_drop_pct': .1,
+                                     'min_closed_trades': 1})
+    assert report['status'] == 'FAILURE_FOUND'
+    module = api()
+    module.export_failure_reproducer(report, tmp_path, 'saved_strategy:RoundTrip')
+    fixture = module.load_failure_fixture(tmp_path / 'failure-fixture.json')
+    altered = make_backtesting_execution_runner(RoundTrip, engine_settings=changed_settings)
+    calls.clear()
+    with pytest.raises(ValueError, match='runner_spec'):
+        module.assert_failure_resilience(altered, fixture)
+    assert calls == []
+
+
+@pytest.mark.parametrize('declare_spec', [False, True])
+@pytest.mark.parametrize('change_on', ['both', 'baseline', 'stress'])
+def test_callback_repair_cannot_dilute_saved_policy_by_changing_initial_cash(tmp_path, declare_spec, change_on):
+    module, fixture, _ = exported(tmp_path, {'min_return_pct': None, 'max_return_drop_pct': 5})
+    def recapitalized(rows, config, seed, stress):
+        result = execution(rows, config, seed, stress)
+        if change_on == 'both' or (change_on == 'baseline') == (stress['commission_bps'] == 0):
+            result['initial_cash'] = 1000000
+            result['effective_settings']['cash'] = 1000000
+            for point in result['equity']:
+                point['equity'] += 999900
+        return result
+    if declare_spec:
+        recapitalized.runner_spec = deepcopy(execution.runner_spec)
+    with pytest.raises(ValueError, match='initial_cash'):
+        module.assert_failure_resilience(recapitalized, fixture)
+
+
+@pytest.mark.parametrize('declare_spec', [False, True])
+def test_callback_config_repair_can_update_metadata_with_saved_cash(tmp_path, declare_spec):
+    module, fixture, _ = exported(tmp_path)
+    before = deepcopy(fixture)
+    def repaired(rows, config, seed, stress):
+        result = execution(rows, config, seed, stress)
+        result['effective_settings']['strategy_source_hash'] = 'repaired-source'
+        return result
+    if declare_spec:
+        repaired.runner_spec = deepcopy(execution.runner_spec)
+    receipt = module.assert_failure_resilience(repaired, fixture, config={'repair': True})
+    assert receipt['status'] == 'PASS'
+    assert receipt['baseline']['result']['initial_cash'] == 100
+    assert receipt['stress']['result']['initial_cash'] == 100
+    assert fixture == before

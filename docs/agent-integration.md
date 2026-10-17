@@ -1,6 +1,6 @@
 # Connect an agent to the local failure lab
 
-BacktestWitness is a crash-test and debugging tool for a strategy before deployment. It checks decisions your strategy already makes. The execution path is:
+BacktestWitness is a crash-test and debugging tool you install and run on your own computer before deploying a strategy. Your copy tests your strategy and saves reports on your device; it does not depend on the publisher's computer being online. The execution path is:
 
 ```text
 Trading decision function → Backtesting.py Strategy → native simulated orders
@@ -25,10 +25,9 @@ From the repository root, with a virtual environment active:
 python -m pip install '.[lab]'
 python -m examples.agent_integration --output failure-output-agent
 # Expected exit 1: FAILURE_FOUND is the intended teaching result.
-backtest-witness serve --directory failure-output-agent
 ```
 
-Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The loopback preview server supports macOS/Linux; on other platforms, open the trusted generated HTML directly. Use a new or empty output directory for each run. The example uses synthetic data and needs no AI API key or price download. [Environment setup](quickstart.md#1-install-from-the-checkout).
+Open `failure-output-agent/index.html` from your file manager in a browser. This is a saved report file; no server is needed. Use a new or empty output directory for each run. The example uses synthetic data and needs no AI API key or price download. [Environment setup](quickstart.md#1-install-from-the-checkout).
 
 The explicit teaching policy allows at most **0.5 percentage points** of return deterioration from the same baseline and requires at least **one closed trade**. Minimum return is disabled. A losing baseline can meet this policy: it checks execution sensitivity, not profitability. The lab reruns its default declared suite of additional commission, spread and delay scenarios.
 
@@ -64,7 +63,7 @@ The included wrapper supports long/flat decisions on one instrument. For shorts,
 Keep real agent code and private prices in a **separate private project**. Install BacktestWitness in that project’s environment and run the CLI from its root, where your strategy module is importable. The repository example is for learning with synthetic inputs.
 
 1. Copy the example pattern into your own importable private project module. Replace `decide` with the historical decision logic you want to test, keeping its long/flat contract if you reuse this adapter.
-2. Supply one instrument's complete OHLCV history instead of the bundled synthetic tape. The CLI accepts CSV or JSON through `--data`; use aware bar-close timestamps and preserve `available_at`. [Input schema](quickstart.md#test-your-own-strategy).
+2. Supply one instrument's complete OHLCV history instead of the bundled synthetic tape. The CLI accepts CSV or JSON through `--data`, including ordinary provider headers with explicit symbol/timezone/session conventions. [Import guide](data-import.md).
 3. Choose requirements before interpreting the run. Keep a minimum closed-trade requirement if an inactive strategy should not count as a repair.
 4. Run the strategy class with `lab`, then inspect `report.json` and replay any verified failure.
 
@@ -72,14 +71,21 @@ For example, after saving your class as `my_agent.strategy:AgentStrategy` and yo
 
 ```bash
 backtest-witness lab --adapter my_agent.strategy:AgentStrategy --engine backtesting \
-  --data bars.csv --requirements requirements.json --output failure-output-my-agent --json
+  --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
+  --requirements requirements.json --output failure-output-my-agent --json
 ```
+
+Open `failure-output-my-agent/index.html` to inspect the report on your computer. Your coding agent can read `failure-output-my-agent/report.json` directly.
+
+This example assumes date-only labels and `Date,Open,High,Low,Close,Volume` headers. Choose the dataset's actual conventions. For hourly source bar-open labels, use `--timestamp-kind open --bar-duration 1h`; `--column-map '{"Time":"Datetime"}'` preserves the original clock for a strategy needing `Time`. No missing bars or exchange calendar are inferred.
+
+Native CLI preflight catches some missing columns, referenced globals left at `None` and all-zero volume used by a strategy. Declare hidden prerequisites with repeated `--require-column` and `--require-global` flags. Companion state still needs a reviewed importable adapter; `--companion-data data/market.csv` records the dependency's path/hash without loading it into the strategy. Explicit `--allow-zero-volume` means partial validation, not a restored volume filter. Callbacks and dynamic helpers cannot be fully inspected. [Prerequisite checks](data-import.md#check-strategy-prerequisites).
 
 The native engine receives the complete input frame. Pass only the information available at the simulated decision time into your agent, and respect delayed availability of records and features. An agent that calls a model or remote service on every decision can change across identical reruns; use deterministic historical decision logic for the simplest reproducible integration.
 
 If you replay a fixed cache of external decisions, key it by the information actually available at each decision time. That checks the cached decisions under the tested execution assumptions. It does **not** validate that the original agent would adapt to different cash, positions or fills under stress. A fresh API response is not a reproducible historical decision record.
 
-Only import and execute strategy code you trust: adapters are normal Python code running locally. Keep proprietary code and credentials in your own project, outside this repository.
+Only import and execute strategy code you trust: adapters are normal, unsandboxed Python code running locally. Keep proprietary code and credentials in your own project, outside this repository. BacktestWitness has no built-in uploads, account or model service. Your chosen agent controls any context it sends to its own provider; a local tool does not make a cloud agent offline.
 
 ## Let a coding agent read the result
 
@@ -123,7 +129,11 @@ finding = check_strategy("failure-output-agent-tool")  # New/empty directory.
 print(finding)
 ```
 
-For another strategy, make the subprocess call `backtest-witness lab --adapter ... --data ... --requirements ... --json` instead. Its command summary stores the report path under `summary["report"]`, rather than the example's `summary["artifacts"]["json"]`. Both point to the same full report schema. The [Python runner API](integrations.md#native-strategy-execution) avoids a subprocess when your agent tool runs in Python.
+For another strategy, make the subprocess call `backtest-witness lab --adapter ... --data ... --requirements ... --json` instead, adding the dataset conventions above. Its command summary stores the report path under `summary["report"]`, rather than the example's `summary["artifacts"]["json"]`. Both point to the same full report schema. The [Python runner API](integrations.md#native-strategy-execution) avoids a subprocess when your agent tool runs in Python.
+
+Native `lab --json` and `audit --json` return input errors as `{"status":"ERROR","phase":"data","error":{"code":"...","message":"...","type":"...","hint":"..."}}`. Handle these before opening a report. A completed `INCONCLUSIVE` report instead contains unavailable or unstable evidence and may include a diagnostics hint. The lab summary includes `input_checks`; read its warnings before treating the run as meaningful.
+
+For a caught strategy exception, rerun with `--diagnostics private-trace.txt` in a new file outside the report output directory. It records raw local tracebacks that can contain private source lines and paths; do not automatically pass it to a remote agent or attach it to an issue. Portable reports retain safe errors. Third-party indicator version mismatches still require manual investigation; the lab does not automatically patch arbitrary Python code.
 
 A useful repair loop reads `status`, policy violations, baseline/stress metrics and coverage, then inspects paired observations before changing code. A valid failure can coexist with unavailable scenarios; a partial suite is not a complete pass. Keep the original fixture and policy fixed while testing a repair.
 
@@ -146,6 +156,6 @@ backtest-witness replay-failure failure-output-agent/failure-fixture.json \
   --adapter my_agent.strategy:RepairedStrategy --config repaired-parameters.json
 ```
 
-A real agent project's strategy module must be installed or otherwise importable in the replay/test environment. `examples/` is a checkout example, not an installed package module. Replay keeps every saved input bar and the declared policy, repeats the current baseline and saved stress, and refuses engine/version mismatch or unstable observations. A passing repair is evidence for that saved case; use separate reserved cases to assess a broader change.
+A real agent project's strategy module must be installed or otherwise importable in the replay/test environment. `examples/` is a checkout example, not an installed package module. Run from the strategy project root so declared companion files remain available under their saved relative paths. Their hashes are checked before runner resolution and execution; the files are not bundled. Source hashes and known runtime versions record provenance without prohibiting code repairs. Replay keeps every saved input bar and the declared policy, repeats the current baseline and saved stress, and refuses engine/version mismatch or unstable observations. A passing repair is evidence for that saved case; use separate reserved cases to assess a broader change.
 
 BacktestWitness records native simulation results, including fees, open holdings and pending orders. OHLC simulations cannot establish live fills or profitability. [Execution semantics](failure-lab.md#cost-and-delay-semantics) · [Execution contract](execution-contract.md) · [Report schema](report-schema.md)

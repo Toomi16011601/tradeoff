@@ -50,6 +50,14 @@ def frame_from_rows(rows):
         raise ImportError("Optional adapters require pandas; install with pip install '.[adapters]'") from exc
     frame = pd.DataFrame({name.title(): [row[name] for row in rows]
                           for name in ("open", "high", "low", "close", "volume")})
+    # A strategy may depend on a source-clock or a prepared feature. Retain
+    # explicit extra fields instead of silently simulating a different input.
+    reserved = {'timestamp', 'available_at', 'symbol', 'open', 'high', 'low', 'close', 'volume'}
+    extras = sorted(set().union(*(row.keys() for row in rows)) - reserved)
+    for name in extras:
+        if name in frame.columns:
+            raise ValueError('Extra fields must not shadow native OHLCV columns')
+        frame[name] = [row.get(name) for row in rows]
     frame.index = pd.to_datetime([row["timestamp"] for row in rows], utc=True).tz_localize(None)
     return frame
 

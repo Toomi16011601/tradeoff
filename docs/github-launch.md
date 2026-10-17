@@ -1,18 +1,18 @@
 # GitHub launch details
 
-The selected identity is **BacktestWitness**. This is a local, unreleased 0.3.0 alpha. No GitHub repository, remote, push, hosted CI run, release or package publication has been created for it.
+The public project is [**BacktestWitness**](https://github.com/Toomi16011601/backtest-witness), version 0.3.0 alpha. Source installation is supported; no PyPI package or tagged GitHub release has been published. [Hosted CI results](https://github.com/Toomi16011601/backtest-witness/actions/workflows/tests.yml) are separate from the recorded local acceptance checks.
 
 ## Copy-ready metadata
 
 | Field | Value |
 | --- | --- |
-| GitHub owner | Choose an account or organization at publication |
+| GitHub owner | `Toomi16011601` |
 | Repository name | `backtest-witness` |
 | Display name | BacktestWitness |
 | Python distribution | `backtest-witness` |
 | Python import | `backtest_witness` |
 | Command | `backtest-witness` |
-| Version | `0.3.0` — unreleased alpha |
+| Version | `0.3.0` — alpha |
 | License | MIT |
 
 **Description — 137 characters:**
@@ -31,13 +31,13 @@ Position this as an alpha strategy failure lab: stress native engine costs and d
 
 The two public strategies run pinned original code and disclosed causal variants on frozen synthetic tapes. Their public policy tests relative deterioration, disables minimum return and requires a closed trade. A causal repair is not an execution-resilient repair, and a losing baseline is not hidden. One-instrument simulations and bounded negative results do not certify global robustness or predict profit. [Execution semantics](failure-lab.md), [public evidence](public-strategies.md).
 
-## Naming checks — 2026-10-14
+## Naming checks — 2026-10-17
 
 The former working name was EdgeLab. That name already belongs to a [PyPI trading CLI](https://pypi.org/project/edgelab/) and an [existing trading project](https://github.com/loksundar/edgelab), so it would confuse discovery and package installation.
 
-A global GitHub repository-name search for `backtest-witness` returned no matches. The PyPI JSON endpoint for `backtest-witness` returned HTTP 404. These are availability observations on the stated date, not a reservation, an exhaustive trademark search or a legal claim. Recheck before creating the repository or publishing the package.
+A global GitHub repository-name search for `backtest-witness` returned no matches. The PyPI JSON endpoint for `backtest-witness` returned HTTP 404. These are availability observations on the stated date, not a reservation, an exhaustive trademark search or a legal claim. The account-specific repository name was rechecked immediately before creation. Recheck the package name before any package publication.
 
-The local workspace folder remains named `edgelab`; it is not the public repository or package name. Legacy wire schema IDs retain the historical name. Stored artifact formats remain readable and fixture validation/hashes are preserved. No speculative repository URL, remote badge or published install command is included.
+The local workspace folder remains named `edgelab`; it is not the public repository or package name. Legacy wire schema IDs retain the historical name. Stored artifact formats remain readable and fixture validation/hashes are preserved. The README uses the actual public repository URL. Installation still uses the source checkout; no published PyPI install is implied.
 
 ## Replaying earlier local artifacts
 
