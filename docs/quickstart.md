@@ -81,6 +81,14 @@ The saved runner is `examples.agent_integration.strategy:AgentStrategy`. The che
 
 ## Test your own strategy
 
+Keep real agent code and private prices in a separate private project. Install Tradeoff into that project's environment and run the CLI from there. Use one instrument's complete OHLCV history. `MyStrategy` must be importable. `--config parameters.json` passes strategy parameters to `Backtest.run`. The native adapter can also handle short orders; the small agent example's decision wrapper is intentionally long/flat.
+
+Before using private data, check the three boundaries of this local workflow:
+
+1. **Code:** importing the strategy runs ordinary Python without a sandbox. Review its imports and keep live credentials out of the environment.
+2. **Files:** `index.html`, `report.json` and replay fixtures can retain complete simulation inputs. Keep the output folder private and inspect files before sharing them.
+3. **Agents:** Tradeoff does not upload the run, but a cloud coding agent may send any files or output you give it to its provider. Share only what you intend to disclose. See the [security guidance](../SECURITY.md).
+
 For a native Backtesting.py class, save `requirements.json`:
 
 ```json
@@ -102,8 +110,6 @@ tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
 ```
 
 Open **`failure-output/index.html`** from your project folder to view this run's report.
-
-Keep real agent code and private prices in a separate private project. Install Tradeoff into that project's environment and run the CLI from there. Use one instrument's complete OHLCV history. `MyStrategy` must be importable. `--config parameters.json` passes strategy parameters to `Backtest.run`. The native adapter can also handle short orders; the small agent example's decision wrapper is intentionally long/flat.
 
 This command accepts an ordinary provider CSV:
 

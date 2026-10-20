@@ -85,7 +85,7 @@ The native engine receives the complete input frame. Pass only the information a
 
 If you replay a fixed cache of external decisions, key it by the information actually available at each decision time. That checks the cached decisions under the tested execution assumptions. It does **not** validate that the original agent would adapt to different cash, positions or fills under stress. A fresh API response is not a reproducible historical decision record.
 
-Only import and execute strategy code you trust: adapters are normal, unsandboxed Python code running locally. Keep proprietary code and credentials in your own project, outside this repository. Tradeoff has no built-in uploads, account or model service. Your chosen agent controls any context it sends to its own provider; a local tool does not make a cloud agent offline.
+Only import and execute strategy code you trust: adapters are normal, unsandboxed Python code running locally. Keep proprietary code and credentials in your own project, outside this repository. Tradeoff has no built-in uploads, account or model service. Reports and replay fixtures can retain the full input data, so inspect them before giving them to an agent. Your chosen agent controls any context it sends to its own provider; a local tool does not make a cloud agent offline. [Security boundaries](../SECURITY.md).
 
 ## Let a coding agent read the result
 

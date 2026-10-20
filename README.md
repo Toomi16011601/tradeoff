@@ -4,7 +4,9 @@
 
 Tradeoff is a local debugging lab for strategies you or your agent already wrote. It runs the strategy in **Backtesting.py 0.6.6**, adds fees, spread and market-order delay, and checks the results against a policy you choose. When it verifies a failure, it saves the evidence and a regression test you can replay after a repair.
 
-**Runs on your device.** Every user installs and runs their own copy. Tests run on that user's computer and save reports there; the project maintainers do not host them or need to keep a computer online. No need to worry about code leaking and other safety concerns. To view a result, open the generated report file in your browser. No server is needed.
+**Runs on your device.** Every user installs and runs their own copy. Tests run on that user's computer and save reports there; the project maintainers do not host them or need to keep a computer online. To view a result, open the generated report file in your browser. No server is needed.
+
+Local execution is not a privacy guarantee. Tradeoff has no built-in upload, but it runs the strategy Python you import without a sandbox. Reports and replay fixtures can contain the full input data; a cloud coding agent may transmit files you give it to its provider. Keep credentials out of the simulation environment, and review code and outputs before sharing them. [Security boundaries](SECURITY.md).
 
 ```text
 Your agent's decisions → Backtesting.py simulates orders
@@ -50,7 +52,7 @@ The example decision function supplies historical buy/close/hold decisions; its 
 
 ## Test your own strategy
 
-Keep real agent code and private prices in your own project on your device. With the environment active, run from your project's root so its strategy module is importable. Save a [requirements policy](docs/quickstart.md#test-your-own-strategy), then use your existing daily CSV:
+Keep real agent code and private prices in your own project on your device. Start with the synthetic example above, then use only strategy code you trust. With the environment active, run from your project's root so its strategy module is importable. Save a [requirements policy](docs/quickstart.md#test-your-own-strategy), then use your existing daily CSV:
 
 ```bash
 # CSV headers: Date,Open,High,Low,Close,Volume
