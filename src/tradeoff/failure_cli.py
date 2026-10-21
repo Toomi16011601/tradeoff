@@ -16,19 +16,66 @@ def _save(report, folder, reference):
     write_failure_report(report, folder)
 
 
+def _interpretation(report):
+    if report['status'] == 'BASELINE_FAILED':
+        return 'Stress scenarios were not run because the baseline breaches the declared requirements.'
+    if report['status'] == 'INCONCLUSIVE':
+        return 'Evidence is inconclusive; inspect the report reason and coverage.'
+    if report['status'] == 'NO_FAILURE_OBSERVED':
+        if report['requirements']['max_return_drop_pct'] is None:
+            return ('No maximum return drop is set; substantial deterioration can still pass '
+                    'when the other declared requirements are met.')
+        return 'Completed scenarios met the declared requirements; this does not predict future returns.'
+    return 'A simulated policy breach was reproduced; inspect the failure fixture and assumptions.'
+
+
 def _announce(report, folder, *, as_json=False):
     from .cli import DIAGNOSTICS_HINT
+    coverage = {name: report['coverage'][name] for name in ('completed', 'total', 'complete')}
+    interpretation = _interpretation(report)
     if as_json:
         summary = {'status': report['status'], 'report_id': report['report_id'],
                    'report': str(folder / 'report.json'), 'interface': str(folder / 'index.html'),
-                   'input_checks': report.get('input_checks', {})}
+                   'input_checks': report.get('input_checks', {}),
+                   'requirements': report['requirements'], 'coverage': coverage,
+                   'interpretation': interpretation}
         if report['status'] == 'INCONCLUSIVE':
             summary['hint'] = DIAGNOSTICS_HINT
         print(json.dumps(summary, allow_nan=False))
     else:
-        print(f"{report['status']}: {report['headline']}\nOpen: {folder / 'index.html'}")
+        print(f"{report['status']}: {report['headline']}")
+        print(f"Coverage: {coverage['completed']}/{coverage['total']} stress scenarios completed")
+        print(f"Requirements: {json.dumps(report['requirements'], allow_nan=False)}")
+        print(f"{interpretation}\nOpen: {folder / 'index.html'}")
         if report['status'] == 'INCONCLUSIVE':
             print(DIAGNOSTICS_HINT)
+
+
+def init_requirements(args):
+    """Write an explicit local policy without assuming a profitability floor."""
+    from .failure_lab import validate_requirements
+    args._phase = 'requirements'
+    chosen = {'min_return_pct': args.min_return_pct,
+              'max_drawdown_pct': args.max_drawdown_pct,
+              'max_return_drop_pct': args.max_return_drop_pct,
+              'min_closed_trades': args.min_closed_trades or 0}
+    if all(chosen[name] is None for name in ('min_return_pct', 'max_drawdown_pct', 'max_return_drop_pct')) \
+            and chosen['min_closed_trades'] == 0:
+        raise ValueError('Choose at least one threshold; for example, --max-return-drop-pct 2')
+    requirements = validate_requirements(chosen)
+    args._phase = 'output'
+    destination = Path(args.output).expanduser()
+    if destination.exists() or destination.is_symlink():
+        raise ValueError('Requirements output already exists; choose a new file')
+    with destination.open('x', encoding='utf-8') as stream:
+        json.dump(requirements, stream, indent=2, allow_nan=False)
+        stream.write('\n')
+    if args.json:
+        print(json.dumps({'status': 'CREATED', 'requirements': str(destination),
+                          'policy': requirements}, allow_nan=False))
+    else:
+        print(f'Created requirements: {destination}\nAdd --requirements {destination} to your tradeoff lab command.')
+    return 0
 
 
 def lab(args):
@@ -171,6 +218,16 @@ def replay_failure(args):
 
 def add_failure_commands(subparsers):
     from .cli import add_data_options, add_diagnostics_option
+    init = subparsers.add_parser('init-requirements',
+        help='Create an explicit local stress policy; no default profitability target')
+    init.add_argument('--output', required=True, help='New JSON file; existing files are never overwritten')
+    init.add_argument('--min-return-pct', type=float, help='Minimum return percentage, applied to baseline and stress')
+    init.add_argument('--max-drawdown-pct', type=float, help='Maximum drawdown percentage, applied to baseline and stress')
+    init.add_argument('--max-return-drop-pct', type=float,
+                      help='Maximum percentage-point return loss from the same baseline under stress')
+    init.add_argument('--min-closed-trades', type=int, help='Minimum closed trades, applied to baseline and stress')
+    init.add_argument('--json', action='store_true', help='Emit a structured command summary')
+    init.set_defaults(handler=init_requirements)
     execution = subparsers.add_parser('lab', help='Rerun a strategy under native engine cost and extra market-order delay')
     execution.add_argument('--adapter', required=True, help='Importable module:Strategy, or execution callback')
     execution.add_argument('--engine', choices=['backtesting', 'callback'], default='backtesting',

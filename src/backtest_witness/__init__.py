@@ -19,7 +19,7 @@ _MODULES = (
     "demos", "diagnostics", "economics", "execution", "failure_cli",
     "failure_lab", "failure_reproduce", "integration", "mutations",
     "preview", "privacy", "report", "report.failure_renderer",
-    "report.renderer", "reproduce", "sizing", "validation",
+    "report.renderer", "reproduce", "sizing", "strategy_onboarding", "validation",
 )
 
 for _name in _MODULES:

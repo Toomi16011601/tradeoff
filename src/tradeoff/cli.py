@@ -357,6 +357,8 @@ def main(argv=None):
                                parser_class=partial(_ArgumentParser, json_errors=as_json))
     from .failure_cli import add_failure_commands
     add_failure_commands(sub)
+    from .strategy_onboarding import add_onboarding_commands
+    add_onboarding_commands(sub)
     demo = sub.add_parser("demo", help="Build three offline synthetic reports; no keys required")
     demo.add_argument("--output", default="demo-output")
     add_diagnostics_option(demo)
