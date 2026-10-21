@@ -52,7 +52,16 @@ The example decision function supplies historical buy/close/hold decisions; its 
 
 ## Test your own strategy
 
-Keep real agent code and private prices in your own project on your device. Start with the synthetic example above, then use only strategy code you trust. With the environment active, run from your project's root so its strategy module is importable. Save a [requirements policy](docs/quickstart.md#test-your-own-strategy), then use your existing daily CSV:
+Keep real agent code and private prices in your own project on your device. Start with the synthetic example above, then use only strategy code you trust. With the environment active, run from your project's root so its strategy module is importable. If your strategy lives in a script that runs a backtest or plot at import time, start with `tradeoff inspect-script path/to/script.py`; it scans source without importing it and gives a bounded integration hint. Move the strategy class and its dependencies into an importable module before running it. [Script-style strategy guide](docs/script-strategy-onboarding.md).
+
+Choose your stress policy explicitly. This example allows a 2-percentage-point return drop from the same baseline and requires one closed trade; the values are illustrative, not a trading recommendation. The generated policy has no absolute minimum return, so a profitable baseline is not required just to start stress testing:
+
+```bash
+tradeoff init-requirements --max-return-drop-pct 2 --min-closed-trades 1 \
+  --output requirements.json
+```
+
+Then use your existing daily CSV:
 
 ```bash
 # CSV headers: Date,Open,High,Low,Close,Volume
@@ -62,6 +71,8 @@ tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
 ```
 
 Open **`failure-output/index.html`** from your project folder in your browser. Occupied outputs are rejected before strategy import or simulation; choose a new or empty output directory for later runs.
+
+If you have native Backtesting.py results from the original strategy, compare its baseline metrics with the report before interpreting the stress result: `tradeoff check-baseline failure-output/report.json --expected native-baseline.json`. This checks only the supplied metrics and context. [Capture the reference and investigate mismatches](docs/script-strategy-onboarding.md).
 
 Choose the symbol, timezone and closing convention for **your** data; no exchange calendar is inferred. Intraday bar-open labels use `--timestamp-kind open --bar-duration 1h`. Extra feature columns and the original source clock are preserved. Native preflight checks some missing columns, unset globals and unusable volume before reruns. It cannot automatically initialize an arbitrary project or fix third-party dependency bugs.
 
@@ -73,7 +84,7 @@ Choose the symbol, timezone and closing convention for **your** data; no exchang
 | --- | --- |
 | `FAILURE_FOUND` | A repeated stressed run breaches your policy; inspect scenario coverage too. |
 | `BASELINE_FAILED` | The baseline already breaches your absolute requirements. |
-| `NO_FAILURE_OBSERVED` | The completed declared suite meets your policy. |
+| `NO_FAILURE_OBSERVED` | The completed declared suite meets your policy; check its exact limits and coverage. |
 | `INCONCLUSIVE` | Unstable, unavailable, unsupported or incomplete evidence prevents a comparable conclusion. |
 
 Every run saves `report.json` and an offline `index.html`. A verified stress failure also saves `failure-fixture.json`, `failure-receipt.json` and `test_failure_resilience.py`.
