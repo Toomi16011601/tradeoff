@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add an explicit policy-file setup command and put completed scenario coverage and missing relative-loss limits in the CLI summary. Existing `lab` defaults and the offline report renderer are unchanged.
+- Add static script inspection for strategy classes and import-time run/plot hints, plus a native-baseline metric comparison step for an existing Backtesting.py strategy. Neither step executes code during static inspection or proves full strategy equivalence.
+- Make the own-strategy walkthrough start with policy choice and baseline comparison rather than an arbitrary absolute return/drawdown example that can stop stress before it runs.
+
 ## 0.3.0 — 2026-10-17 · public source alpha
 
 ### Tradeoff rename

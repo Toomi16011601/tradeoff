@@ -6,6 +6,8 @@ The lab runs on your own computer and reruns a strategy in Backtesting.py 0.6.6 
 
 ```bash
 python -m pip install '.[lab]'
+tradeoff init-requirements --max-return-drop-pct 2 --min-closed-trades 1 \
+  --output requirements.json
 tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
   --engine-settings '{"cash": 10000, "commission": 0.001}' \
   --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
@@ -14,7 +16,7 @@ tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
 
 Open `failure-output/index.html` from your file manager in a browser. The report is a saved file; viewing it needs no server or connection to the publisher's computer.
 
-Install from the checkout, then run from your own project's root with an importable Backtesting.py `Strategy` class. The example uses provider-style `Date,Open,High,Low,Close,Volume` headers; choose the actual symbol, timezone and closing convention for your data. Save `requirements.json` as below. Config JSON passes strategy parameters to `Backtest.run`.
+Install from the checkout, then run from your own project's root with an importable Backtesting.py `Strategy` class. The example uses provider-style `Date,Open,High,Low,Close,Volume` headers; choose the actual symbol, timezone and closing convention for your data. Config JSON passes strategy parameters to `Backtest.run`. For a class inside a script that also runs a backtest, follow the [static inspection and baseline comparison guide](script-strategy-onboarding.md).
 
 For intraday bar-open labels, use `--timestamp-kind open --bar-duration 1h`; normalized close times remain separate from preserved source-clock columns. Existing normalized CSV/JSON is also accepted. No missing observations, volume or exchange calendar is invented. [Import guide](data-import.md).
 
@@ -45,18 +47,16 @@ The casebook tests original code and disclosed causal variants on frozen **synth
 
 ## Declare what failure means
 
-Save a JSON file, for example `requirements.json`:
+Create a policy file with thresholds you choose:
 
-```json
-{
-  "min_return_pct": 0,
-  "max_drawdown_pct": 20,
-  "max_return_drop_pct": 2,
-  "min_closed_trades": 5
-}
+```bash
+tradeoff init-requirements --max-return-drop-pct 2 --min-closed-trades 1 \
+  --output requirements.json
 ```
 
-Pass `--requirements requirements.json`. These illustrative thresholds are a policy you choose before interpreting the results; they are not a trading recommendation. Percent return/drawdown and percentage-point deterioration have different units. Set a nullable requirement to `null` to disable it. The default minimum return is 0%, with drawdown/deterioration limits disabled and no minimum trade count. Closed trades exclude holdings still open at the end. A minimum trade count can prevent an inactive replacement from passing a repair test.
+The command writes a complete policy with `min_return_pct` and `max_drawdown_pct` set to `null`, a 2-percentage-point maximum drop from the same baseline, and a minimum of one closed trade. It refuses to overwrite an existing file. You can also set an absolute return or drawdown limit explicitly; percent return/drawdown and percentage-point deterioration have different units. These numbers illustrate the workflow, not a trading recommendation. Closed trades exclude holdings still open at the end. A minimum trade count can prevent an inactive replacement from passing a repair test.
+
+Pass `--requirements requirements.json` to `lab`. Omitting that flag retains the older default: minimum return 0%, with drawdown and relative-deterioration limits disabled and no minimum trade count. Under that policy, a large return decline versus a profitable baseline can still pass. The CLI summary calls out this missing limit and scenario coverage; the offline report lists the policy and coverage in its requirements and scope sections. Read those fields before interpreting `NO_FAILURE_OBSERVED`.
 
 The baseline must meet absolute requirements. `BASELINE_FAILED` means it already fails, so stress is not blamed for that failure. `FAILURE_FOUND` means a repeated stressed run breaches a requirement. `NO_FAILURE_OBSERVED` means the completed declared suite passes. `INCONCLUSIVE` means instability, invalid/unsupported execution, or an incomplete passing suite prevents a comparable conclusion. A valid failure can coexist with other unavailable scenarios; every cell remains visible.
 
