@@ -1,5 +1,6 @@
 """Tradeoff branding keeps existing callback references and regressions usable."""
 import importlib
+from importlib.util import find_spec
 import json
 import os
 from pathlib import Path
@@ -57,6 +58,8 @@ def test_all_existing_first_party_import_paths_share_canonical_modules():
         if not parts:
             continue
         suffix = ".".join(parts)
+        if suffix == "historical_strategy" and find_spec("backtesting") is None:
+            continue  # The history showcase belongs to the optional lab engine.
         assert importlib.import_module("backtest_witness." + suffix) is importlib.import_module("tradeoff." + suffix)
 
 

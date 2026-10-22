@@ -4,6 +4,8 @@
 
 Tradeoff is a local debugging lab for strategies you or your agent already wrote. It runs the strategy in **Backtesting.py 0.6.6**, adds fees, spread and market-order delay, and checks the results against a policy you choose. When it verifies a failure, it saves the evidence and a regression test you can replay after a repair.
 
+**See a real-data failure in one command.** On the [GOOG daily sample bundled with Backtesting.py](https://kernc.github.io/backtesting.py/doc/examples/Quick%20Start%20User%20Guide.html) (2,148 bars, 2004–2013), a simple long/flat 10/20-day moving-average crossover returned **656.46%** with zero baseline fees. Adding just **5 bps commission** cut that simulated return to **626.21%**. Tradeoff completed all **12/12** declared cost, spread and delay scenarios, verified the policy breach with fresh reruns, and saved a replayable regression test. These are in-sample historical results, not a forecast or profitability claim; open terminal holdings remain marked to market.
+
 **Runs on your device.** Every user installs and runs their own copy. Tests run on that user's computer and save reports there; the project maintainers do not host them or need to keep a computer online. To view a result, open the generated report file in your browser. No server is needed.
 
 Local execution is not a privacy guarantee. Tradeoff has no built-in upload, but it runs the strategy Python you import without a sandbox. Reports and replay fixtures can contain the full input data; a cloud coding agent may transmit files you give it to its provider. Keep credentials out of the simulation environment, and review code and outputs before sharing them. [Security boundaries](SECURITY.md).
@@ -35,7 +37,16 @@ On Windows PowerShell, activate with `.\.venv\Scripts\Activate.ps1`.
 
 **Upgrading from BacktestWitness?** In the same environment, run `python -m pip uninstall backtest-witness` before installing Tradeoff. The new package includes the old command and import aliases; removing the old distribution first avoids overlapping package files.
 
-Run the included small agent example. It uses synthetic prices so you can try the full workflow before connecting your own strategy:
+Run the historical showcase. It uses the GOOG sample included in the pinned Backtesting.py dependency, so there is no data download or API key:
+
+```bash
+tradeoff demo-history --output historical-output
+# Expected exit 1: the simulated strategy breaches the example stress policy.
+```
+
+Open **`historical-output/index.html`** from your project folder in your browser. The offline report shows the baseline and stressed trades, equity, scenario coverage and saved failure. Replay it with `tradeoff replay-failure historical-output/failure-fixture.json` (exit 1 while the failure remains). The [direct native-engine baseline check](tests/test_historical_demo.py) and exact [demo assumptions](docs/historical-demo.md) are available for inspection.
+
+For a smaller agent-integration example using synthetic prices, run:
 
 ```bash
 python -m examples.agent_integration --output failure-output-agent
@@ -45,10 +56,6 @@ python -m examples.agent_integration --output failure-output-agent
 Open the generated **`failure-output-agent/index.html`** file in your browser: find it in Finder or File Explorer and double-click it, or use your browser's Open File command. The interactive report contains its data and works offline. It does not need a running server. Use a new or empty output directory for every run.
 
 The example decision function supplies historical buy/close/hold decisions; its adapter places native simulated orders. For shorts, sizing rules and other order behavior, use the native strategy-class interface. A coding agent can call `lab --json` or Python and inspect evidence before proposing a repair. [Agent integration walkthrough](docs/agent-integration.md) · [Step-by-step quickstart](docs/quickstart.md).
-
-![Synthetic agent example: two extra delay bars change return from 1.50% to -0.60%.](docs/assets/agent-integration-desktop.jpg)
-
-*Earlier-version report capture, before the Tradeoff rename. The screenshot still shows the former BacktestWitness name.*
 
 ## Test your own strategy
 

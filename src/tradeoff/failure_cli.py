@@ -218,6 +218,14 @@ def replay_failure(args):
 
 def add_failure_commands(subparsers):
     from .cli import add_data_options, add_diagnostics_option
+    history = subparsers.add_parser('demo-history',
+        help='Run the native failure lab on Backtesting.py bundled GOOG history')
+    history.add_argument('--output', default='historical-output',
+        help='New or empty directory for the offline report and replay fixture')
+    history.add_argument('--json', action='store_true', help='Emit a structured command summary')
+    add_diagnostics_option(history)
+    from .historical_demo import command as demo_history
+    history.set_defaults(handler=demo_history)
     init = subparsers.add_parser('init-requirements',
         help='Create an explicit local stress policy; no default profitability target')
     init.add_argument('--output', required=True, help='New JSON file; existing files are never overwritten')
