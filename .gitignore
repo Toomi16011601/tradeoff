@@ -11,6 +11,7 @@ public-output*/
 audit-output/
 failure-output*/
 failure-public-output*/
+historical-output*/
 .DS_Store
 .env
 .env.*

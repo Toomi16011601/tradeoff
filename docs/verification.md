@@ -4,6 +4,12 @@ Tradeoff 0.3.0 is a public source alpha. The checks below are local acceptance e
 
 The linked screenshots are earlier-version captures and still show BacktestWitness branding. They document the synthetic report flows inspected before the rename.
 
+## Historical GOOG showcase — 22 October 2026
+
+`tradeoff demo-history` runs a Tradeoff long/flat 10/20-day SMA crossover on the 2,148 GOOG daily bars bundled with Backtesting.py 0.6.6. The direct native baseline check matches the lab's 75,645.99 final equity and 46 closed trades. A further 5-bps commission reduces final equity to 72,620.69; all 12 native stress scenarios complete, and fresh reruns verify the declared 2-percentage-point deterioration breach. CLI replay and the generated pytest both fail as expected while the breach remains.
+
+The full local suite passes **654 tests**. The source and wheel build include the new demo, strategy, compatibility aliases and guide. The wheel was installed to a separate target and run outside the checkout using existing native dependencies; the installed command exported and replayed the same failure. A scan of the five generated files found no local home path or private trading identifiers. This is a package smoke test, not a fresh dependency-resolution audit or a visual check of the larger historical report. [Inputs, assumptions and limitations](historical-demo.md).
+
 ## Tradeoff rename — 17 October 2026
 
 A fresh wheel installation verifies both command names, installed report assets, the native agent example and saved-failure replay. Earlier `backtest_witness` callback references and generated pytest files still reproduce their expected failure; the same old fixture passes with the causal callback and keeps identical bytes. Compatibility imports share exception classes and local diagnostic state without loading optional trading frameworks. Serialized schema IDs and receipt keys remain unchanged. These checks cover naming compatibility, not new strategy capabilities.
