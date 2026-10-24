@@ -2,6 +2,8 @@
 
 Use this path when a public or private project defines a `Strategy` class inside a script that also runs a backtest or opens a plot. Work in **your own project** with your own historical data. Tradeoff runs locally; it does not need your files copied into this repository.
 
+For future-data checks, start with `tradeoff init --strategy path/to/original.py --data prices.csv`. It scans without importing, detects supported classes and records the unresolved clock/import choices. After resolving those choices, `tradeoff check` reuses the manifest. [Future-data quickstart](quickstart.md). The steps below describe the additional native-baseline and execution-cost workflow.
+
 ## 1. Inspect the script without running it
 
 ```bash

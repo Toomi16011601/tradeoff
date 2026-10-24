@@ -9,6 +9,9 @@ build/
 demo-output*/
 public-output*/
 audit-output/
+bug-output*/
+.tradeoff/
+tradeoff.json
 failure-output*/
 failure-public-output*/
 historical-output*/

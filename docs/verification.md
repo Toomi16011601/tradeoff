@@ -1,8 +1,22 @@
 # Verification
 
-Tradeoff 0.3.0 is a public source alpha. The checks below are local acceptance evidence, not a security or profitability certificate. [Hosted CI results](https://github.com/Toomi16011601/tradeoff/actions/workflows/tests.yml) record runs for published commits. The data-import and integration-check build, recorded before the Tradeoff rename, passed **621 tests** on Python 3.12.14, including native execution, input validation, replay and private diagnostics. The renamed source passes **627 tests** locally; hosted results are recorded separately.
+Tradeoff 0.4.0 is a public source alpha. The checks below are local acceptance evidence, not a security or profitability certificate. [Hosted CI results](https://github.com/Toomi16011601/tradeoff/actions/workflows/tests.yml) record runs for published commits. The data-import and integration-check build, recorded before the Tradeoff rename, passed **621 tests** on Python 3.12.14, including native execution, input validation, replay and private diagnostics. That earlier renamed source passed **627 tests** locally; later acceptance checks follow below.
 
-The linked screenshots are earlier-version captures and still show BacktestWitness branding. They document the synthetic report flows inspected before the rename.
+The new future-data investigation screenshot shows Tradeoff 0.4.0. Other linked screenshots include earlier-version captures with BacktestWitness branding and document those earlier flows.
+
+## Future-data workflow — 24 October 2026
+
+The integrated local suite passed **710 tests** on Python 3.12. Follow-up working-directory guidance was checked with **41 report tests** after that run. The standard-library-only installation also passed **592 tests**, with 82 optional cases skipped. Hosted CI tests the published commit separately, including Python 3.10/3.12/3.13 and the full optional integrations.
+
+An isolated wheel installation outside the checkout, without a development import path, resolved Backtesting.py 0.6.6, pandas 3.1.0 and NumPy 2.5.4. Its installed `demo-bug` command returned `VERIFIED`: unchanged public Riskkit code produced the **29 → 31** earlier-position witness after one unavailable-row edit. The original fixture replay failed as expected, the repair replay passed without changing fixture bytes, and the repaired full tape had **95 nonzero-position bars** after warmup. Actual installed dependency versions are recorded in the exported provenance.
+
+**That positive input is synthetic.** The original 2,148-bar historical GOOG sample is a separate bounded negative control, with no earlier-position dependency observed. Removing `.bfill()` changes native warmup and skips the original early trades; the result is a debugging counterexample and case-specific repair verification, not historical profitability evidence. [Exact source, data and limits](future-data-case-study.md).
+
+Separate synthetic strategy projects exercise the documented `init`/`check` flow, daily provider CSV flags, manifest-relative paths, fresh outputs, original failure and same-fixture repair. Four installed-package regressions cover matching stale bytecode in the strategy, eager helper, package helper and lazy helper: unchanged originals fail CLI replay and exported pytest; real repairs pass. Protected sibling directories no longer prevent unrelated callback imports, while selected strategy import errors remain visible.
+
+Chrome inspection opens the generated HTML **directly as a file**, with no server. Desktop (1440 × 1100), mobile (390 × 844), keyboard navigation, clipboard feedback, source/test links in separate tabs and all four no-JavaScript views pass, with no page errors, external requests or page-width overflow. The report distinguishes verified, failed and unverified repairs. Local-project commands identify the strategy project root and the report path to replace; built-in demos retain export-directory commands. [Current screenshot](assets/future-data-investigation.png).
+
+Source/wheel builds and publication scans include the new modules, inline assets and upstream licenses, with no generated private outputs, known local home paths or private trading material identified. Relative Markdown links and screenshot metadata were checked. This is a scoped inspection, not a security certificate; imported strategies still execute as ordinary Python and fixtures retain their input data.
 
 ## Historical GOOG showcase — 22 October 2026
 
@@ -53,9 +67,9 @@ Both pinned public strategies and their disclosed causal variants complete all 1
 
 The saved public temporal-audit fixtures reproduce their original dependencies and pass with the matching causal repair. A constructed native roundtrip reproduces its policy failure, passes with an explicit repaired strategy and preserves fixture bytes. Public execution cases intentionally return exit 1 for their teaching failures; CI checks that exact exit code.
 
-## Interface and packaging
+## Interface and packaging — earlier acceptance
 
-The documented first-use flow now states that each user runs their own copy on their own device, then opens the generated `index.html` file. Setup guides contain no local web addresses or server steps. The example completes all 12 scenarios and writes the report; static artifact checks confirm embedded data, CSS and JavaScript, no external assets or fetch/XHR dependency, and valid sibling-file links. Direct file navigation is blocked by the local browser-automation policy, so this documentation update does not claim an independently verified browser file-opening check.
+The documented first-use flow now states that each user runs their own copy on their own device, then opens the generated `index.html` file. Setup guides contain no local web addresses or server steps. The example completes all 12 scenarios and writes the report; static artifact checks confirm embedded data, CSS and JavaScript, no external assets or fetch/XHR dependency, and valid sibling-file links. At that earlier acceptance, the browser-automation policy blocked direct file navigation. The 0.4.0 direct-file inspection is recorded above.
 
 Desktop, mobile and narrow report inspections cover scenario selection, paired equity/position changes, divergence navigation, keyboard sliders, terminal holdings and incomplete states. The hardened HTTP preview's CSP preserves packaged styling and interactive controls; mobile inspection shows no page-level overflow or console warnings/errors. [Desktop](assets/failure-lab-desktop.png), [mobile](assets/failure-lab-mobile.png).
 
@@ -63,8 +77,8 @@ Wheel and source builds include inline report assets, pinned sources/licenses, f
 
 ## Privacy and security
 
-The publication snapshot excludes internal session notes, old identifying Git history, stale packages, caches, virtual environments and generated private artifacts. Screenshots show synthetic reports without account identity, browser chrome or location metadata. The GitHub hosting account is public; commit attribution uses a neutral project identity.
+The publication snapshot excludes internal session notes, old identifying Git history, stale packages, caches, virtual environments and generated private artifacts. Screenshots show synthetic reports without account identity, browser chrome or location metadata. The GitHub hosting account and commit attribution are public.
 
 Regression checks cover recognized sensitive inputs, malformed output, trace diagnostics, callback exceptions/replay tracebacks, export references and gallery labels. Fixtures are rejected rather than silently redacted, preserving replay integrity. Preview tests cover traversal, symlinks at every path component, host/origin validation, known-artifact allowlists, directory-listing refusal and security headers. Independent review reproduced and verified fixes for additional export and ancestor-symlink edge cases. [Security policy and limits](../SECURITY.md), [audit scope](security-review.md).
 
-Local verification used Python 3.12.14 and the stated engine versions. Core CI is configured for Python 3.10/3.12/3.13, with optional cases on 3.12; the pinned cases extra requires Python 3.11+. The optional secure HTTP preview supports macOS/Linux and fails clearly elsewhere. Direct HTML opening is the documented viewing path; its browser integration is not independently verified here. Reports retain full simulation data and arbitrary imported callbacks remain ordinary unsandboxed Python.
+Local verification used Python 3.12.14 and the stated engine versions. Core CI is configured for Python 3.10/3.12/3.13, with optional cases on 3.12; the pinned cases extra requires Python 3.11+. The optional secure HTTP preview supports macOS/Linux and fails clearly elsewhere. Direct HTML opening is the documented viewing path; the 0.4.0 check above verifies its temporal-report interface in Chrome. Reports retain full simulation data and arbitrary imported callbacks remain ordinary unsandboxed Python.
