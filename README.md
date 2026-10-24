@@ -46,7 +46,7 @@ The example decision function supplies historical buy/close/hold decisions; its 
 
 ![Synthetic agent example: two extra delay bars change return from 1.50% to -0.60%.](docs/assets/agent-integration-desktop.jpg)
 
-*Earlier-version report capture, before the Tradeoff rename. The screenshot still shows the former BacktestWitness name.*
+*Earlier-version report capture, before the Tradeoff rename. The screenshot would still show the former BacktestWitness name.*
 
 ## Test your own strategy
 
