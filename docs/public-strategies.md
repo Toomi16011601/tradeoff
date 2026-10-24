@@ -1,5 +1,7 @@
 # Public strategy failure and future-data cases
 
+For the easiest single-case bug-and-repair workflow, run `tradeoff demo-bug --output bug-output` after installing `.[audit]`. It uses the existing 400-bar synthetic Riskkit tape, verifies the original saved failure and an active repaired strategy, and retains a separate full historical GOOG negative control. [Detailed evidence](future-data-case-study.md).
+
 ## Native execution failure casebook
 
 The 0.3.0 failure lab reruns both pinned Backtesting.py 0.6.6 examples and their disclosed causal variants with native costs and market-order delay. It records engine equity, positions, closed/open trades and pending orders. Original strategy bytes and MIT notices remain unchanged.

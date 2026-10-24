@@ -5,8 +5,8 @@ backend-path = ["."]
 
 [project]
 name = "tradeoff"
-version = "0.3.0"
-description = "Strategy failure lab for trading bots. Stress real engine costs and delays, investigate failures, and export replayable regression tests."
+version = "0.4.0"
+description = "Find future-data bugs in trading strategies, inspect paired evidence, and verify repairs with replayable regression tests."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -19,6 +19,7 @@ classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Pytho
 dev = ["pytest>=9.0.3", "build>=1.2", "setuptools>=83", "wheel"]
 adapters = ["pandas>=2.2", "backtrader==1.9.78.123", "backtesting>=0.6,<0.7"]
 lab = ["backtesting==0.6.6", "pandas>=2.2"]
+audit = ["backtesting==0.6.6", "pandas>=2.2"]
 cases = ["backtesting==0.6.6", "pandas==2.2.3", "numpy==2.3.5"]
 
 [project.scripts]

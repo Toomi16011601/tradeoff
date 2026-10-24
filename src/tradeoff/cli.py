@@ -89,7 +89,10 @@ def _diagnostics_context(args):
     output = getattr(args, 'output', None)
     protected_folders = []
     if output is not None:
-        protected_folders.append(Path(output).expanduser().resolve())
+        selected_output = Path(output).expanduser()
+        if getattr(args, 'command', None) == 'check':
+            selected_output = Path(args.project).expanduser().absolute().parent / selected_output
+        protected_folders.append(selected_output.resolve())
     if output is None and getattr(args, 'command', None) in {'reproduce', 'replay-failure'}:
         fixture = Path(args.fixture).expanduser()
         protected_folders.extend((fixture.parent.resolve(), fixture.resolve().parent))
@@ -359,6 +362,10 @@ def main(argv=None):
     add_failure_commands(sub)
     from .strategy_onboarding import add_onboarding_commands
     add_onboarding_commands(sub)
+    from .project import add_project_commands
+    add_project_commands(sub)
+    from .future_demo import add_future_demo_command
+    add_future_demo_command(sub)
     demo = sub.add_parser("demo", help="Build three offline synthetic reports; no keys required")
     demo.add_argument("--output", default="demo-output")
     add_diagnostics_option(demo)

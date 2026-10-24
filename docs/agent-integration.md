@@ -1,4 +1,18 @@
-# Connect an agent to the local failure lab
+# Connect a coding agent to the local debugger
+
+## Start with future-data debugging
+
+Install Tradeoff in the strategy project's environment, then tell your coding agent:
+
+> Use Tradeoff locally to check this strategy for future-data dependencies. Review its source and imports first. Run `tradeoff init --strategy strategy.py --data prices.csv` with the actual data conventions and `--review-imports` after review; resolve any reported issues using CLI flags. Run `tradeoff check --json`, read its report and paired witness, then propose a causal repair. Preserve the original fixture and replay it with `tradeoff reproduce` from the project root. Run a fresh check after repair. Report unsupported or inconclusive evidence explicitly.
+
+Replace the example filenames with the project's actual files. The tool does not need a dedicated agent service or AI key. A CLI agent runs ordinary commands and reads the returned JSON. `init` is static; `check` executes reviewed local strategy code. The private manifest keeps settings for one-command reruns. [Exact setup and exit codes](quickstart.md).
+
+For the included public-code demonstration, use `tradeoff demo-bug --output bug-output --json`. It runs a genuine published defect on a labeled synthetic tape and records the original failure plus same-fixture repaired pass. [Evidence and limits](future-data-case-study.md).
+
+## Optional execution-resilience workflow
+
+The rest of this page describes the separate native cost/delay lab and its small decision-agent example. Its `FAILURE_FOUND` policy result and `failure-fixture.json` are different from a temporal `FOUND` result and `reproducer.json`.
 
 Tradeoff is a crash-test and debugging tool you install and run on your own computer before deploying a strategy. Your copy tests your strategy and saves reports on your device; it does not depend on the publisher's computer being online. The execution path is:
 
