@@ -81,18 +81,22 @@ The saved runner is `examples.agent_integration.strategy:AgentStrategy`. The che
 
 ## Test your own strategy
 
-For a native Backtesting.py class, save `requirements.json`:
+Keep real agent code and private prices in a separate private project. Install Tradeoff into that project's environment and run the CLI from there. Use one instrument's complete OHLCV history. `MyStrategy` must be importable. `--config parameters.json` passes strategy parameters to `Backtest.run`. The native adapter can also handle short orders; the small agent example's decision wrapper is intentionally long/flat. If the class lives in a script that runs a backtest or plot on import, first run `tradeoff inspect-script path/to/script.py`; [move it into a safe importable module](script-strategy-onboarding.md) rather than importing the whole running script.
 
-```json
-{
-  "min_return_pct": 0,
-  "max_drawdown_pct": 20,
-  "max_return_drop_pct": 2,
-  "min_closed_trades": 5
-}
+Before using private data, check the three boundaries of this local workflow:
+
+1. **Code:** importing the strategy runs ordinary Python without a sandbox. Review its imports and keep live credentials out of the environment.
+2. **Files:** `index.html`, `report.json` and replay fixtures can retain complete simulation inputs. Keep the output folder private and inspect files before sharing them.
+3. **Agents:** Tradeoff does not upload the run, but a cloud coding agent may send any files or output you give it to its provider. Share only what you intend to disclose. See the [security guidance](../SECURITY.md).
+
+For a native Backtesting.py class, choose a policy before interpreting results:
+
+```bash
+tradeoff init-requirements --max-return-drop-pct 2 --min-closed-trades 1 \
+  --output requirements.json
 ```
 
-These illustrative thresholds are user policy, not a trading recommendation. Return/drawdown are percentages; deterioration is the percentage-point drop from the same strategy's baseline. Set a nullable field to `null` to disable it. The default minimum return is 0%; other limits are disabled and minimum closed trades is zero. A baseline that already fails absolute requirements yields `BASELINE_FAILED`.
+This example asks whether stress reduces return by more than 2 **percentage points** versus the same baseline and requires at least one closed trade. The values are illustrative, not a trading recommendation. The generated policy has no minimum return or drawdown limit unless you explicitly add them with `--min-return-pct` or `--max-drawdown-pct`. This prevents an arbitrary absolute target from stopping the stress search before it starts. If you omit `--requirements` entirely, the existing default still requires nonnegative return but sets no relative return-drop limit; a severely weakened strategy can pass that default policy. A baseline already failing an absolute requirement yields `BASELINE_FAILED` with zero stress scenarios run. [Policy details](failure-lab.md#declare-what-failure-means).
 
 ```bash
 tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
@@ -103,7 +107,7 @@ tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
 
 Open **`failure-output/index.html`** from your project folder to view this run's report.
 
-Keep real agent code and private prices in a separate private project. Install Tradeoff into that project's environment and run the CLI from there. Use one instrument's complete OHLCV history. `MyStrategy` must be importable. `--config parameters.json` passes strategy parameters to `Backtest.run`. The native adapter can also handle short orders; the small agent example's decision wrapper is intentionally long/flat.
+If you have the original strategy's Backtesting.py baseline, save its native return, drawdown, trade count and final equity to `native-baseline.json`, then compare it with `tradeoff check-baseline failure-output/report.json --expected native-baseline.json`. Investigate mismatches before relying on the stress finding. This checks the supplied metrics; it does not prove identical trades or data. [Exact steps for script-style strategies](script-strategy-onboarding.md).
 
 This command accepts an ordinary provider CSV:
 
@@ -138,6 +142,8 @@ Both the current baseline and saved stress must meet the unchanged policy on the
 
 | Command | Exit 0 | Exit 1 | Exit 2 |
 | --- | --- | --- | --- |
+| `init-requirements` / `inspect-script` | Policy created / source scanned | — | Invalid input / error |
+| `check-baseline` | Supplied metrics match | A supplied metric or context differs | Invalid / unavailable report or reference |
 | Agent example / `lab` | Completed suite passes | Verified stress failure or baseline failure | Inconclusive / invalid / error |
 | `lab-cases` | All variants have completed scoped passes | At least one policy failure | Any inconclusive case / invalid / error |
 | `replay-failure` | Current baseline and saved stress meet policy | Comparable policy breach reproduced | Unstable / invalid / unavailable / error |
