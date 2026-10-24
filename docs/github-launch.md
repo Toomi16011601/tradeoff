@@ -1,6 +1,6 @@
 # GitHub launch details
 
-The public project is [**Tradeoff**](https://github.com/Toomi16011601/tradeoff), version 0.3.0 alpha. Source installation is supported; no PyPI package or tagged GitHub release has been published. [Hosted CI results](https://github.com/Toomi16011601/tradeoff/actions/workflows/tests.yml) are separate from the recorded local acceptance checks.
+The public project is [**Tradeoff**](https://github.com/Toomi16011601/tradeoff), version 0.4.0 alpha. Source installation is supported; no PyPI package or tagged GitHub release has been published. [Hosted CI results](https://github.com/Toomi16011601/tradeoff/actions/workflows/tests.yml) are separate from the recorded local acceptance checks.
 
 ## Copy-ready metadata
 
@@ -12,22 +12,22 @@ The public project is [**Tradeoff**](https://github.com/Toomi16011601/tradeoff),
 | Python distribution | `tradeoff` |
 | Python import | `tradeoff` |
 | Command | `tradeoff` |
-| Version | `0.3.0` — alpha |
+| Version | `0.4.0` — alpha |
 | License | MIT |
 
-**Description — 137 characters:**
+**Description:**
 
-> Strategy failure lab for trading bots. Stress real engine costs and delays, investigate failures, and export replayable regression tests.
+> Find future-data bugs in trading strategies, inspect paired evidence, and verify repairs with replayable regression tests.
 
 **README tagline:**
 
-> Crash-test a trading strategy before you deploy it. Keep a test for the fix.
+> Catch future-data bugs in a trading strategy. Keep a test for the fix.
 
 **GitHub topics:**
 
 `trading`, `backtesting`, `stress-testing`, `lookahead-bias`, `algorithmic-trading`, `quantitative-finance`, `python`, `pytest`, `backtesting-py`, `backtrader`, `regression-testing`, `debugging`, `reproducibility`
 
-Position this as an alpha strategy failure lab: stress native engine costs and delays, investigate reproducible policy breaches, and export tests for repair replay. Backtesting.py 0.6.6 is the first verified execution backend. Backtrader, pandas, numeric targets and callbacks retain their existing future-data audit scope. Explicit execution callbacks own their accounting.
+Position this as an alpha future-data debugger: initialize a supported strategy project, change unavailable inputs, inspect an earlier decision difference, and verify the repair on the same saved fixture. Backtesting.py 0.6.6 is the first-use backend. The public Riskkit demonstration uses unchanged upstream code on an explicitly synthetic stress tape; historical GOOG remains a bounded negative control. Native execution cost/delay tests and lower-level adapters remain available. Explicit execution callbacks own their accounting.
 
 The two public strategies run pinned original code and disclosed causal variants on frozen synthetic tapes. Their public policy tests relative deterioration, disables minimum return and requires a closed trade. A causal repair is not an execution-resilient repair, and a losing baseline is not hidden. One-instrument simulations and bounded negative results do not certify global robustness or predict profit. [Execution semantics](failure-lab.md), [public evidence](public-strategies.md).
 

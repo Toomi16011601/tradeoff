@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import sys
 
+from ..project_source import current_source_runner
 from ..validation import validate_config
 from ._shared import settings_dict
 from .backtrader import make_backtrader_runner
@@ -33,6 +34,7 @@ def _import_callable(reference):
     return result
 
 
+@current_source_runner
 def resolve_runner(reference, *, engine="callback", engine_settings=None):
     """Load a project callable/class and return a replayable adapter boundary."""
     if engine not in ("callback", "targets", "pandas", "backtrader", "backtesting"):
