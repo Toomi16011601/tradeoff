@@ -59,6 +59,7 @@ The example decision function supplies historical buy/close/hold decisions; its 
 
 ## Test your own strategy
 
+*Earlier-version report capture, before the Tradeoff rename. The screenshot would still show the former BacktestWitness name.*
 Keep real agent code and private prices in your own project on your device. Start with the synthetic example above, then use only strategy code you trust. With the environment active, run from your project's root so its strategy module is importable. If your strategy lives in a script that runs a backtest or plot at import time, start with `tradeoff inspect-script path/to/script.py`; it scans source without importing it and gives a bounded integration hint. Move the strategy class and its dependencies into an importable module before running it. [Script-style strategy guide](docs/script-strategy-onboarding.md).
 
 Choose your stress policy explicitly. This example allows a 2-percentage-point return drop from the same baseline and requires one closed trade; the values are illustrative, not a trading recommendation. The generated policy has no absolute minimum return, so a profitable baseline is not required just to start stress testing:
