@@ -30,8 +30,12 @@
     else if (event.key === "End") next = links.length - 1;
     else return;
     event.preventDefault();
+    // Native fragment navigation resets focus after this key handler in Chrome.
+    // Keep each view in history without triggering that fragment focus step.
+    const fragment = "#" + links[next].dataset.view;
+    if (location.hash !== fragment) history.pushState(null, "", fragment);
+    activateView(true);
     links[next].focus();
-    location.hash = links[next].dataset.view;
   }));
   const economics = report.economics || {};
   const original = (economics.original || {}).equity_curve || [];
@@ -108,14 +112,14 @@
     try {
       if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("Clipboard unavailable");
       await navigator.clipboard.writeText(target.textContent);
-      setText("copy-status", "Command copied. Run it from the export directory.");
+      setText(button.dataset.copyStatus || "copy-status", "Command copied. Use the working directory shown above.");
     } catch (_) {
       const selection = window.getSelection();
       const range = document.createRange();
       range.selectNodeContents(target);
       selection.removeAllRanges();
       selection.addRange(range);
-      setText("copy-status", "Command selected. Use your keyboard or context menu to copy.");
+      setText(button.dataset.copyStatus || "copy-status", "Command selected. Use your keyboard or context menu to copy, then use the working directory shown above.");
     }
   }));
 })();

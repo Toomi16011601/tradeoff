@@ -49,7 +49,17 @@ jobs:
       - name: Install as a new user
         run: |
           python -m pip install --upgrade pip
-          python -m pip install '.[lab]'
+          python -m pip install '.[audit]'
+      - name: Reproduce a public future-data bug and verify the same-fixture repair
+        shell: bash
+        run: |
+          tradeoff demo-bug --output bug-output --json
+          set +e
+          tradeoff reproduce bug-output/reproducer.json
+          original_status=$?
+          set -e
+          test "$original_status" -eq 1
+          tradeoff reproduce bug-output/reproducer.json --adapter tradeoff.cases.riskkit:fixed_run
       - name: Run the agent example and reproduce its expected policy failure
         shell: bash
         run: |

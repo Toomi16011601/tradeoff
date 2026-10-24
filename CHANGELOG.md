@@ -1,7 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-10-24
 
+- Center the first-use workflow on future-data dependencies: inspect changed unavailable records, compare the earlier decision, and verify a repair against the original saved fixture.
+- Add static `init` setup and one-command `check` reruns with a private project manifest, explicit data conventions, source review acknowledgement and fresh local output directories.
+- Compile current local source during checks and replay, including eager/lazy helpers, so stale bytecode cannot falsely verify a repair; preserve callback module state and restore import context.
+- Redesign the temporal report as a graphite-and-teal investigation workspace, expose recorded repair verification, and put decision evidence ahead of conditional economics.
+- Add a one-command public Riskkit bug investigation with a one-row synthetic witness, unchanged-fixture repair replay, active-repair check and a separate full historical GOOG negative control.
 - Add an explicit policy-file setup command and put completed scenario coverage and missing relative-loss limits in the CLI summary. Existing `lab` defaults and the offline report renderer are unchanged.
 - Add static script inspection for strategy classes and import-time run/plot hints, plus a native-baseline metric comparison step for an existing Backtesting.py strategy. Neither step executes code during static inspection or proves full strategy equivalence.
 - Make the own-strategy walkthrough start with policy choice and baseline comparison rather than an arbitrary absolute return/drawdown example that can stop stress before it runs.

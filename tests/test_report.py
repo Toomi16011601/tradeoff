@@ -112,6 +112,27 @@ def test_found_report_exposes_exact_witness_without_javascript():
     assert any(tag == "a" and attrs.get("href") == "test_future_invariance.py" for tag, attrs in doc.nodes)
 
 
+@pytest.mark.parametrize("has_witness,primary_label,primary_file", [
+    (True, "Open regression test", "test_future_invariance.py"),
+    (False, "Open audit JSON", "report.json"),
+])
+def test_saved_artifacts_open_separately_without_promising_a_download(has_witness, primary_label, primary_file):
+    data = report("FOUND" if has_witness else "NO_DEPENDENCY_OBSERVED")
+    if not has_witness:
+        data["artifacts"] = {"json": "report.json"}
+    doc = Document(renderer().render_report(data))
+    artifact_links = [attrs for tag, attrs in doc.nodes
+                      if tag == "a" and attrs.get("href") in data["artifacts"].values()]
+    assert artifact_links
+    assert primary_label in doc.text
+    primary = [attrs for attrs in artifact_links if "primary" in attrs.get("class", "").split()]
+    assert len(primary) == 1 and primary[0]["href"] == primary_file
+    for attrs in artifact_links:
+        assert attrs.get("target") == "_blank"
+        assert "noopener" in attrs.get("rel", "").split()
+        assert "download" not in attrs
+
+
 @pytest.mark.parametrize("status", ["NO_DEPENDENCY_OBSERVED", "INCONCLUSIVE"])
 def test_nonfinding_states_disclose_reason_without_inventing_witness(status):
     data = report(status)
@@ -282,3 +303,86 @@ def test_html_transports_large_target_display_without_numeric_rounding(tmp_path)
     # Machine-readable report quantities keep their numeric schema.
     saved = json.loads((tmp_path / "report.json").read_text())
     assert saved == data
+
+
+@pytest.mark.parametrize('status', ['PASS', 'FAILED'])
+def test_saved_fixture_repair_status_adapter_and_reason_are_visible_without_js(status):
+    data = report()
+    data['repair_replay'] = {'status': status, 'adapter': 'sample.repair:run',
+                             'reason': 'Saved original fixture was replayed.'}
+    data['provenance'] = {'fixed_patch': 'Remove backward filling; wait for trailing warmup.'}
+    doc = Document(renderer().render_report(data))
+    assert 'Saved-fixture repair' in doc.text
+    assert f'Repair {status}' in doc.text
+    assert 'sample.repair:run' in doc.text
+    assert 'Saved original fixture was replayed.' in doc.text
+    assert 'Remove backward filling; wait for trailing warmup.' in doc.text
+    assert 'tradeoff reproduce path/to/report/reproducer.json --adapter sample.repair:run' in doc.text
+    assert 'same saved fixture' in doc.text
+
+
+@pytest.mark.parametrize('reference,fixed_reference,prefix,directory', [
+    ('strategy:LocalStrategy', 'strategy:RepairedStrategy', 'path/to/report/', 'YOUR STRATEGY PROJECT ROOT'),
+    ('tradeoff.cases.riskkit:original_run', 'tradeoff.cases.riskkit:fixed_run', '', 'THE EXPORT DIRECTORY'),
+    ('backtest_witness.demos:leaky_run', 'backtest_witness.demos:causal_run', '', 'THE EXPORT DIRECTORY'),
+])
+def test_replay_commands_keep_local_strategy_imports_at_project_root(reference, fixed_reference, prefix, directory):
+    data = report()
+    data['strategy_ref'] = reference
+    data['repair_replay'] = {'status': 'PASS', 'adapter': fixed_reference}
+    doc = Document(renderer().render_report(data))
+    assert f'RUN FROM {directory}' in doc.text
+    assert f'REPLAY FROM {directory}' in doc.text
+    assert f'python -m pytest {prefix}test_future_invariance.py' in doc.text
+    assert f'tradeoff reproduce {prefix}reproducer.json --adapter {fixed_reference}' in doc.text
+    if prefix:
+        assert 'Replace path/to/report with the directory containing this report' in doc.text
+        assert 'imports and companion files' in doc.text
+        assert 'FROM THE EXPORT DIRECTORY' not in doc.text
+    else:
+        assert 'path/to/report/' not in doc.text
+
+
+@pytest.mark.parametrize('repair', [None, {}, {'status': 'NO_VERIFIED_WITNESS'},
+    {'adapter': 'sample.repair:run'}, {'status': 'UNKNOWN', 'reason': 'Replay interrupted.'}])
+def test_absent_or_unrecognized_repair_never_becomes_a_pass(repair):
+    data = report()
+    if repair is not None:
+        data['repair_replay'] = repair
+    doc = Document(renderer().render_report(data))
+    assert 'Repair NOT VERIFIED' in doc.text
+    assert 'Repair PASS' not in doc.text
+    if repair and repair.get('reason'):
+        assert repair['reason'] in doc.text
+
+
+def test_investigation_evidence_and_repair_precede_economics_in_reading_order():
+    markup = renderer().render_report(report())
+    assert markup.index('THE DECISION WITNESS') < markup.index('Saved-fixture repair')
+    assert markup.index('Saved-fixture repair') < markup.index('CONDITIONAL ECONOMICS')
+
+
+def test_timeline_uses_late_availability_even_for_an_earlier_event():
+    data = report()
+    changed = data['witness']['changed_rows'][0]
+    changed['timestamp'] = '2026-01-01T12:00:00+00:00'
+    changed['available_at'] = '2026-01-05T09:00:00+00:00'
+    doc = Document(renderer().render_report(data))
+    assert 'Availability boundary' in doc.text
+    assert '2026-01-05T09:00:00+00:00' in doc.tables['availability-table']
+    assert '2026-01-01T12:00:00+00:00' in doc.tables['availability-table']
+    assert 'Unavailable at cutoff' in doc.tables['availability-table']
+    assert any(tag == 'ol' and attrs.get('aria-label') == 'Decision and input availability timeline'
+               for tag, attrs in doc.nodes)
+
+
+def test_patch_source_and_data_details_remain_inert_html():
+    data = report()
+    hostile = '<img src=x onerror="alert(1)"><script>owned()</script>'
+    data['provenance'] = {'fixed_patch': hostile, 'source_url': hostile,
+                          'dataset': {'description': hostile}}
+    data['repair_replay'] = {'status': 'FAILED', 'reason': hostile, 'adapter': hostile}
+    doc = Document(renderer().render_report(data))
+    assert hostile in doc.text
+    assert not any(tag == 'img' or 'onerror' in attrs for tag, attrs in doc.nodes)
+    assert len(doc.scripts) == 2

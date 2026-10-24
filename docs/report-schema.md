@@ -19,7 +19,7 @@
 | `scenarios` | Named scenario objects plus status, result, metrics, violations and reason |
 | `failure` | Verified reduced scenario, result, metrics, violations, differences and reduction scope; otherwise null |
 | `rows`, `config` | Complete input history/config retained for artifact export |
-| `artifacts`, `provenance` | Relative sibling downloads; optional public source/data disclosures |
+| `artifacts`, `provenance` | Relative sibling artifact files; optional public source/data disclosures |
 
 Each baseline/scenario entry is `PASS`, `FAIL`, `UNAVAILABLE` or `NOT_RUN`. Unavailable values remain absent with a reason. A report may establish a verified failure even when other scenarios are unavailable. `coverage.runs` counts every native invocation, including repeats, reduction and final verification. A negative conclusion requires the completed declared suite. Metrics are `return_pct`, `net_profit`, `final_equity`, `max_drawdown_pct` and `closed_trades`, derived from native observations with initial cash included in drawdown peaks.
 
@@ -74,6 +74,8 @@ The report is a plain JSON-compatible dictionary. Its principal fields are:
 | `economics` | Conditional projections and assumptions, or `null` |
 | `economics_error` | Optional explanation when the economic model cannot produce a representable ledger |
 | `artifacts` | Safe relative sibling paths to JSON, fixture, test and receipt |
+| `repair_replay` | Optional recorded saved-fixture replay: `status`, repaired `adapter`, and optional `reason`; absent means repair not verified |
+| `provenance.fixed_patch` | Optional disclosed repair description; explanatory text, not automatic source-line attribution |
 
 The status vocabulary deliberately limits the claim:
 

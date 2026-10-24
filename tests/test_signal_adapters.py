@@ -155,6 +155,7 @@ def test_resolve_runner_imports_project_function_and_preserves_metadata(tmp_path
         "callback.trace_kind = 'observed_position'\ncallback.adapter_info = {'engine': 'custom'}\n"
     )
     monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
     targets = resolve_runner("local_signals:target_sequence", engine="targets")
     assert targets(rows(), {}, 7)[0]["target"] == -2
     assert targets.runner_spec == {"engine": "targets", "engine_settings": {}}

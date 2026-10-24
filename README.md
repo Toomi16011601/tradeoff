@@ -1,138 +1,98 @@
-# Tradeoff (backtest)
+# Tradeoff
 
-**Crash-test a trading strategy before you deploy it. Keep a test for the fix.**
+**Catch future-data bugs in a trading strategy. Keep a test for the fix.**
 
-Tradeoff is a local debugging lab for strategies you or your agent already wrote. It runs the strategy in **Backtesting.py 0.6.6**, adds fees, spread and market-order delay, and checks the results against a policy you choose. When it verifies a failure, it saves the evidence and a regression test you can replay after a repair.
+Tradeoff changes data that was unavailable at a historical cutoff and reruns your strategy. If an earlier decision changes, it saves the exact paired inputs and a regression test. You or your coding agent can then repair the strategy and replay the **same fixture**.
 
-**See a real-data failure in one command.** On the [GOOG daily sample bundled with Backtesting.py](https://kernc.github.io/backtesting.py/doc/examples/Quick%20Start%20User%20Guide.html) (2,148 bars, 2004–2013), a simple long/flat 10/20-day moving-average crossover returned **656.46%** with zero baseline fees. Adding just **5 bps commission** cut that simulated return to **626.21%**. Tradeoff completed all **12/12** declared cost, spread and delay scenarios, verified the policy breach with fresh reruns, and saved a replayable regression test. These are in-sample historical results, not a forecast or profitability claim; open terminal holdings remain marked to market.
+Start with **Backtesting.py 0.6.6** strategies. Lower-level callback, pandas, numeric-target and Backtrader adapters are also available. Everything runs on your device and writes an offline report file.
 
-**Runs on your device.** Every user installs and runs their own copy. Tests run on that user's computer and save reports there; the project maintainers do not host them or need to keep a computer online. To view a result, open the generated report file in your browser. No server is needed.
+## Try a real public-code bug
 
-Local execution is not a privacy guarantee. Tradeoff has no built-in upload, but it runs the strategy Python you import without a sandbox. Reports and replay fixtures can contain the full input data; a cloud coding agent may transmit files you give it to its provider. Keep credentials out of the simulation environment, and review code and outputs before sharing them. [Security boundaries](SECURITY.md).
+The included Riskkit example contains a pre-existing `.bfill()` dependency in its published volatility calculation. Tradeoff runs the pinned original code and position sizer, changes only unavailable input, reproduces the earlier position difference, and verifies a disclosed repair against the unchanged fixture.
 
-```text
-Your agent's decisions → Backtesting.py simulates orders
-                      → Tradeoff stresses execution and checks your policy
-                      → You or a coding agent reads JSON, repairs the strategy, replays the test
-```
+**The demo input is a synthetic stress tape, not historical market prices.** The defect is in the public source; Tradeoff does not plant it. The longer tape also checks that the repaired strategy still trades. The original full historical GOOG sample did not show a position difference under the tested edits because sizing caps masked the dependency. [Source, evidence and limits](docs/future-data-case-study.md).
 
-The browser UI is an interactive report file of a **completed run**. Create new runs with the CLI or Python API. Tradeoff does not choose trades, connect to a live broker or provide a universal agent connector. It needs no AI API keys; passing a simulation does not establish profitability or live execution quality.
-
-**Local • Offline reports • Python 3.10+ • MIT • 0.3.0 alpha**
-
-## Install and try it
-
-Clone this repository onto your own device, then create an environment and install the execution dependencies:
+Use Python 3.12 for the simplest tested setup:
 
 ```bash
 git clone https://github.com/Toomi16011601/tradeoff.git
 cd tradeoff
-python -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install '.[lab]'
+python -m pip install '.[audit]'
+tradeoff demo-bug --output bug-output
 ```
 
-On Windows PowerShell, activate with `.\.venv\Scripts\Activate.ps1`.
+On Windows, create the environment with `py -3.12 -m venv .venv` and activate with `.\.venv\Scripts\Activate.ps1`.
 
-**Upgrading from BacktestWitness?** In the same environment, run `python -m pip uninstall backtest-witness` before installing Tradeoff. The new package includes the old command and import aliases; removing the old distribution first avoids overlapping package files.
+Open **`bug-output/index.html`** in your browser. It is a file on your computer; no server is needed. The command exits **0** only when it reproduces the original dependency and verifies the repair. It does not certify the entire strategy.
 
-Run the historical showcase. It uses the GOOG sample included in the pinned Backtesting.py dependency, so there is no data download or API key:
+The report puts the investigation in order: changed unavailable input, affected earlier decision, then saved-fixture repair verification. Detailed tables, saved regression files and conditional economic projections remain available.
+
+![Tradeoff reproduces a 29-to-31 position change in pinned public code and verifies its repair on the same synthetic fixture.](docs/assets/future-data-investigation.png)
+
+## Connect your own project
+
+Install Tradeoff into your strategy project's environment. Keep your strategy and data in that project:
 
 ```bash
-tradeoff demo-history --output historical-output
-# Expected exit 1: the simulated strategy breaches the example stress policy.
+python -m pip install 'tradeoff[audit] @ git+https://github.com/Toomi16011601/tradeoff.git'
 ```
 
-Open **`historical-output/index.html`** from your project folder in your browser. The offline report shows the baseline and stressed trades, equity, scenario coverage and saved failure. Replay it with `tradeoff replay-failure historical-output/failure-fixture.json` (exit 1 while the failure remains). The [direct native-engine baseline check](tests/test_historical_demo.py) and exact [demo assumptions](docs/historical-demo.md) are available for inspection.
-
-For a smaller agent-integration example using synthetic prices, run:
+For an importable `Strategy` class in `strategy.py` and a daily CSV with `Date,Open,High,Low,Close,Volume`, run from your project root:
 
 ```bash
-python -m examples.agent_integration --output failure-output-agent
-# Expected exit 1: this synthetic teaching example breaches its stress policy.
+tradeoff init --strategy strategy.py --data prices.csv \
+  --symbol DEMO --timezone America/New_York --session-close 16:00 \
+  --timestamp-kind close --review-imports
+tradeoff check --json
 ```
 
-Open the generated **`failure-output-agent/index.html`** file in your browser: find it in Finder or File Explorer and double-click it, or use your browser's Open File command. The interactive report contains its data and works offline. It does not need a running server. Use a new or empty output directory for every run.
+Use your data's **actual** symbol, timezone and bar-label convention. For hourly bar-open labels, use `--timestamp-kind open --bar-duration 1h`. A timezone is unnecessary when timestamps already include one. The setup command lists unresolved choices and the flags to supply; you do not need to write a wrapper or edit JSON for a supported importable class. Multiple classes require `--strategy-class MyStrategy`.
 
-The example decision function supplies historical buy/close/hold decisions; its adapter places native simulated orders. For shorts, sizing rules and other order behavior, use the native strategy-class interface. A coding agent can call `lab --json` or Python and inspect evidence before proposing a repair. [Agent integration walkthrough](docs/agent-integration.md) · [Step-by-step quickstart](docs/quickstart.md).
+`init` reads source without importing it and saves a private `tradeoff.json`. `--review-imports` acknowledges that you reviewed the source, dependencies and companion files; static inspection cannot certify import safety. Recognized unguarded backtest/plot calls must be moved behind `if __name__ == "__main__":` or into a separate script. [Script setup](docs/script-strategy-onboarding.md).
 
-## Test your own strategy
+After setup, **`tradeoff check`** is the rerun command. Each default run gets a fresh `.tradeoff/` folder. Its summary gives the report path and replay command. A coding agent can read `--json` and `report.json` directly. [Quickstart](docs/quickstart.md) · [Agent workflow](docs/agent-integration.md).
 
-*Earlier-version report capture, before the Tradeoff rename. The screenshot would still show the former BacktestWitness name.*
-Keep real agent code and private prices in your own project on your device. Start with the synthetic example above, then use only strategy code you trust. With the environment active, run from your project's root so its strategy module is importable. If your strategy lives in a script that runs a backtest or plot at import time, start with `tradeoff inspect-script path/to/script.py`; it scans source without importing it and gives a bounded integration hint. Move the strategy class and its dependencies into an importable module before running it. [Script-style strategy guide](docs/script-strategy-onboarding.md).
+## Repair and verify
 
-Choose your stress policy explicitly. This example allows a 2-percentage-point return drop from the same baseline and requires one closed trade; the values are illustrative, not a trading recommendation. The generated policy has no absolute minimum return, so a profitable baseline is not required just to start stress testing:
+When a check finds a dependency, keep its `reproducer.json` unchanged. From the strategy project root, edit the strategy and run the replay command printed by the check. To try another class explicitly:
 
 ```bash
-tradeoff init-requirements --max-return-drop-pct 2 --min-closed-trades 1 \
-  --output requirements.json
+tradeoff reproduce .tradeoff/check-RUN/reproducer.json \
+  --adapter strategy:RepairedStrategy
 ```
 
-Then use your existing daily CSV:
+Replace `check-RUN` with the actual folder printed by your check. Replay exits **1** while the dependency remains, **0** when the saved comparison passes, and **2** for unstable or invalid evidence. Run another `tradeoff check` after the repair to inspect fresh interventions as well.
 
-```bash
-# CSV headers: Date,Open,High,Low,Close,Volume
-tradeoff lab --adapter my_strategy:MyStrategy --engine backtesting \
-  --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
-  --requirements requirements.json --output failure-output --json
-```
-
-Open **`failure-output/index.html`** from your project folder in your browser. Occupied outputs are rejected before strategy import or simulation; choose a new or empty output directory for later runs.
-
-If you have native Backtesting.py results from the original strategy, compare its baseline metrics with the report before interpreting the stress result: `tradeoff check-baseline failure-output/report.json --expected native-baseline.json`. This checks only the supplied metrics and context. [Capture the reference and investigate mismatches](docs/script-strategy-onboarding.md).
-
-Choose the symbol, timezone and closing convention for **your** data; no exchange calendar is inferred. Intraday bar-open labels use `--timestamp-kind open --bar-duration 1h`. Extra feature columns and the original source clock are preserved. Native preflight checks some missing columns, unset globals and unusable volume before reruns. It cannot automatically initialize an arbitrary project or fix third-party dependency bugs.
-
-[CSV import, prerequisites and troubleshooting](docs/data-import.md) · [Step-by-step quickstart](docs/quickstart.md) · [Native execution guide](docs/failure-lab.md)
-
-## Read, repair and replay
-
-| Result | Meaning |
+| Audit result | Meaning |
 | --- | --- |
-| `FAILURE_FOUND` | A repeated stressed run breaches your policy; inspect scenario coverage too. |
-| `BASELINE_FAILED` | The baseline already breaches your absolute requirements. |
-| `NO_FAILURE_OBSERVED` | The completed declared suite meets your policy; check its exact limits and coverage. |
-| `INCONCLUSIVE` | Unstable, unavailable, unsupported or incomplete evidence prevents a comparable conclusion. |
+| `FOUND` | A repeated future-only edit changed an observed past target or position. |
+| `NO_DEPENDENCY_OBSERVED` | The inspected interventions did not change the tested past decisions. |
+| `INCONCLUSIVE` | A comparable result could not be established. |
 
-Every run saves `report.json` and an offline `index.html`. A verified stress failure also saves `failure-fixture.json`, `failure-receipt.json` and `test_failure_resilience.py`.
+A passing saved fixture covers that case. It does not prove global absence of leakage, future profitability or safe live execution. The checker observes decision differences; it does not automatically identify a causal source line.
 
-```bash
-tradeoff replay-failure failure-output-agent/failure-fixture.json
-# Expected exit 1 while the saved policy breach remains.
-```
+## Local execution and privacy
 
-Run this example's replay from the checkout root so its strategy module can be imported. Repair replay checks the current baseline and saved stress against the unchanged tape and policy. A passing repair covers that saved case; it does not establish global robustness. [Repair workflow](docs/quickstart.md#replay-a-repair) · [Artifact schema](docs/report-schema.md)
+Every user runs their own installed copy. Reports need no running process after generation. Tradeoff has no built-in upload or AI API requirement, but imported strategy code executes as ordinary Python. Reports and fixtures can contain the full input tape. Your chosen coding agent controls any files it sends to its provider. [Security boundaries](SECURITY.md).
 
-## Explore further
+## Other workflows
 
-The public strategy casebook is a larger synthetic debugging example using pinned Riskkit and CoinGlass code. Its causal variants repair independently reproduced future-data defects, not execution resilience. [Public sources and scope](docs/public-strategies.md).
+- **Execution resilience:** native fee, spread and market-order-delay reruns under an explicit policy. [Failure lab](docs/failure-lab.md) · [Historical execution demo](docs/historical-demo.md).
+- **Public source casebook:** `tradeoff cases --output public-output` runs two pinned public-code future-data cases and their local repairs. Install `.[cases]` for its numerical pins; Python 3.11+ is required. [Sources and scope](docs/public-strategies.md).
+- **Direct integration:** `tradeoff audit` accepts explicit adapters and data options without a project manifest. [Callback contract](docs/callback-contract.md) · [Integrations](docs/integrations.md) · [Methodology](docs/methodology.md).
 
-```bash
-# Public case pins require Python 3.11+.
-python -m pip install '.[cases]'
-tradeoff lab-cases --output failure-public-output
-# Expected exit 1: the variants breach the declared teaching policy.
-```
+Prior work includes [Freqtrade lookahead analysis](https://www.freqtrade.io/en/stable/lookahead-analysis/), [SharpeBench](https://github.com/general-liquidity/sharpebench), [Backtesting.py](https://kernc.github.io/backtesting.py/) and [Backtrader](https://www.backtrader.com/). Tradeoff focuses on saved paired evidence and repair replay; it makes no first-ever detector claim.
 
-Open the generated `failure-public-output/index.html` file in your browser.
-
-A separate **future-data audit** changes records unavailable at a fixed cutoff and checks whether earlier decisions change. Its illustrative economic projection is separate from the native execution ledger. Existing Backtrader, pandas and numeric-target integrations retain this audit scope. [Future-data workflow](docs/quickstart.md#future-data-audits) · [Callback contract](docs/callback-contract.md) · [Methodology](docs/methodology.md)
-
-Native execution retains open terminal holdings and pending orders, and preserves native protective SL/TP timing. Some order types are unsupported under added delay. [Execution contract and limits](docs/execution-contract.md).
-
-## Develop and contribute
+## Develop
 
 ```bash
-python -m pip install -e '.[dev,adapters,cases,lab]'
+python -m pip install -e '.[dev,adapters,cases,audit]'
 python -m pytest
 python -m build
 ```
 
-[Contributing](CONTRIBUTING.md) · [Architecture](docs/architecture.md) · [Local verification](docs/verification.md) · [Release checklist](docs/launch-checklist.md) · [Changelog](CHANGELOG.md)
+[Contributing](CONTRIBUTING.md) · [Architecture](docs/architecture.md) · [Report format](docs/report-schema.md) · [Verification](docs/verification.md) · [Changelog](CHANGELOG.md).
 
-Prior work includes [Freqtrade lookahead analysis](https://www.freqtrade.io/en/stable/lookahead-analysis/), [SharpeBench](https://github.com/general-liquidity/sharpebench), [QuantStats](https://github.com/ranaroussi/quantstats), [Backtrader](https://www.backtrader.com/) and [Backtesting.py](https://kernc.github.io/backtesting.py/). Tradeoff focuses on explicit policy, repeatable failures, paired evidence and repair replay; it makes no first-ever detector claim.
-
-Renamed from BacktestWitness. Existing `backtest-witness` commands and `backtest_witness` Python imports remain compatibility aliases. Saved artifact formats and hashes are unchanged. [Migration details](docs/github-launch.md#compatibility-and-earlier-artifacts).
-
-Licensed under [MIT](LICENSE). Install from this repository; the package has not been published to PyPI. Good Luck!
+Tradeoff is MIT licensed and alpha software. Install from this repository; it is not published on PyPI. Earlier `backtest-witness` commands and `backtest_witness` imports remain compatibility aliases. [Migration](docs/github-launch.md#compatibility-and-earlier-artifacts).
