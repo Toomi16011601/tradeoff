@@ -64,18 +64,22 @@ Keep real agent code and private prices in a **separate private project**. Insta
 
 1. Copy the example pattern into your own importable private project module. Replace `decide` with the historical decision logic you want to test, keeping its long/flat contract if you reuse this adapter.
 2. Supply one instrument's complete OHLCV history instead of the bundled synthetic tape. The CLI accepts CSV or JSON through `--data`, including ordinary provider headers with explicit symbol/timezone/session conventions. [Import guide](data-import.md).
-3. Choose requirements before interpreting the run. Keep a minimum closed-trade requirement if an inactive strategy should not count as a repair.
+3. Choose requirements before interpreting the run. Keep a minimum closed-trade requirement if an inactive strategy should not count as a repair. `tradeoff init-requirements` creates a complete explicit policy without assuming an absolute profit floor.
 4. Run the strategy class with `lab`, then inspect `report.json` and replay any verified failure.
 
-For example, after saving your class as `my_agent.strategy:AgentStrategy` and your policy as `requirements.json`:
+For example, after saving your class as `my_agent.strategy:AgentStrategy`:
 
 ```bash
+tradeoff init-requirements --max-return-drop-pct 2 --min-closed-trades 1 \
+  --output requirements.json
 tradeoff lab --adapter my_agent.strategy:AgentStrategy --engine backtesting \
   --data daily.csv --symbol DEMO --timezone America/New_York --session-close 16:00 \
   --requirements requirements.json --output failure-output-my-agent --json
 ```
 
 Open `failure-output-my-agent/index.html` to inspect the report on your computer. Your coding agent can read `failure-output-my-agent/report.json` directly.
+
+If your original strategy is in a script that runs a backtest or plot at import time, use `tradeoff inspect-script original.py` and [prepare an importable class](script-strategy-onboarding.md). If its original Backtesting.py run produced native metrics, compare them with `tradeoff check-baseline failure-output-my-agent/report.json --expected native-baseline.json` before relying on a stress result. A match of summary metrics is only a bounded integration check.
 
 This example assumes date-only labels and `Date,Open,High,Low,Close,Volume` headers. Choose the dataset's actual conventions. For hourly source bar-open labels, use `--timestamp-kind open --bar-duration 1h`; `--column-map '{"Time":"Datetime"}'` preserves the original clock for a strategy needing `Time`. No missing bars or exchange calendar are inferred.
 
@@ -85,7 +89,7 @@ The native engine receives the complete input frame. Pass only the information a
 
 If you replay a fixed cache of external decisions, key it by the information actually available at each decision time. That checks the cached decisions under the tested execution assumptions. It does **not** validate that the original agent would adapt to different cash, positions or fills under stress. A fresh API response is not a reproducible historical decision record.
 
-Only import and execute strategy code you trust: adapters are normal, unsandboxed Python code running locally. Keep proprietary code and credentials in your own project, outside this repository. Tradeoff has no built-in uploads, account or model service. Your chosen agent controls any context it sends to its own provider; a local tool does not make a cloud agent offline.
+Only import and execute strategy code you trust: adapters are normal, unsandboxed Python code running locally. Keep proprietary code and credentials in your own project, outside this repository. Tradeoff has no built-in uploads, account or model service. Reports and replay fixtures can retain the full input data, so inspect them before giving them to an agent. Your chosen agent controls any context it sends to its own provider; a local tool does not make a cloud agent offline. [Security boundaries](../SECURITY.md).
 
 ## Let a coding agent read the result
 
