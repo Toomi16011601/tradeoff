@@ -2,6 +2,10 @@
 
 **Catch future-data bugs in a trading strategy. Keep a test for the fix.**
 
+![26-second Tradeoff demo: run the public Riskkit example, inspect a 29-to-31 position change caused by future data, and verify the repair on the unchanged saved fixture.](docs/assets/tradeoff-demo.gif)
+
+**Real public code · synthetic data · 26s, edited for length.** Historical GOOG control: no dependency observed. [Evidence and limits](docs/future-data-case-study.md) · [Static preview](docs/assets/future-data-investigation.png).
+
 Tradeoff changes data that was unavailable at a historical cutoff and reruns your strategy. If an earlier decision changes, it saves the exact paired inputs and a regression test. You or your coding agent can then repair the strategy and replay the **same fixture**.
 
 Start with **Backtesting.py 0.6.6** strategies. Lower-level callback, pandas, numeric-target and Backtrader adapters are also available. Everything runs on your device and writes an offline report file.
