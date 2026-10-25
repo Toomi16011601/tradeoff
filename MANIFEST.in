@@ -1,7 +1,7 @@
 include LICENSE README.md CHANGELOG.md CONTRIBUTING.md SECURITY.md _build_backend.py
 recursive-include src/tradeoff/report *.html *.css *.js
 recursive-include src/tradeoff/cases/sources *.py *.json *_LICENSE
-recursive-include docs *.md *.jpg *.png
+recursive-include docs *.md *.jpg *.png *.gif
 recursive-include examples *.py
 recursive-include tests *.py
 prune docs/superpowers
