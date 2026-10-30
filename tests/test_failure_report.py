@@ -90,6 +90,15 @@ def test_initial_view_contains_native_pair_and_policy_without_javascript():
     assert any(tag == "table" and attrs.get("id") == "equity-table" for tag, attrs in page.tags)
 
 
+def test_keyboard_skip_link_targets_focusable_main_content():
+    page = Page(render(sample_report()))
+    links = [attrs for tag, attrs in page.tags if tag == "a"]
+    assert links[0].get("class") == "skip-link"
+    assert links[0].get("href") == "#main"
+    assert any(tag == "main" and attrs.get("id") == "main" and attrs.get("tabindex") == "-1"
+               for tag, attrs in page.tags)
+
+
 def test_embedded_json_escapes_script_and_preserves_exact_position_labels():
     report = sample_report()
     hostile = '</script><img src=x onerror="alert(1)">@@CSS@@&\u2028'

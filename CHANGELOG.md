@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Unify offline audit reports, execution reports and demo galleries with a dark research-desk palette, tabular numbers, clearer chart contrast and light print layouts.
+- Add keyboard skip navigation to execution reports and refresh the README demo and report previews from fresh public-code runs on labelled synthetic data.
+
 ## 0.4.0 — 2026-10-24
 
 - Center the first-use workflow on future-data dependencies: inspect changed unavailable records, compare the earlier decision, and verify a repair against the original saved fixture.
