@@ -3,12 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
 <title>@@TITLE@@</title>
 <style>@@CSS@@</style>
 </head>
 <body>
-<header><a class="brand" href="#main"><span class="brand-mark" aria-hidden="true">T/O</span>Tradeoff</a><span class="header-meta">LOCAL EXECUTION REPORT</span></header>
-<main id="main">@@CONTENT@@</main>
+<a class="skip-link" href="#main">Skip to report</a>
+<header>
+  <a class="brand" href="#main" aria-label="Tradeoff, execution report">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h24v6h-9v20h-6V10H4V4z" fill="currentColor"/></svg>
+    <span>Tradeoff<span class="brand-period">.</span></span>
+  </a>
+  <span class="brand-description">Evidence for trading decisions</span>
+  <span class="header-meta">LOCAL EXECUTION REPORT<span>SELF-CONTAINED / OFFLINE</span></span>
+</header>
+<main id="main" tabindex="-1">@@CONTENT@@</main>
 <footer><span>Tradeoff · @@VERSION@@</span><span>SELF-CONTAINED / OFFLINE</span></footer>
 <script id="failure-data" type="application/json">@@DATA@@</script>
 <script>@@JS@@</script>
