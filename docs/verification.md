@@ -2,7 +2,15 @@
 
 Tradeoff 0.4.0 is a public source alpha. The checks below are local acceptance evidence, not a security or profitability certificate. [Hosted CI results](https://github.com/Toomi16011601/tradeoff/actions/workflows/tests.yml) record runs for published commits. The data-import and integration-check build, recorded before the Tradeoff rename, passed **621 tests** on Python 3.12.14, including native execution, input validation, replay and private diagnostics. That earlier renamed source passed **627 tests** locally; later acceptance checks follow below.
 
-The new future-data investigation screenshot shows Tradeoff 0.4.0. Other linked screenshots include earlier-version captures with BacktestWitness branding and document those earlier flows.
+The current future-data investigation screenshots show Tradeoff 0.4.0. Other linked screenshots include earlier-version captures with BacktestWitness branding and document those earlier flows.
+
+## Research desk interface — 30 October 2026
+
+The local Python 3.12 suite passed **714 tests**, including actual optional-framework integrations. The report-focused subset passed **108 tests**. The refresh changes report styles, templates and demo media; detector, replay and execution logic are unchanged.
+
+Direct-file Chrome checks covered temporal reports in found, no-dependency-observed and inconclusive states, both demo galleries, and the native execution report at desktop (1440 × 1100) and mobile widths (390 and 360 pixels). No page-width overflow, JavaScript errors or external requests were observed. Checks also covered keyboard skip links, report-view navigation, bar inspection, native scenario selection, first divergence, sibling artifact opening, readable no-JavaScript reports and light print output. [Desktop preview](assets/future-data-investigation.png) · [Mobile preview](assets/future-data-investigation-mobile.png).
+
+The 26-second README GIF uses fresh Riskkit demo evidence and unretouched report crops, with clean scene cuts and selected CLI JSON fields explicitly labelled. A fresh run returned `VERIFIED`, reproduced **29 → 31** on the synthetic 400-bar tape, and passed repaired replay on the unchanged saved fixture. The repair remains active for **95 bars** after warmup; the historical GOOG control remains a bounded negative result. Each frame labels the synthetic input; the repair's warmup change and saved-case limit remain visible.
 
 ## Future-data workflow — 24 October 2026
 
