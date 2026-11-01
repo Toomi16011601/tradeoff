@@ -2,21 +2,24 @@
 
 Find look-ahead bugs in trading strategies.
 
+Tradeoff changes data your strategy could not have known yet, reruns it, and checks whether an earlier decision changes. It saves the evidence and a test you can rerun after a repair.
+
+**Start here:**
+
+- **[Try the demo](#try-the-demo)** — use the included strategy and prices; no trading project needed.
+- **[Let your agent set it up](#let-your-agent-set-it-up)** — give your coding agent a prompt to check your own project.
+
+Tradeoff runs on **your computer** and writes reports you open as files. Start with **Backtesting.py 0.6.6**; [other adapters](docs/integrations.md) are available.
+
 ![Tradeoff demo: a later bar changes an earlier position from 29 to 31 units; the saved test passes after the fix.](docs/assets/tradeoff-demo.gif)
 
 26-second demo, edited for length. It uses public Riskkit code and synthetic data. The historical GOOG test found no position change. [Case details](docs/future-data-case-study.md) · [Still image](docs/assets/future-data-investigation.png).
 
-Tradeoff reruns your strategy after changing data it could not have known at the time. If an earlier target or position changes, it saves both sets of inputs and a regression test. Fix the strategy, then rerun the saved test to check the repair.
+## Try the demo
 
-Start with **Backtesting.py 0.6.6**. There are also adapters for callbacks, pandas, numeric targets and Backtrader. It runs locally and writes an HTML report.
+You need **Git** and **Python 3.12**. [Install or check these first](docs/quickstart.md#1-install-from-the-checkout) if you are unsure. The demo includes its strategy and synthetic prices, so no API key, market-data download or open market is required.
 
-## Try the example
-
-The included Riskkit strategy uses `.bfill()` in its volatility calculation. That lets prices from later bars affect earlier position sizes. The demo runs the original code, finds a position that changes from 29 to 31 units, and checks a fix using the same saved inputs.
-
-The prices are synthetic. The fix changes indicator warmup and skips the original early trades; the strategy still trades after warmup. The original historical GOOG sample showed no position difference under the tested edits, where sizing caps masked the indicator's effect. [Source and test details](docs/future-data-case-study.md).
-
-Use Python 3.12 for the simplest tested setup:
+**macOS / Linux:** open a terminal in the folder where you want the checkout, then copy this block:
 
 ```bash
 git clone https://github.com/Toomi16011601/tradeoff.git
@@ -27,15 +30,51 @@ python -m pip install '.[audit]'
 tradeoff demo-bug --output bug-output
 ```
 
-On Windows, create the environment with `py -3.12 -m venv .venv` and activate with `.\.venv\Scripts\Activate.ps1`.
+<details>
+<summary>Windows (PowerShell)</summary>
 
-Open **`bug-output/index.html`** in your browser. It is a file on your computer; no server is needed. The command exits **0** only when it reproduces the original dependency and verifies the repair. It does not certify the entire strategy.
+```powershell
+git clone https://github.com/Toomi16011601/tradeoff.git
+cd tradeoff
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install '.[audit]'
+.\.venv\Scripts\tradeoff.exe demo-bug --output bug-output
+```
 
-![Tradeoff reproduces a 29-to-31 position change in pinned public code and verifies its repair on the same synthetic fixture.](docs/assets/future-data-investigation.png)
+These commands use the virtual environment directly; no PowerShell activation-policy change is needed.
+
+</details>
+
+**Expected result:** the terminal prints `VERIFIED`. Open the checkout's **`bug-output`** folder and double-click **`index.html`** to see the report in your browser. No server is needed. To repeat the demo, use a fresh output name such as `--output bug-output-2`.
+
+The report shows an earlier position changing from **29 to 31 units**, followed by a passing repair check on the same saved inputs. The command exits **0** when that full demonstration is verified; an incomplete run exits **2**. [Setup troubleshooting](docs/quickstart.md#if-setup-stops).
+
+The included public Riskkit code uses `.bfill()` in a rolling volatility calculation. Removing it changes warmup and skips early trades; the repaired strategy still trades after warmup. The positive example uses **synthetic prices**. The separate historical GOOG test found no position change under the tested edits. A passing saved-case test does not certify the entire strategy. [Source, data and limits](docs/future-data-case-study.md).
+
+## Let your agent set it up
+
+Open your trading project in a coding agent that can run terminal commands. Paste this prompt; you do not need to clone Tradeoff separately first:
+
+```text
+Set up Tradeoff (https://github.com/Toomi16011601/tradeoff) to check this trading project for look-ahead bugs.
+
+Find the strategy and one instrument's historical OHLCV data. Ask me for missing data or unclear timestamp conventions; do not guess. Check that the strategy has a supported adapter, starting with Backtesting.py 0.6.6.
+
+Install with: python -m pip install 'tradeoff[audit] @ git+https://github.com/Toomi16011601/tradeoff.git'
+Use the project's test environment, or an isolated environment if dependencies conflict.
+
+Review the strategy and imports, then run tradeoff init with the actual files and data conventions. Use --review-imports only after review. Run tradeoff check --json and give me the result, report filename and command for the next check.
+
+Do not place live trades or change strategy logic during setup. If an adapter or data is missing, explain what is needed instead of claiming the check passed.
+```
+
+Your agent may need to ask which strategy or data to use. After setup, run **`tradeoff check`** in that environment for another check. A finding produces evidence to inspect; a no-finding result covers the tested inputs only. [Agent workflow and repair loop](docs/agent-integration.md).
+
+Tradeoff has no built-in upload or AI key requirement. Your chosen coding agent controls any files it sends to its own provider.
 
 ## Connect your own project
 
-Install Tradeoff into your strategy project's environment. Keep your strategy and data in that project:
+Prefer to set it up yourself? Install Tradeoff into your strategy project's test environment. Keep your strategy and data in that project:
 
 ```bash
 python -m pip install 'tradeoff[audit] @ git+https://github.com/Toomi16011601/tradeoff.git'
