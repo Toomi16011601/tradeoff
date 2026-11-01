@@ -1,5 +1,7 @@
 # Connect a coding agent to the local debugger
 
+For a first setup, open your trading project in a coding agent with terminal access and use the [copyable setup prompt in the README](../README.md#let-your-agent-set-it-up). It includes installation, finding the strategy and historical data, checking supported adapters and returning the first report. No separate agent service is needed.
+
 ## Start with future-data debugging
 
 Install Tradeoff in the strategy project's environment, then tell your coding agent:
@@ -7,6 +9,8 @@ Install Tradeoff in the strategy project's environment, then tell your coding ag
 > Use Tradeoff locally to check this strategy for future-data dependencies. Review its source and imports first. Run `tradeoff init --strategy strategy.py --data prices.csv` with the actual data conventions and `--review-imports` after review; resolve any reported issues using CLI flags. Run `tradeoff check --json`, read its report and paired witness, then propose a causal repair. Preserve the original fixture and replay it with `tradeoff reproduce` from the project root. Run a fresh check after repair. Report unsupported or inconclusive evidence explicitly.
 
 Replace the example filenames with the project's actual files. The tool does not need a dedicated agent service or AI key. A CLI agent runs ordinary commands and reads the returned JSON. `init` is static; `check` executes reviewed local strategy code. The private manifest keeps settings for one-command reruns. [Exact setup and exit codes](quickstart.md).
+
+Setup can require your input: the agent should ask for missing historical prices or ambiguous timestamps, and explain any adapter work needed for an unsupported strategy. It should use a test environment, keep dependency conflicts isolated, and leave trading logic and live trading untouched during setup. The tool does not automatically connect every trading project.
 
 For the included public-code demonstration, use `tradeoff demo-bug --output bug-output --json`. It runs a genuine published defect on a labeled synthetic tape and records the original failure plus same-fixture repaired pass. [Evidence and limits](future-data-case-study.md).
 
