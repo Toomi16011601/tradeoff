@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Put demo and coding-agent setup paths at the top of the README, with a copyable agent prompt, prerequisites, complete Windows commands and first-run troubleshooting.
 - Unify offline audit reports, execution reports and demo galleries with a dark research-desk palette, tabular numbers, clearer chart contrast and light print layouts.
 - Add keyboard skip navigation to execution reports and refresh the README demo and report previews from fresh public-code runs on labelled synthetic data.
 

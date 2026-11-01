@@ -4,9 +4,34 @@ Tradeoff tests whether changing unavailable future input changes an earlier stra
 
 Your installed copy runs on your own device. Open the generated `index.html` file to inspect a completed run; no server or hosted account is needed.
 
+Choose a starting point:
+
+- **[Try the demo](#1-install-from-the-checkout):** use the included strategy and data to see a verified bug and repair. You do not need your own strategy, live market data or API keys.
+- **[Let your agent set it up](../README.md#let-your-agent-set-it-up):** give a coding agent the setup prompt, then let it inspect your strategy project and explain any missing inputs. The agent needs permission to run local commands and read the relevant files.
+
 ## 1. Install from the checkout
 
+You need **Git** and **Python 3.12** for the commands below. Get Git from its [official installation page](https://git-scm.com/install/) and see [Python.org downloads](https://www.python.org/downloads/) for official Python options. Use a maintained Python 3.12 setup for your operating system or package manager; on Linux, include its venv package if packaged separately.
+
+Open **Terminal** on macOS/Linux or **PowerShell** on Windows. First check that the tools are available:
+
+```bash
+# macOS / Linux
+git --version
+python3.12 --version
+```
+
+```powershell
+# Windows PowerShell
+git --version
+py -3.12 --version
+```
+
+Git should print a version, and Python should print `Python 3.12.x`. After installing a missing tool, close and reopen your terminal before checking again.
+
 Python 3.12 is the recommended tested setup. Core commands require Python 3.10+; the optional pinned public casebook requires Python 3.11+.
+
+**macOS / Linux:** copy these commands into Terminal, one line at a time. They download the public source, create a project-local Python environment, install the demo dependencies and run the investigation.
 
 ```bash
 git clone https://github.com/Toomi16011601/tradeoff.git
@@ -14,19 +39,39 @@ cd tradeoff
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install '.[audit]'
-```
-
-On Windows use `py -3.12 -m venv .venv`, then `.\.venv\Scripts\Activate.ps1`. If this environment contains the old `backtest-witness` distribution, uninstall it first so installed files do not overlap.
-
-## 2. Run the public bug investigation
-
-```bash
 tradeoff demo-bug --output bug-output --json
 ```
 
-The command runs an existing defect in pinned Riskkit source on a clearly labeled **synthetic** stress tape, exports a witness, confirms the original still fails its saved fixture, and verifies the disclosed repair. It also checks that the repaired strategy remains active. A complete verified demonstration exits **0**; an incomplete demonstration exits **2**.
+**Windows PowerShell:** use this complete alternative. It calls the local environment directly, so you do not need to activate it or change PowerShell's execution policy.
 
-Open **`bug-output/index.html`**. Start with the changed input and earlier position, then inspect saved-fixture repair verification. The source, data construction, warmup change and tested limits are disclosed. The original full historical GOOG input was a negative control: tested edits did not change earlier positions because the position cap masked the faulty feature. [Case study](future-data-case-study.md).
+```powershell
+git clone https://github.com/Toomi16011601/tradeoff.git
+cd tradeoff
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install ".[audit]"
+.\.venv\Scripts\tradeoff.exe demo-bug --output bug-output --json
+```
+
+The initial download and installation need internet access. The demo itself uses included source and data and does not connect to a broker or market-data service. If reusing an environment containing the old `backtest-witness` distribution, uninstall it first so installed files do not overlap; a fresh `.venv` avoids that overlap.
+
+## 2. Run the public bug investigation
+
+The final command above runs an existing defect in pinned Riskkit source on a clearly labeled **synthetic 400-bar stress tape**, exports a witness, confirms the original still fails its saved fixture, and verifies the disclosed repair. It also checks that the repaired strategy remains active after warmup.
+
+Expect JSON containing **`"status": "VERIFIED"`** when the full demonstration succeeds, with exit code **0**. An incomplete demonstration exits **2**; read its error or report before treating it as verified.
+
+In Finder or File Explorer, open the downloaded **`tradeoff`** folder, then **`bug-output`**, and double-click **`index.html`** to open the report in your browser. On Linux, use your file manager. Start with the changed input and earlier position, then inspect saved-fixture repair verification.
+
+To run the demo again, use a fresh output name, for example `tradeoff demo-bug --output bug-output-2 --json` (Windows: `.\.venv\Scripts\tradeoff.exe demo-bug --output bug-output-2 --json`). Tradeoff refuses to overwrite a nonempty output folder; open the report in the new folder after each run.
+
+The repair changes indicator warmup and skips the original early trades. Its **PASS** covers the exact saved fixture; it does not establish profitability or that every future-data dependency is gone. The original full historical GOOG input was a negative control: tested edits did not change earlier positions because the position cap masked the faulty feature. [Case study and tested limits](future-data-case-study.md).
+
+### If setup stops
+
+- **`git` or `python3.12` is not found / `py -3.12` cannot find Python:** install the prerequisite above, reopen Terminal or PowerShell, and repeat the version check. On Windows, ensure your Python installation includes the `py` launcher or Python install manager.
+- **`tradeoff` is not found on macOS/Linux:** return to the `tradeoff` folder and run `source .venv/bin/activate`, then retry. If installation did not complete, rerun `python -m pip install '.[audit]'` in that environment.
+- **Windows cannot find `.\.venv\Scripts\tradeoff.exe`:** run commands from the `tradeoff` folder, create `.venv` if needed, and repeat `.\.venv\Scripts\python.exe -m pip install ".[audit]"`. Use that local executable for later `tradeoff` commands too.
+- **Missing demo dependencies:** repeat the `.[audit]` installation using the same environment as the demo. A plain `pip install .` does not install these optional dependencies.
 
 ## 3. Set up your own strategy
 
