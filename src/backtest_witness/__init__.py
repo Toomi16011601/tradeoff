@@ -26,6 +26,9 @@ _MODULES = (
     "feedback.mcp",
     "feedback.export", "report.feedback_renderer",
     "feedback.demo",
+    "feedback.diagnostics",
+    "feedback.onboarding", "feedback._setup_probe",
+    "feedback.setup_cli",
 )
 
 for _name in _MODULES:

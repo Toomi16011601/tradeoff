@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1 — 2026-11-04
+
+- Add `tradeoff connect`: private MCP JSON/Codex TOML configuration, a generated agent-integration prompt, and an isolated Python/real-MCP recording/binding/retry test.
+- Add read-only `tradeoff doctor` checks for setup and evidence gaps, keeping real-hook verification separate from synthetic setup success.
+- Preserve edited connection files and recording environments; retain virtual-environment executable paths and report safe, actionable install failures.
+- Put own-agent setup beside the demo in the README and document client registration, hook tests and diagnostic exit codes.
+
 ## 0.5.0 — 2026-11-04
 
 - Local decision recording, exact execution/cost feedback and descriptive version comparisons through a shared Python/CLI API.
