@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — Unreleased
+
+- Local decision recording, exact execution/cost feedback and descriptive version comparisons through a shared Python/CLI API.
+- Optional MCP stdio tools and GET-only Alpaca paper evidence sync; no order execution or live broker host.
+- Offline research-desk reports, private append-only evidence, stable retries, pseudonymized exports and retained correction revisions.
+- Account-free synthetic demo and explicit retrospective public-source/agent-contract examples. Real paper-account, full LLM-agent and prospective improvement checks remain separately reported.
 
 - Put demo and coding-agent setup paths at the top of the README, with a copyable agent prompt, prerequisites, complete Windows commands and first-run troubleshooting.
 - Unify offline audit reports, execution reports and demo galleries with a dark research-desk palette, tabular numbers, clearer chart contrast and light print layouts.
