@@ -9,7 +9,7 @@ Tradeoff is a local evidence tool for trading-agent developers. Record an agent'
 - **[Try the demo](#try-the-demo)** — use the included strategy and prices; no trading project needed.
 - **[Let your agent set it up](#let-your-agent-set-it-up)** — give your coding agent a prompt to check your own project.
 - **[Try agent feedback](#try-agent-feedback)** — see decisions, fill matching, missing costs and version comparisons; no account or model needed.
-- **[Connect your trading agent](docs/feedback-integration.md#2-let-your-coding-agent-wire-the-hook)** — Python hook or local MCP; wire it once, then record automatically.
+- **[Connect your trading agent](#connect-your-trading-agent)** — Python hook or local MCP; wire it once, then record automatically.
 
 Tradeoff runs on **your computer** and writes reports you open as files. Decision feedback supports normalized imports and **read-only Alpaca paper sync**. Future-data audits start with **Backtesting.py 0.6.6**. [Supported integrations and limits](docs/integrations.md).
 
@@ -45,9 +45,30 @@ py -3.12 -m venv .venv
 
 Open **`feedback-output-demo/report/index.html`** directly. No server, model, account or open market is needed. The synthetic example shows an attributable partial-fill trade, unknown short-borrow costs, mixed-version exclusions and a comparison where the candidate does **worse**. It does not claim trading improvement.
 
-To use your own agent, [ask your agent CLI to wire the recording hook](docs/feedback-integration.md#2-let-your-coding-agent-wire-the-hook). Tradeoff records before submission and binds the returned order ID afterward. The existing broker code places orders; Tradeoff only reads evidence. MCP is optional and runs as a stdio process on your device. [Workflow and report guide](docs/decision-feedback.md).
+To use your own agent, [prepare its local connection](#connect-your-trading-agent), then give the generated prompt to your agent CLI. Tradeoff records before submission and binds the returned order ID afterward. The existing broker code places orders; Tradeoff only reads evidence. MCP is optional and runs as a stdio process on your device. [Workflow and report guide](docs/decision-feedback.md).
 
 ![Synthetic agent-feedback report showing 12 recorded decisions, unknown costs and mixed-version exclusions.](docs/assets/agent-feedback.png)
+
+## Connect your trading agent
+
+From your **own trading project's folder**, install once and prepare the local connection:
+
+```bash
+python -m pip install 'tradeoff[mcp] @ git+https://github.com/Toomi16011601/tradeoff.git'
+tradeoff connect --project .
+```
+
+Use your project's Python environment, or an isolated tool environment if dependencies conflict. `connect` generates the MCP entry with the correct paths, an agent setup prompt, and tests recording/binding/retries through Python and real local MCP calls. Its synthetic test runs in a temporary workspace; your trading records stay empty.
+
+Open **`.tradeoff/feedback/connection/AGENT_SETUP.md`**. It explains how to register the generated configuration and gives your coding agent the prompt to wire your real decision hook. Tradeoff cannot attach itself to an arbitrary agent: that hook needs one integration and a fake-broker test.
+
+Then run:
+
+```bash
+tradeoff doctor --project .
+```
+
+The doctor checks setup and recorded evidence without changing your project. It gives specific next steps for missing bindings, orders/fills, inventory, costs and outcome marks. `SETUP_READY` means the installed tools passed the isolated test; your real agent hook remains `NOT_VERIFIED` until you review and test it. [Complete setup, Windows and troubleshooting](docs/feedback-integration.md).
 
 ## Try the demo
 

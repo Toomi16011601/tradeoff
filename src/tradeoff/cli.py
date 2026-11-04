@@ -353,7 +353,7 @@ def _audit_options(parser):
 def main(argv=None):
     arguments = list(sys.argv[1:] if argv is None else argv)
     as_json = '--json' in arguments
-    safe_arguments = as_json or bool(arguments and arguments[0] == 'feedback')
+    safe_arguments = as_json or bool(arguments and arguments[0] in {'feedback', 'connect', 'doctor'})
     parser = _ArgumentParser(prog="tradeoff", description="Find what breaks a strategy and keep a reproducible test.",
                              json_errors=safe_arguments)
     parser.add_argument("--version", action="version", version=f"Tradeoff {__version__}")
@@ -369,6 +369,8 @@ def main(argv=None):
     add_future_demo_command(sub)
     from .feedback.cli import add_feedback_commands
     add_feedback_commands(sub)
+    from .feedback.setup_cli import add_connection_commands
+    add_connection_commands(sub)
     demo = sub.add_parser("demo", help="Build three offline synthetic reports; no keys required")
     demo.add_argument("--output", default="demo-output")
     add_diagnostics_option(demo)

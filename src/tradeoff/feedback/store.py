@@ -32,7 +32,10 @@ def _no_symlinks(path):
 
 
 class FeedbackStore:
-    def __init__(self, project: Path, *, create=False, clock=None, environment=None):
+    def __init__(self, project: Path, *, create=False, clock=None, environment=None, readonly=False):
+        if readonly and create:
+            _fail("READ_ONLY")
+        self.readonly = readonly
         self.project = Path(project).absolute()
         _no_symlinks(self.project)
         self.folder = self.project / ".tradeoff" / "feedback"
@@ -59,9 +62,22 @@ class FeedbackStore:
             self.key = (self.folder / "private.key").read_bytes()
             if len(self.key) != 32:
                 _fail()
-            self.db = sqlite3.connect(self.folder / "events.sqlite3", timeout=5, isolation_level=None)
+            database = self.folder / "events.sqlite3"
+            if readonly:
+                # mode=ro can create/update WAL sidecars. immutable=1 would
+                # instead ignore active WAL evidence. Refuse both hazards.
+                with database.open("rb") as stream:
+                    header = stream.read(20)
+                if header[18:20] != b"\x01\x01":
+                    _fail("READ_ONLY_STORAGE_MODE")
+            self.db = sqlite3.connect(database.as_uri() + "?mode=ro" if readonly else database,
+                                      uri=readonly, timeout=5, isolation_level=None)
             self.db.row_factory = sqlite3.Row
+            if readonly:
+                self.db.execute("PRAGMA query_only=ON")
             self.db.execute("PRAGMA busy_timeout=5000")
+        except FeedbackError:
+            raise
         except (OSError, sqlite3.Error, ValueError):
             _fail()
 
@@ -136,6 +152,8 @@ class FeedbackStore:
     @contextmanager
     def transaction(self):
         """Serialize read-then-append constraints; nested store calls share it."""
+        if self.readonly:
+            _fail("READ_ONLY")
         own = not self.db.in_transaction
         try:
             if own:
