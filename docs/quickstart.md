@@ -154,3 +154,6 @@ tradeoff replay-failure failure-output-agent/failure-fixture.json
 | `replay-failure` | Saved execution policy passes | Comparable policy failure | Unstable / invalid / error |
 
 Reports and fixtures can contain the full input tape. Tradeoff has no built-in upload, but your chosen coding agent may send files you give it to its provider. [Security boundaries](../SECURITY.md).
+## Agent feedback setup
+
+For recording your own agent's decisions and matching execution outcomes, use the [decision-feedback walkthrough](decision-feedback.md) and [copyable integration prompt](feedback-integration.md#2-let-your-coding-agent-wire-the-hook). Run `tradeoff feedback demo --output feedback-output-demo` after installing the checkout, then open `feedback-output-demo/report/index.html`. This workflow has no local web server. MCP is optional; it uses stdio on your device.

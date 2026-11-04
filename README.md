@@ -1,19 +1,53 @@
 # Tradeoff
 
-Find look-ahead bugs in trading strategies.
+Review trading decisions. Verify strategy changes.
 
-Tradeoff changes data your strategy could not have known yet, reruns it, and checks whether an earlier decision changes. It saves the evidence and a test you can rerun after a repair.
+Tradeoff is a local evidence tool for trading-agent developers. Record an agent's intent, match execution evidence, check costs and compare declared versions. Its existing audit workflow also finds future-data bugs and saves tests you can rerun after a repair.
 
 **Start here:**
 
 - **[Try the demo](#try-the-demo)** — use the included strategy and prices; no trading project needed.
 - **[Let your agent set it up](#let-your-agent-set-it-up)** — give your coding agent a prompt to check your own project.
+- **[Try agent feedback](#try-agent-feedback)** — see decisions, fill matching, missing costs and version comparisons; no account or model needed.
+- **[Connect your trading agent](docs/feedback-integration.md#2-let-your-coding-agent-wire-the-hook)** — Python hook or local MCP; wire it once, then record automatically.
 
-Tradeoff runs on **your computer** and writes reports you open as files. Start with **Backtesting.py 0.6.6**; [other adapters](docs/integrations.md) are available.
+Tradeoff runs on **your computer** and writes reports you open as files. Decision feedback supports normalized imports and **read-only Alpaca paper sync**. Future-data audits start with **Backtesting.py 0.6.6**. [Supported integrations and limits](docs/integrations.md).
 
-![Tradeoff demo: a later bar changes an earlier position from 29 to 31 units; the saved test passes after the fix.](docs/assets/tradeoff-demo.gif)
+![Future-data audit demo: a later bar changes an earlier position from 29 to 31 units; the saved test passes after the fix.](docs/assets/tradeoff-demo.gif)
 
 26-second demo, edited for length. It uses public Riskkit code and synthetic data. The historical GOOG test found no position change. [Case details](docs/future-data-case-study.md) · [Still image](docs/assets/future-data-investigation.png).
+
+## Try agent feedback
+
+You need Git and Python 3.12. Open a terminal and run:
+
+```bash
+git clone https://github.com/Toomi16011601/tradeoff.git
+cd tradeoff
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install '.[mcp]'
+tradeoff feedback demo --output feedback-output-demo
+```
+
+<details>
+<summary>Windows (PowerShell)</summary>
+
+```powershell
+git clone https://github.com/Toomi16011601/tradeoff.git
+cd tradeoff
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install '.[mcp]'
+.\.venv\Scripts\tradeoff.exe feedback demo --output feedback-output-demo
+```
+
+</details>
+
+Open **`feedback-output-demo/report/index.html`** directly. No server, model, account or open market is needed. The synthetic example shows an attributable partial-fill trade, unknown short-borrow costs, mixed-version exclusions and a comparison where the candidate does **worse**. It does not claim trading improvement.
+
+To use your own agent, [ask your agent CLI to wire the recording hook](docs/feedback-integration.md#2-let-your-coding-agent-wire-the-hook). Tradeoff records before submission and binds the returned order ID afterward. The existing broker code places orders; Tradeoff only reads evidence. MCP is optional and runs as a stdio process on your device. [Workflow and report guide](docs/decision-feedback.md).
+
+![Synthetic agent-feedback report showing 12 recorded decisions, unknown costs and mixed-version exclusions.](docs/assets/agent-feedback.png)
 
 ## Try the demo
 

@@ -21,3 +21,10 @@ Source distributions strip local filesystem ownership and timestamps. Internal s
 Report injection or path traversal issues with a minimal synthetic reproducer. Do not include secrets in public issue reports. Use the repository's private vulnerability reporting feature if available. If no private reporting channel is available, open an issue requesting one without including exploit details, private data or credentials.
 
 Fixture hashes detect changes to content, not trustworthiness of code or origin. Future dependencies and financial losses are research/debugging concerns rather than security guarantees.
+## Agent feedback privacy boundary
+
+Feedback evidence stays in `.tradeoff/feedback/` on the user's device with a local ignore file and restrictive permissions where supported. Broker credentials are loaded only for an explicitly invoked paper sync and are never event payloads, exports, errors or MCP results. The connector pins the Alpaca paper host, uses GET only, verifies TLS, refuses redirects and bounds requests/pagination. There is no Tradeoff telemetry or upload service.
+
+Local MCP tools validate bounded arguments and allow output only within their configured workspace. They are not an OS sandbox for an agent with other tools. Rejected values and arbitrary SDK/broker exceptions are not echoed. Input snapshots are opt-in. Portable exports use allowlists, local broker-ID pseudonyms and recognized-secret checks; proprietary trading records may remain and require review before sharing. Your external agent controls what it sends to its provider.
+
+Receipts are byte-integrity checks against retained heads, not signatures or proof of source authenticity. SQLite, local clocks and local files remain editable by their owner. Supported cost/scope corrections append revisions; they do not rewrite prior exports.

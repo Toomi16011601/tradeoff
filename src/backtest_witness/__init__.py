@@ -20,6 +20,12 @@ _MODULES = (
     "failure_lab", "failure_reproduce", "integration", "mutations",
     "preview", "privacy", "report", "report.failure_renderer",
     "report.renderer", "reproduce", "sizing", "strategy_onboarding", "validation",
+    "feedback", "feedback.contracts", "feedback.store", "feedback.recorder", "feedback.reconcile", "feedback.metrics", "feedback.comparison",
+    "feedback.api", "feedback.cli",
+    "feedback.alpaca",
+    "feedback.mcp",
+    "feedback.export", "report.feedback_renderer",
+    "feedback.demo",
 )
 
 for _name in _MODULES:
