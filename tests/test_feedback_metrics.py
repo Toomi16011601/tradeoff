@@ -1,4 +1,5 @@
 from copy import deepcopy
+import pytest
 
 from feedback_helpers import (AFTER_HORIZON, episode_records, make_snapshot, complete_cost_scope, cost, mark)
 
@@ -62,6 +63,13 @@ def test_horizon_marks_must_be_mature_compatible_and_available(tmp_path):
         mark(available_at="2026-01-06T00:00:00Z")]):
         unavailable = evaluate_records(tmp_path / str(i), records, marks=[bad])
         assert unavailable["decisions"][0]["outcome_status"] == "UNAVAILABLE"
+
+
+@pytest.mark.parametrize("timestamp", ["2026-01-05T15:30:00Z", "2026-01-05T15:30:00+00:00", "2026-01-05T10:30:00-05:00"])
+def test_equivalent_aware_mark_times_have_the_same_outcome(tmp_path, timestamp):
+    result = evaluate_records(tmp_path, episode_records(), marks=[mark(observed_at=timestamp, available_at=timestamp)])
+    assert result["decisions"][0]["outcome_status"] == "AVAILABLE"
+    assert result["decisions"][0]["horizon_price_change"] == "2"
 
 
 def test_large_quantities_do_not_collapse_to_the_same_profit(tmp_path):

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0 — Unreleased
+## 0.5.0 — 2026-11-04
 
 - Local decision recording, exact execution/cost feedback and descriptive version comparisons through a shared Python/CLI API.
 - Optional MCP stdio tools and GET-only Alpaca paper evidence sync; no order execution or live broker host.
