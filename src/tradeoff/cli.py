@@ -353,11 +353,12 @@ def _audit_options(parser):
 def main(argv=None):
     arguments = list(sys.argv[1:] if argv is None else argv)
     as_json = '--json' in arguments
+    safe_arguments = as_json or bool(arguments and arguments[0] == 'feedback')
     parser = _ArgumentParser(prog="tradeoff", description="Find what breaks a strategy and keep a reproducible test.",
-                             json_errors=as_json)
+                             json_errors=safe_arguments)
     parser.add_argument("--version", action="version", version=f"Tradeoff {__version__}")
     sub = parser.add_subparsers(dest="command", required=True,
-                               parser_class=partial(_ArgumentParser, json_errors=as_json))
+                               parser_class=partial(_ArgumentParser, json_errors=safe_arguments))
     from .failure_cli import add_failure_commands
     add_failure_commands(sub)
     from .strategy_onboarding import add_onboarding_commands
@@ -366,6 +367,8 @@ def main(argv=None):
     add_project_commands(sub)
     from .future_demo import add_future_demo_command
     add_future_demo_command(sub)
+    from .feedback.cli import add_feedback_commands
+    add_feedback_commands(sub)
     demo = sub.add_parser("demo", help="Build three offline synthetic reports; no keys required")
     demo.add_argument("--output", default="demo-output")
     add_diagnostics_option(demo)
@@ -415,7 +418,7 @@ def main(argv=None):
                 record_exception(exc)
                 raise
     except Exception as exc:
-        return _command_error(exc, args, as_json=as_json)
+        return _command_error(exc, args, as_json=safe_arguments)
 
 
 if __name__ == "__main__":

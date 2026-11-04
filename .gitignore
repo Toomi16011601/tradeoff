@@ -13,6 +13,10 @@ bug-output*/
 .tradeoff/
 tradeoff.json
 failure-output*/
+feedback-output*/
+feedback-report.json
+feedback-evidence.json
+feedback-receipt.json
 failure-public-output*/
 historical-output*/
 .DS_Store

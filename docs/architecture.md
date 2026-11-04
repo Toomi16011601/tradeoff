@@ -25,3 +25,8 @@ The core uses the Python standard library; optional engines, pandas and NumPy lo
 Report CSS/JavaScript are package resources inlined into generated HTML; no frontend build or runtime network request is needed. Native execution and temporal audit artifacts have distinct schemas and replay assertions. [Execution contract](execution-contract.md), [report schemas](report-schema.md), [methodology](methodology.md).
 
 Callbacks execute ordinary user code and must expose a simulation-only entry point. Rerun checks do not isolate hidden state or external side effects. Keep proprietary strategies, account data and credentials outside the repository; all bundled examples use synthetic data.
+## Decision-feedback extension
+
+`feedback/contracts.py` validates bounded normalized evidence and exact decimal text. `store.py` persists private append-only SQLite events and retained heads; `recorder.py` supplies pre-submission Python hooks. `reconcile.py` joins explicit order IDs to fills and inventory; `metrics.py` preserves unknown costs and separate market-price outcomes. `comparison.py` pairs eligible recorded opportunities under an append-only plan. `api.py` is the shared Python/CLI/MCP application boundary.
+
+`alpaca.py` only reads the fixed paper host; `mcp.py` lazily loads the optional stdio SDK. `export.py` allowlists portable records and replaces broker identifiers with local pseudonyms. `report/feedback_renderer.py` renders already-computed values as offline HTML. No order execution, agent orchestration, telemetry, upload service or autonomous tuning is added. Existing audit/lab contracts remain separate and unchanged. [Integration details](feedback-integration.md).
