@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal, localcontext
 import hashlib
 
-from .contracts import COMPONENTS, canonical_json, decimal_text, utc_time
+from .contracts import COMPONENTS, canonical_json, decimal_text, utc_time, validate_payload
 from .recorder import classify_capture
 
 
@@ -124,6 +124,9 @@ def _episode_costs(episode, episodes, costs, scope):
 
 
 def evaluate(reconciled, *, marks, costs, cost_scopes, as_of):
+    marks = [validate_payload("mark", item) for item in marks]
+    costs = [validate_payload("cost", item) for item in costs]
+    cost_scopes = [validate_payload("cost_scope", item) for item in cost_scopes]
     with localcontext() as context:
         context.prec = 128
         return _evaluate(reconciled, marks=marks, costs=costs, cost_scopes=cost_scopes, as_of=utc_time(as_of))
