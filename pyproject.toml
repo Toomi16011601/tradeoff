@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "tradeoff"
-version = "0.5.1"
+version = "0.5.2"
 description = "Local decision feedback and future-data audits for trading agents."
 readme = "README.md"
 requires-python = ">=3.10"

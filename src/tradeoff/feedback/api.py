@@ -24,6 +24,14 @@ def _schema(properties, required):
 
 
 OPERATIONS = {
+    "configure_price_source": ("Configure an explicit local single-instrument price CSV; no file scanning or network", _schema({
+        "data_file": {"type":"string", "minLength":1, "maxLength":4096},
+        "symbol": _ID, "currency": schema_for("mark")["properties"]["currency"], "source": _ID, "feed": _ID,
+        "price_kind": schema_for("mark")["properties"]["price_kind"],
+        **{name:{"type":"string", "minLength":1, "maxLength":256} for name in ("timestamp_column","price_column","available_at_column","timezone","session_close")},
+        "replace": {"type":"boolean"}}, ["data_file","symbol","currency","source","feed","price_kind"])),
+    "collect_outcomes": ("Collect matching matured outcome prices from the configured local CSV and refresh feedback; missing fees stay unknown", _schema({
+        "as_of": _TIME, "output": {"type":"string", "maxLength":256}}, [])),
     "record_decision": ("Record a validated intent before the caller submits its order", _schema({"event_id": _ID, "decision": schema_for("decision")}, ["event_id", "decision"])),
     "bind_order": ("Bind one actual order ID to a recorded decision", _schema({"event_id": _ID, "binding": schema_for("order_binding")}, ["event_id", "binding"])),
     "import_evidence": ("Import normalized retrospective evidence, never prospective capture", _schema({"records": {"type": "array", "items": {"type": "object"}}}, ["records"])),
@@ -39,7 +47,7 @@ OPERATIONS = {
 def operation_definitions():
     return [{"operation": name, "description": desc, "input_schema": schema,
         "annotations": {"read_only_hint": name in {"evaluate_decisions", "compare_versions"},
-            "destructive_hint": False, "idempotent_hint": name in {"record_decision", "bind_order", "register_comparison", "evaluate_decisions", "compare_versions"},
+            "destructive_hint": False, "idempotent_hint": name in {"record_decision", "bind_order", "register_comparison", "evaluate_decisions", "compare_versions", "configure_price_source", "collect_outcomes"},
             "open_world_hint": name == "sync_paper_evidence"}}
         for name, (desc, schema) in OPERATIONS.items()]
 
@@ -69,6 +77,37 @@ class FeedbackApp:
     def record_decision(self, args):
         a = _arguments("record_decision", args)
         return {"status": "RECORDED", **Recorder(self.project, clock=self.clock).record_decision(a["decision"], event_id=a["event_id"])}
+
+    def configure_price_source(self, args):
+        # A local path is private configuration, not portable financial data.
+        # Normalize its representation without weakening credential scanning.
+        if isinstance(args, dict) and isinstance(args.get("data_file"), str) and Path(args["data_file"]).is_absolute():
+            try:
+                args = {**args, "data_file":os.path.relpath(args["data_file"], self.project)}
+            except ValueError:
+                raise FeedbackError("PRICE_PATH_VOLUME", "Select a CSV on the same filesystem volume as the project") from None
+        a = _arguments("configure_price_source", args)
+        from .outcomes import configure_source
+        with FeedbackStore(self.project, clock=self.clock) as store, store.transaction():
+            store.verify_chain()
+            return configure_source(store, a)
+
+    def collect_outcomes(self, args):
+        a = _arguments("collect_outcomes", args)
+        target = self._output(a["output"]) if "output" in a else None
+        from .outcomes import collect
+        with FeedbackStore(self.project, clock=self.clock) as store:
+            before, after, collection, cutoff = collect(store, as_of=a.get("as_of"))
+        previous = self._evaluate(before, cutoff)
+        evaluation = self._evaluate(after, cutoff)
+        available = lambda result: sum(d["outcome_status"] == "AVAILABLE" for d in result["decisions"])
+        collection["newly_available_outcomes"] = available(evaluation) - available(previous)
+        result = {"status":"COLLECTED", "collection":collection,
+                  "feedback":self._report(after, evaluation, cutoff)}
+        if target is not None:
+            from .export import export_feedback
+            result.update(export_feedback(after, evaluation, None, target), output=a["output"])
+        return result
 
     def bind_order(self, args):
         a = _arguments("bind_order", args)
