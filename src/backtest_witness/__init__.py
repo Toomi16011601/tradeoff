@@ -29,6 +29,7 @@ _MODULES = (
     "feedback.diagnostics",
     "feedback.onboarding", "feedback._setup_probe",
     "feedback.setup_cli",
+    "feedback.outcomes",
 )
 
 for _name in _MODULES:

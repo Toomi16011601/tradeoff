@@ -116,7 +116,7 @@ Open `.tradeoff/feedback/connection/AGENT_SETUP.md` on your device. Your coding 
 
 The generated entry uses an absolute installed-environment Python path and `-I -m tradeoff feedback mcp --project <your workspace>`. `-I` avoids importing a same-named module from the client/project directory. No local web address or hosted service is involved. Each user runs their own stdio process on their own device.
 
-Setup never changes an agent client's config automatically. The client manages when the server starts. Keep generated files private: they contain local paths. Inspect the eight tools in your client, then give your agent the generated integration prompt. Registering MCP makes the tool available; wiring the real callback and its fake-broker test is still required.
+Setup never changes an agent client's config automatically. The client manages when the server starts. Keep generated files private: they contain local paths. Inspect the ten tools in your client, then give your agent the generated integration prompt. Registering MCP makes the tool available; wiring the real callback and its fake-broker test is still required.
 
 ## Check setup and evidence
 
@@ -147,6 +147,40 @@ tradeoff feedback report --as-of 2026-01-05T16:00:00Z --output feedback-output
 Those timestamps are examples: choose the actual requested interval and evaluation time. An initial sync done **before** new trading supplies a possible future baseline, not a historical one. Syncs overlap two days by default to catch late observations, but cannot certify complete economic history. Unsupported activities, missing fees or capped/failed fetches remain visible. A sync does not evaluate newly recorded decisions before their horizon has matured.
 
 Open **`feedback-output/index.html`**. The market need not be open to evaluate stored records. Recording new real paper outcomes needs your own configured agent/account and elapsed observation time. Tradeoff itself never starts trading.
+
+## Automatically collect outcome prices
+
+Once the recording hook works, configure the **existing local price CSV** used by your agent. Your coding agent can do this once from the real data contract. Tradeoff reads the one selected file; it does not scan directories or contact a provider.
+
+For a single-instrument CSV with aware `timestamp`, decimal `price` and optional `available_at` columns:
+
+```bash
+tradeoff feedback price-source --project . --data data/prices.csv \
+  --symbol SPY --currency USD --source my-market-data --feed my-feed \
+  --price-kind mid --available-at-column available_at
+tradeoff feedback collect --project . --output feedback-output-collected
+```
+
+Use the **actual** symbol, source, feed and price kind declared in your decisions. `mid` is appropriate only for midpoint observations; a close cannot be relabelled as a quote. For a file with `Date,Close`, set `--timestamp-column Date --price-column Close --price-kind close`, and explicitly supply `--timezone` and `--session-close` for date-only labels. These are caller-owned conventions; no exchange calendar, adjustment policy or historical availability is inferred. Select a completed, stable single-instrument snapshot.
+
+If your file has no original receipt-time column, omit `--available-at-column`. Each newly collected observation then becomes available **when Tradeoff actually reads it**, not at its historical price timestamp. That supports retrospective evaluation now, without claiming that you knew the price earlier. Historical `--as-of` needs genuine recorded availability at or before that cutoff. A collection cutoff later than the actual read time is rejected.
+
+After configuration, future runs need only:
+
+```bash
+tradeoff feedback collect --project . --json
+```
+
+The result contains refreshed feedback, collection counts and unresolved reasons. Add `--output` with a fresh name to create an offline report; open its `index.html` as a file. No server is needed. This is an explicit one-shot command that your agent or scheduler can invoke; it does not install a background task.
+
+- Only matured decisions with an exact matching symbol/currency/source/feed/price-kind contract receive observations. Holds and skips have outcomes too.
+- A selected price must be at or before the declared horizon and within its freshness tolerance; future-only or stale prices remain unresolved. Pending horizons stay waiting.
+- Original decimal strings are preserved. Repeated collection adds no duplicates or changed receipt times; conflicting stored observations stop collection before new marks are appended.
+- This completes **horizon-price feedback**. It does not invent fills, historical inventory or missing fees, calculate causal execution impact, or establish complete net trading returns.
+
+Source settings stay in ignored `.tradeoff/feedback/price-source.json`, with a project-relative file path. Repeating the same setup preserves it; changing settings requires `--replace`. Reconfigure after moving an external data source. Source files are bounded to 16 MiB/100000 rows. Recognized secrets and conflicting embedded source identities are rejected. A configured local file remains user-supplied evidence, not authenticated market data.
+
+For Python, call `FeedbackApp.configure_price_source({...})` and `FeedbackApp.collect_outcomes({})`. MCP exposes the same operations as `tradeoff_configure_price_source` and `tradeoff_collect_outcomes`; the latter returns feedback directly, with an optional fresh report directory. [Real FinRL pilot and reproducible commands](public-agent-pilot.md).
 
 ## Comparison plans, corrections and CLI input
 

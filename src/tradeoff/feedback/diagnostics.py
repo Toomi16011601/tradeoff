@@ -110,7 +110,7 @@ def diagnose(project, *, as_of=None):
                         "Collect applicable fees and cost-scope evidence; keep modeled costs labeled and never assume missing fees are zero." if missing_costs else ""))
     checks.append(check("outcomes", "WARN" if missing_outcomes else "WAIT" if pending or not decisions else "PASS",
                         f"{missing_outcomes} matured decisions lack a matching horizon mark; {pending} are still waiting.",
-                        "Import marks matching the declared feed, price kind and horizon tolerance." if missing_outcomes else "Wait until declared horizons mature; no open market is needed to inspect stored evidence." if pending else ""))
+                        "Configure a matching local price source and run tradeoff feedback collect, or import marks with the declared feed, price kind and horizon tolerance." if missing_outcomes else "Wait until declared horizons mature; no open market is needed to inspect stored evidence." if pending else ""))
     excluded = evaluation["coverage"]["excluded_episodes"]
     checks.append(check("attribution", "WARN" if excluded else "PASS" if episodes else "WAIT",
                         f"{excluded} episodes excluded from attribution.",
