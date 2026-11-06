@@ -19,7 +19,7 @@ class _Once(argparse.Action):
 def add_feedback_commands(sub):
     parser = sub.add_parser("feedback", help="Record agent decisions and inspect execution feedback locally")
     commands = parser.add_subparsers(dest="feedback_command", required=True)
-    for name in ("init", "record", "bind-order", "import", "plan", "evaluate", "compare", "report", "sync-alpaca-paper", "demo", "mcp"):
+    for name in ("init", "record", "bind-order", "import", "plan", "evaluate", "compare", "report", "sync-alpaca-paper", "demo", "mcp", "price-source", "collect"):
         p = commands.add_parser(name)
         p.add_argument("--project", action=_Once, default=".", help="Your trading workspace; feedback stays under its .tradeoff folder")
         p.add_argument("--json", action="store_true", help="Emit structured results")
@@ -28,9 +28,18 @@ def add_feedback_commands(sub):
             p.add_argument("--environment", action=_Once, choices=["paper", "simulated", "live_import"], default=None)
         if name in {"record", "bind-order", "import", "plan"}:
             p.add_argument("--input", action=_Once, required=True, help="JSON arguments file, or - for standard input")
-        if name in {"evaluate", "compare", "report"}:
+        if name in {"evaluate", "compare", "report", "collect"}:
             p.add_argument("--as-of", action=_Once, help="Aware ISO timestamp; defaults to now")
+        if name in {"evaluate", "compare", "report"}:
             p.add_argument("--as-of-seq", action=_Once, type=int)
+        if name == "price-source":
+            for option in ("data", "symbol", "currency", "source", "feed", "price-kind"):
+                p.add_argument("--" + option, action=_Once, required=True)
+            for option in ("timestamp-column", "price-column", "available-at-column", "timezone", "session-close"):
+                p.add_argument("--" + option, action=_Once)
+            p.add_argument("--replace", action="store_true", help="Explicitly replace existing price-source settings; evidence is preserved")
+        if name == "collect":
+            p.add_argument("--output", action=_Once, help="Optional fresh offline-report directory")
         if name in {"compare", "report"}:
             p.add_argument("--plan-id", action=_Once, required=name == "compare")
         if name in {"report", "demo"}:
@@ -52,12 +61,18 @@ def _handle(args):
             print(canonical_json(result))
         else:
             print(result["status"])
+            if "collection" in result:
+                counts = {name:sum(d["outcome_status"] == name for d in result["feedback"]["evaluation"]["decisions"])
+                          for name in ("AVAILABLE", "PENDING", "UNAVAILABLE")}
+                print(f"Outcomes: {counts['AVAILABLE']} available, {counts['PENDING']} waiting, {counts['UNAVAILABLE']} unresolved; {result['collection']['new_marks']} new price marks.")
             if "interface" in result:
                 print("Open report file: " + str(Path(args.project).absolute() / result.get("output", "") / result["interface"]))
             elif args.feedback_command in {"evaluate", "compare"}:
                 print(canonical_json(result))
             elif args.feedback_command == "init":
                 print("Feedback stays on this device. Connect a Python hook or local MCP tool; see docs/feedback-integration.md.")
+            elif args.feedback_command == "price-source":
+                print("Next: tradeoff feedback collect --project . --output feedback-output (choose a fresh report directory).")
         return 1 if result.get("status") == "PARTIAL_SYNC" else 0
     except FeedbackError as exc:
         result = {"status": "ERROR", "error": {"code": exc.code, "message": exc.message}}
@@ -79,6 +94,14 @@ def _run(args):
         serve(Path(args.project))
         return {}
     app = FeedbackApp(Path(args.project))
+    if name == "price-source":
+        payload = {key:getattr(args, key) for key in ("symbol", "currency", "source", "feed", "price_kind")}
+        payload.update(data_file=args.data, replace=args.replace)
+        payload.update({key:getattr(args,key) for key in ("timestamp_column","price_column","available_at_column","timezone","session_close") if getattr(args,key) is not None})
+        return app.dispatch("configure_price_source", payload)
+    if name == "collect":
+        payload = {key:getattr(args,key) for key in ("as_of","output") if getattr(args,key) is not None}
+        return app.dispatch("collect_outcomes", payload)
     if name == "demo":
         target = app._output(args.output)
         from .demo import run_feedback_demo

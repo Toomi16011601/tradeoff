@@ -27,7 +27,7 @@ jobs:
               connect = subprocess.run([sys.executable, '-I', '-m', 'tradeoff', 'connect', '--project', str(project), '--json'], cwd=project, capture_output=True, text=True)
               assert connect.returncode == 0, connect.stdout
               setup = json.loads(connect.stdout)
-              assert setup['self_test']['tools'] == 8 and setup['agent_hook'] == 'NOT_VERIFIED'
+              assert setup['self_test']['tools'] == 10 and setup['agent_hook'] == 'NOT_VERIFIED'
               doctor = subprocess.run([sys.executable, '-I', '-m', 'tradeoff', 'doctor', '--project', str(project), '--json'], cwd=project, capture_output=True, text=True)
               assert doctor.returncode == 1, doctor.stdout
               result = json.loads(doctor.stdout)

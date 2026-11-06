@@ -70,6 +70,8 @@ tradeoff doctor --project .
 
 The doctor checks setup and recorded evidence without changing your project. It gives specific next steps for missing bindings, orders/fills, inventory, costs and outcome marks. `SETUP_READY` means the installed tools passed the isolated test; your real agent hook remains `NOT_VERIFIED` until you review and test it. [Complete setup, Windows and troubleshooting](docs/feedback-integration.md).
 
+Already recording decisions? [Configure your agent’s local price CSV once](docs/feedback-integration.md#automatically-collect-outcome-prices), then run `tradeoff feedback collect --project .` to refresh outcome feedback without writing mark JSON. A [real FinRL PPO pilot](docs/public-agent-pilot.md) reproduces the missing-price gap and verifies collection while preserving the native simulation trace.
+
 ## Try the demo
 
 You need **Git** and **Python 3.12**. [Install or check these first](docs/quickstart.md#1-install-from-the-checkout) if you are unsure. The demo includes its strategy and synthetic prices, so no API key, market-data download or open market is required.
