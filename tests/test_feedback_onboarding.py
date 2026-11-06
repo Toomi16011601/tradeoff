@@ -31,7 +31,7 @@ def test_setup_generates_private_configuration_and_never_seeds_real_evidence(tmp
     assert result['status'] == 'SETUP_READY'
     assert result['agent_hook'] == 'NOT_VERIFIED'
     assert result['self_test']['status'] == 'PASS'
-    assert result['self_test']['tools'] == 8
+    assert result['self_test']['tools'] == 10
     bundle = project / '.tradeoff/feedback/connection'
     config = json.loads((bundle / 'mcp.json').read_text())['mcpServers']['tradeoff']
     assert config['command'] == sys.executable

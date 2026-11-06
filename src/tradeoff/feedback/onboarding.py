@@ -63,8 +63,10 @@ def probe(python, *, self_test=False, timeout=45):
             if process.returncode != 0 and result['status'] == 'PASS':
                 raise ValueError('failed probe')
             safe = dict(status=result['status'], code=code)
-            if code == 'SELF_TEST_VERIFIED' and safe['status'] == 'PASS' and result.get('tools') == 8:
-                safe.update(tools=8, scope='Isolated synthetic Python and MCP test; real agent hook and broker not tested')
+            from .api import operation_definitions
+            expected_tools = len(operation_definitions())
+            if code == 'SELF_TEST_VERIFIED' and safe['status'] == 'PASS' and result.get('tools') == expected_tools:
+                safe.update(tools=expected_tools, scope='Isolated synthetic Python and MCP test; real agent hook and broker not tested')
             elif self_test and safe['status'] == 'PASS':
                 raise ValueError('self-test missing')
             return safe

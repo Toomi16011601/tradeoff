@@ -28,7 +28,7 @@ def test_real_stdio_protocol_retries_and_safe_errors(feedback_project, tmp_path)
                 async with ClientSession(reader, writer) as session:
                     await session.initialize()
                     listing = await session.list_tools()
-                    assert len(listing.tools) == 8
+                    assert len(listing.tools) == 10
                     assert "tradeoff_record_decision" in {t.name for t in listing.tools}
                     first = await session.call_tool("tradeoff_record_decision", {"event_id": "mcp-d1", "decision": decision()})
                     assert not first.is_error
@@ -46,6 +46,14 @@ def test_real_stdio_protocol_retries_and_safe_errors(feedback_project, tmp_path)
                     result = await session.call_tool("tradeoff_evaluate_decisions", {"as_of": AFTER_HORIZON})
                     assert not result.is_error
                     assert result.structured_content["evaluation"]["coverage"]["decision_count"] == 1
+                    (feedback_project / 'prices.csv').write_text('timestamp,price,received\n2026-01-05T15:30:00Z,12,2026-01-05T15:30:01Z\n')
+                    configured = await session.call_tool('tradeoff_configure_price_source', dict(data_file='prices.csv',symbol='SYNTH',
+                        currency='USD',source='fixture',feed='fixture-feed',price_kind='mid',available_at_column='received'))
+                    assert not configured.is_error
+                    collected = await session.call_tool('tradeoff_collect_outcomes', {'as_of':AFTER_HORIZON})
+                    assert not collected.is_error
+                    assert collected.structured_content['collection']['new_marks'] == 1
+                    assert collected.structured_content['feedback']['evaluation']['decisions'][0]['outcome_status'] == 'AVAILABLE'
         assert "SYNTHETIC_SECRET_SENTINEL" not in log_path.read_text()
     asyncio.run(check())
 

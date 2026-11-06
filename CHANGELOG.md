@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.2 — 2026-11-06
+
+- Add one-time local CSV price-source configuration and automatic matured-outcome collection through Python, CLI and MCP; refresh feedback and optionally export a fresh offline report.
+- Preserve exact prices and actual receipt times, deduplicate observations, reject conflicting source identities/history and future evaluation cutoffs, and retain unresolved outcomes and unknown costs.
+- Add a real pinned FinRL PPO integration pilot with an explicit executable-intent adapter, terminal-day protection, chronological historical data and native-trace parity checks.
+- Normalize selected source paths to project-relative private settings, keeping home-directory paths out of portable feedback without weakening credential checks.
+- Make setup verification follow the current MCP operation set.
+
 ## 0.5.1 — 2026-11-04
 
 - Add `tradeoff connect`: private MCP JSON/Codex TOML configuration, a generated agent-integration prompt, and an isolated Python/real-MCP recording/binding/retry test.
