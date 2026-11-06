@@ -72,7 +72,9 @@ def _handle(args):
             elif args.feedback_command == "init":
                 print("Feedback stays on this device. Connect a Python hook or local MCP tool; see docs/feedback-integration.md.")
             elif args.feedback_command == "price-source":
-                print("Next: tradeoff feedback collect --project . --output feedback-output (choose a fresh report directory).")
+                print("Next: In the project folder selected with --project, run:")
+                print("  tradeoff feedback collect --project . --output feedback-output")
+                print("Choose a fresh report directory if feedback-output already exists.")
         return 1 if result.get("status") == "PARTIAL_SYNC" else 0
     except FeedbackError as exc:
         result = {"status": "ERROR", "error": {"code": exc.code, "message": exc.message}}
