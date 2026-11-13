@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — 2026-11-13
+
+- Separate bounded input validation from aggregate historical output so large feedback reports, exports, CLI results and MCP responses retain their evidence without sharing the incoming-record 1 MiB cap. Preserve input limits, privacy checks and canonical bytes for existing small reports.
+- Keep outcome collection transactional through report validation; explicitly report when observations were saved but a later offline export failed.
+- Add opt-in modeled whole-account comparisons for flat-start, long-only USD cash-stock simulations, including holds and marked open positions. Require a complete shared calendar, declared account assumptions and full modeled fee coverage; retain blocked-evidence reasons and the separate observed-episode contract.
+- Show modeled account returns, cash, holdings, fees, drawdown and turnover in offline reports, and document the existing Python, CLI and MCP integration path.
+- Verify the workflow from a clean FinRL installation with five freshly trained PPO policies, normal public APIs and no research fallback. This is software regression evidence, not a new profitability finding.
+
 ## 0.5.2 — 2026-11-06
 
 - Add one-time local CSV price-source configuration and automatic matured-outcome collection through Python, CLI and MCP; refresh feedback and optionally export a fresh offline report.

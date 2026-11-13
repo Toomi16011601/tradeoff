@@ -32,18 +32,24 @@ Run the initial paper sync **before** the first episode you want to attribute. I
 | Data quality | Were decisions captured in time? Are bindings, inventory and costs resolved? |
 | Decisions | What did each version intend? Is its declared horizon mature? |
 | Outcomes | Which flat-to-flat episodes are attributable? Which costs remain unknown? |
-| Compare | How do eligible matched opening decisions differ under the recorded plan? |
+| Compare | How do eligible matched episodes or declared simulated accounts differ under the plan? |
 | Evidence | Which sequence, normalized records and byte-integrity receipt support the result? |
 
 Gross cash flow, observed net, modeled net and market-price outcomes are separate. Fees missing from a paper API are **not zero**. A price difference from the decision's quote includes intervening market movement and is not pure market impact. A sell that closes a long is not automatically a bearish prediction. Open holdings have no completed-episode profit.
 
-Comparisons cover the **eligible both-traded subset** and disclose the remaining decisions. Holds, skips, unmatched periods, incompatible feeds, unknown costs and ambiguous ownership are excluded from the numeric pairs. Results are descriptive; no automatic winner is declared. A late plan or reconstructed record cannot become prospective just by changing its caller-supplied timestamp.
+Observed-episode comparisons cover the **eligible both-traded subset** and disclose the remaining decisions. Holds, skips, unmatched periods, incompatible feeds, unknown costs and ambiguous ownership are excluded from the numeric pairs. Results are descriptive; no automatic winner is declared. A late plan or reconstructed record cannot become prospective just by changing its caller-supplied timestamp.
+
+## Compare simulated cash-stock accounts
+
+A separate, opt-in plan uses `simulated_account_return_bps` to compare two **simulated**, USD, long-only, single-stock cash accounts with the same initial cash and market calendar. It includes holds, skips and open terminal holdings. It requires distinct source aliases, the complete adjacent decision calendar and expected count, exact shared market references and valuation marks, and complete modeled cost scopes with explicit fill charges, including charges on an open holding. Missing evidence blocks the account result.
+
+The Compare view labels this **MODELED SIMULATION** and shows account returns, their difference in percentage points, final cash/shares/equity, explicit modeled fees, drawdown and turnover. Its `matched_count` counts common calendar opportunities, not closed-episode pairs. Historical imports and late plans keep their retrospective labels. These are modeled research results under declared assumptions, not broker profit or an automatic agent-optimization recommendation. [Plan JSON and commands](feedback-integration.md#simulated-account-comparison).
 
 ## Current boundaries
 
 - First network connector: **Alpaca paper**, GET endpoints only. No submission, cancel or live endpoint.
 - Supported attribution: USD equities, fractional/signed shares, separate flat-to-flat long/short episodes with a known initial inventory observation.
-- Mixed versions/owners, within-fill reversals, unsupported child orders, corporate actions and FX stay excluded. No account-level portfolio-return claim.
+- Mixed versions/owners, within-fill reversals, unsupported child orders, corporate actions and FX stay excluded. Observed episode evidence does not establish account-level returns; the separate simulated-account mode remains limited to its declared model.
 - An observed zero needs explicit evidence and a declared applicable cost set. Personal taxes are outside this metric. A fee assumption is modeled evidence.
 - SQLite and local clocks are user-editable. Hash-linked receipts detect changes relative to retained heads; they are not signatures or authenticated proof of prospective capture.
 - Exports can contain proprietary trading records. Pseudonyms and recognized-secret checks do not make them safe to share automatically. Your external coding agent controls what it sends to its provider.

@@ -9,6 +9,10 @@ def register_plan(store, payload, *, event_id):
     p = validate_payload("comparison_plan", payload)
     if p["baseline_version"] == p["candidate_version"]:
         raise FeedbackError("INVALID_PLAN", "Choose two different declared versions")
+    if (p["metric"] == "simulated_account_return_bps"
+            and store.metadata.get("recording_environment", "paper") != "simulated"):
+        raise FeedbackError("SIMULATION_WORKSPACE_REQUIRED",
+            "Use a separate feedback workspace initialized with --environment simulated for modeled account comparisons")
     with store.transaction():
         plans = [e for e in store.snapshot()["events"] if e["kind"] == "comparison_plan"]
         if any(e["payload"]["plan_id"] == p["plan_id"] and e["event_id"] != event_id for e in plans):
@@ -30,6 +34,9 @@ def _compare(snapshot, evaluation, *, plan_id, as_of):
         raise FeedbackError("PLAN_NOT_FOUND", "One unambiguous recorded comparison plan is required")
     event, = plans
     p = event["payload"]
+    if p["metric"] == "simulated_account_return_bps":
+        from .simulated_comparison import compare_simulated
+        return compare_simulated(snapshot, evaluation, event, as_of)
     baseline_version, candidate_version = p["baseline_version"], p["candidate_version"]
     capture_class = "PROSPECTIVE_PLAN" if event["recorded_at"] < p["window_start"] and event["origin"] == "captured" else "RETROSPECTIVE_PLAN"
     episodes = {ep["episode_id"]: ep for ep in evaluation["episodes"]}

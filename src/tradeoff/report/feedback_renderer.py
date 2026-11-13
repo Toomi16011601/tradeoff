@@ -5,8 +5,8 @@ from importlib.resources import files
 from pathlib import Path
 import re
 
-from ..feedback.contracts import FeedbackError, canonical_json
-from ..privacy import reject_sensitive_data
+from ..feedback.contracts import FeedbackError
+from ..feedback.serialization import validate_output
 
 
 def _escape(value):
@@ -42,8 +42,7 @@ def _chart(episodes):
 
 
 def render_feedback_report(report):
-    canonical_json(report)
-    reject_sensitive_data(report)
+    validate_output(report)
     if report.get("schema_version") != "tradeoff.feedback-report.v1":
         raise FeedbackError("UNSUPPORTED_SCHEMA", "Unsupported feedback report schema")
     ev, quality = report["evaluation"], report["quality"]
@@ -71,7 +70,12 @@ def render_feedback_report(report):
     finding_html = "".join(f'<div class="fb-finding"><code>{_escape(f["code"])}</code><p>{_escape(f["action"])}</p></div>' for f in findings[:16]) or '<p class="fb-green">No supported evidence issue was detected in these records.</p>'
     quality_html = f'<div class="fb-columns"><div class="fb-panel"><h3>Evidence coverage</h3>{check_html}</div><div class="fb-panel"><h3>Investigate next <span class="subtle">/ {len(findings)} findings</span></h3><div class="fb-findings" tabindex="0" role="region" aria-label="Evidence findings">{finding_html}</div></div></div>'
     if known < len(episodes):
-        quality_html += '<p class="fb-note"><strong>Cost coverage incomplete.</strong> Unknown net results stay unknown. Fee schedules and assumptions are modeled evidence.</p>'
+        comparison = report.get("comparison")
+        if (comparison and comparison.get("schema_version") == "tradeoff.simulated-account-comparison.v1"
+                and comparison.get("status") == "MODELED_ACCOUNT_COMPARISON"):
+            quality_html += '<p class="fb-note"><strong>Observed episode net unavailable.</strong> Unknown observed net results stay unknown. Modeled account costs are declared assumptions.</p>'
+        else:
+            quality_html += '<p class="fb-note"><strong>Cost coverage incomplete.</strong> Unknown net results stay unknown. Fee schedules and assumptions are modeled evidence.</p>'
     if not decisions:
         quality_html += '<p class="fb-note">Connect the Python recorder or local MCP tools, record an intent before submission, then bind the actual order ID. The demo uses synthetic evidence.</p>'
     decision_html = _table("Recorded decisions — exact quantities, separate capture and outcome states",
@@ -85,7 +89,48 @@ def render_feedback_report(report):
         [[e["episode_id"], e["direction"], e["status"], e["gross_cashflow"], e["observed_net"], e["modeled_net"], e["cost_coverage"]] for e in episodes]) if episodes else '<div class="fb-empty">No execution episodes yet. Current flat positions do not establish historical opening inventory.</div>'
     outcome_html += ''.join(f'<span class="fb-code" data-net-state="{"unknown" if e["observed_net"] is None else "known"}">{_escape(e["episode_id"])} / {_escape(", ".join(e["reasons"]) or "Complete supported evidence")}</span>' for e in episodes)
     comp = report.get("comparison")
-    if comp:
+    if comp and comp.get("schema_version") == "tradeoff.simulated-account-comparison.v1":
+        compare_html = '<span class="fb-badge">MODELED SIMULATION</span>'
+        compare_html += f'<p class="fb-note"><strong>{_escape(comp["status"])} · {_escape(comp["matched_count"])} common calendar opportunities · {_escape(comp["capture_class"])}</strong><br>{_escape(comp["scope"])}</p>'
+        metrics, accounts = comp.get("metrics", {}), comp.get("accounts", {})
+        account_rows = [
+            ("Initial cash / USD", "initial_cash"), ("Final cash / USD", "final_cash"),
+            ("Final holdings / shares", "final_shares"), ("Terminal equity / USD", "terminal_equity"),
+            ("Modeled net P&L / USD", "net_pnl"), ("Explicit modeled fees / USD", "explicit_fees"),
+            ("Maximum drawdown / bps", "max_drawdown_bps"), ("Filled notional / USD", "filled_notional"),
+            ("Turnover / initial cash", "turnover"), ("Filled executions", "fill_count"),
+            ("Recorded decisions", "decision_count"), ("Hold decisions", "hold_count")]
+        complete = comp["status"] == "MODELED_ACCOUNT_COMPARISON" and all(
+            isinstance(accounts.get(side), dict) and all(accounts[side].get(key) is not None
+                for key in [key for _, key in account_rows] + ["net_return_pct"])
+            for side in ("baseline", "candidate")) and all(metrics.get(key) is not None
+                for key in ("baseline_return_bps", "candidate_return_bps", "delta_return_bps"))
+        if complete:
+            with localcontext() as ctx:
+                ctx.prec = 128
+                delta_pp = format(Decimal(metrics["delta_return_bps"]) / Decimal("100"), "f")
+            if "." in delta_pp:
+                delta_pp = delta_pp.rstrip("0").rstrip(".")
+            compare_html += '<div class="fb-comparison">' + ''.join(
+                f'<div><span class="fb-label">{title}</span><strong>{_escape(value)} <small>{unit}</small></strong></div>'
+                for title, value, unit in [
+                    ("BASELINE ACCOUNT RETURN", accounts["baseline"]["net_return_pct"], "%"),
+                    ("CANDIDATE ACCOUNT RETURN", accounts["candidate"]["net_return_pct"], "%"),
+                    ("CANDIDATE − BASELINE", delta_pp, "pp")]) + '</div>'
+            compare_html += _table("Modeled cash-stock accounts — same market calendar and starting cash",
+                ["Account measure", "Baseline", "Candidate"],
+                [[title, accounts["baseline"][key], accounts["candidate"][key]] for title, key in account_rows])
+            compare_html += '<p class="fb-note">Open holdings are valued at the terminal mark. Account return includes cash, terminal holdings and explicit modeled fill charges. Turnover is filled notional divided by initial cash. Maximum drawdown uses the declared valuation calendar. These results depend on the recorded cost, execution and historical-ordering assumptions.</p>'
+        else:
+            compare_html += '<div class="fb-empty"><strong>Account results unavailable.</strong><br>Resolve the comparison exclusions and evidence gaps before interpreting account returns.</div>'
+        compare_html += _table("Recorded comparison population — includes holds and skips", ["Agent version", "Decisions"],
+            [[version, count] for version, count in comp.get("population_counts", {}).items()])
+        compare_html += _table("Modeled simulation warnings", ["Warning"], [[warning] for warning in comp.get("warnings", [])])
+        compare_html += _table("Comparison exclusions — unresolved evidence remains visible",
+            ["Source", "Opportunity", "Decision", "Reason"],
+            [[e.get("source_alias", "—"), e.get("opportunity_id", "—"), e.get("decision_id", "—"), e["reason"]]
+                for e in comp["exclusions"]])
+    elif comp:
         metrics = comp["metrics"]
         compare_html = '<div class="fb-comparison">' + ''.join(f'<div><span class="fb-label">{title}</span><strong>{_escape(value)} <small>bps</small></strong></div>' for title, value in [
             ("BASELINE MEAN", metrics["baseline_mean_bps"]), ("CANDIDATE MEAN", metrics["candidate_mean_bps"]), ("CANDIDATE − BASELINE", metrics["mean_delta_bps"])]) + '</div>'
