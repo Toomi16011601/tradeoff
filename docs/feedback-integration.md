@@ -192,6 +192,63 @@ Cost corrections append a new cost with `corrects_cost_id`. To resolve an earlie
 
 Feedback subcommand exit codes: `0` means the operation completed (possibly with insufficient evidence), `1` means partial broker sync, and `2` means invalid/failed operation. `connect` exits `0` for its successful isolated setup and `2` for blocked/invalid setup. `doctor` exits `1` for setup/evidence gaps, `2` for invalid arguments/failed invocation, and `0` only when the generated setup is usable and stored evidence is available or waiting without a diagnosed evidence gap. Even exit `0` does not verify the real hook. A zero exit is never a profitability certificate.
 
+## Simulated account comparison
+
+The existing comparison workflow also supports an explicitly modeled, USD, long-only, single-stock cash account per version. Use **different** `baseline_source_alias` and `candidate_source_alias` values for the two isolated simulated accounts. This does not turn paper or broker evidence into simulated evidence or backdate imported capture.
+
+Save this argument object as `simulation-plan.json`, substituting the versions, source aliases, symbol and market-data contract actually recorded in your evidence:
+
+```json
+{
+  "event_id": "register-simulation-plan-1",
+  "plan": {
+    "plan_id": "simulation-plan-1",
+    "baseline_version": "v1",
+    "candidate_version": "v2",
+    "window_start": "2026-01-05T14:30:00+00:00",
+    "window_end": "2026-01-07T14:30:00+00:00",
+    "metric": "simulated_account_return_bps",
+    "horizon_policy": "decision_at_declared_end",
+    "reference_policy": "exact_reference",
+    "cost_policy": "complete_modeled",
+    "match_policy": "same_market_calendar",
+    "minimum_pairs": 1,
+    "simulation": {
+      "baseline_source_alias": "baseline-simulation",
+      "candidate_source_alias": "candidate-simulation",
+      "initial_cash": "100",
+      "currency": "USD",
+      "symbol": "SYNTH",
+      "asset_class": "us_equity",
+      "valuation_source": "fixture",
+      "valuation_feed": "daily",
+      "price_kind": "close",
+      "initial_at": "2026-01-05T14:30:00+00:00",
+      "terminal_at": "2026-01-07T14:30:00+00:00",
+      "expected_decisions": 2,
+      "cost_model_id": "explicit-fill-fees-v1",
+      "execution_policy_id": "recorded-fills-include-shortfall-v1",
+      "timestamp_policy": "declared_historical_ordering",
+      "acknowledge_assumptions": true
+    }
+  }
+}
+```
+
+```bash
+tradeoff feedback plan --input simulation-plan.json --project .
+tradeoff feedback compare --plan-id simulation-plan-1 --as-of 2026-02-01T00:00:00+00:00 --project .
+tradeoff feedback report --plan-id simulation-plan-1 --as-of 2026-02-01T00:00:00+00:00 --output feedback-simulation-report --project .
+```
+
+Python uses the existing `FeedbackApp.register_comparison`, `FeedbackApp.compare_versions` and `FeedbackApp.export_feedback` operations; MCP uses the same existing registration, comparison and export tools. There is no separate simulation tool. The normal `comparison_plan` schema includes all fields above; revisions still require a new plan ID and the existing supersession rules.
+
+Both versions must cover every common opportunity, including holds/skips, with matching decision times, horizons and exogenous reference prices/source/feed/kind. Adjacent horizons must reach the next decision and finally `terminal_at`; `expected_decisions` is the full count per version. The example declares two adjacent opportunities, not two closed trades. Initial inventory must be established as flat with no open orders. Exact, available valuation marks must cover the shared calendar through the terminal timestamp. Different agent inputs may have different hashes; the shared market path is checked separately.
+
+Every fill needs complete **modeled** cost coverage and explicit fill-linked charges for each applicable component, including fills belonging to a still-open holding. Declare genuinely inapplicable components in a modeled `cost_scope`; absent fees are never zero. Fill prices contain the recorded execution effect; the explicit charges are added once. The cost/execution IDs name caller-owned assumptions, not authenticated schedules or execution guarantees.
+
+The result uses `tradeoff.simulated-account-comparison.v1`. Valid `MODELED_ACCOUNT_COMPARISON` results report cash plus marked holdings, modeled net account return and candidate-minus-baseline difference. `matched_count` is common calendar opportunities; `pairs` stays empty. `INSUFFICIENT_EVIDENCE` or `NOT_COMPARABLE` results keep account metrics unknown and disclose exclusions. The report shows **MODELED SIMULATION**, return percentages, delta percentage points, fees, drawdown and turnover; retrospective capture and timestamp warnings stay visible. This is modeled research under declared assumptions, not observed broker profit, proof of prospective knowledge, or automatic agent optimization.
+
 ## Privacy and troubleshooting
 
 - `PROJECT_NOT_INITIALIZED`: run `tradeoff connect --project .` with the same workspace (or `feedback init` for Python-only usage).

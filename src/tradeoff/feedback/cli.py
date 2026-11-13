@@ -4,7 +4,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 import sys
 
-from .contracts import FeedbackError, MAX_BYTES, canonical_json, parse_json, utc_time
+from .contracts import FeedbackError, MAX_BYTES, parse_json, utc_time
+from .serialization import output_chunks, output_json
 
 
 class _Once(argparse.Action):
@@ -58,7 +59,8 @@ def _handle(args):
         if args.feedback_command == "mcp":
             return 0
         if args.json:
-            print(canonical_json(result))
+            sys.stdout.writelines(output_chunks(result))
+            sys.stdout.write("\n")
         else:
             print(result["status"])
             if "collection" in result:
@@ -68,7 +70,8 @@ def _handle(args):
             if "interface" in result:
                 print("Open report file: " + str(Path(args.project).absolute() / result.get("output", "") / result["interface"]))
             elif args.feedback_command in {"evaluate", "compare"}:
-                print(canonical_json(result))
+                sys.stdout.writelines(output_chunks(result))
+                sys.stdout.write("\n")
             elif args.feedback_command == "init":
                 print("Feedback stays on this device. Connect a Python hook or local MCP tool; see docs/feedback-integration.md.")
             elif args.feedback_command == "price-source":
@@ -80,7 +83,7 @@ def _handle(args):
         result = {"status": "ERROR", "error": {"code": exc.code, "message": exc.message}}
     except Exception:
         result = {"status": "ERROR", "error": {"code": "INTERNAL_ERROR", "message": "Feedback operation failed"}}
-    print(canonical_json(result))
+    print(output_json(result))
     return 2
 
 

@@ -21,7 +21,7 @@ _MODULES = (
     "preview", "privacy", "report", "report.failure_renderer",
     "report.renderer", "reproduce", "sizing", "strategy_onboarding", "validation",
     "feedback", "feedback.contracts", "feedback.store", "feedback.recorder", "feedback.reconcile", "feedback.metrics", "feedback.comparison",
-    "feedback.api", "feedback.cli",
+    "feedback.api", "feedback.cli", "feedback.serialization", "feedback.simulated_comparison",
     "feedback.alpaca",
     "feedback.mcp",
     "feedback.export", "report.feedback_renderer",

@@ -6,12 +6,12 @@ from pathlib import Path
 import shutil
 import tempfile
 
-from ..privacy import reject_sensitive_data
-from .contracts import FeedbackError, canonical_json, validate_payload
+from .contracts import FeedbackError, validate_payload
+from .serialization import output_chunks
 from .store import _no_symlinks
 
 _ID_KEYS = {"source_alias", "order_id", "fill_id", "client_order_id", "replaces_order_id", "replaced_by_order_id",
-            "parent_order_id", "cost_id", "corrects_cost_id"}
+            "parent_order_id", "cost_id", "corrects_cost_id", "baseline_source_alias", "candidate_source_alias"}
 _LIST_IDS = {"order_ids", "fill_ids", "open_order_ids"}
 
 
@@ -65,30 +65,40 @@ def export_feedback(snapshot, evaluation, comparison, output_dir, *, include_sna
     evidence = {"schema_version": "tradeoff.feedback-export.v1", "as_of_seq": snapshot["as_of_seq"],
         "head_hash": snapshot["head_hash"], "events": events, "snapshot_content_included": include_snapshots,
         "scope": "Allowlisted normalized evidence with project-local pseudonyms; proprietary decisions may remain"}
+    staging = None
     try:
-        reject_sensitive_data(report)
-        reject_sensitive_data(evidence)
-        blobs = {"feedback-report.json": canonical_json(report) + "\n", "feedback-evidence.json": canonical_json(evidence) + "\n"}
-        blobs["index.html"] = render_feedback_report(report)
+        target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        staging = Path(tempfile.mkdtemp(prefix=".feedback-export-", dir=target.parent))
+
+        def write_chunks(name, chunks):
+            path = staging / name
+            digest = hashlib.sha256()
+            with path.open("xb") as stream:
+                path.chmod(0o600)
+                for chunk in chunks:
+                    data = chunk.encode("utf-8")
+                    stream.write(data)
+                    digest.update(data)
+            return digest.hexdigest()
+
+        def json_chunks(value):
+            yield from output_chunks(value)
+            yield "\n"
+
+        hashes = {"feedback-report.json": write_chunks("feedback-report.json", json_chunks(report)),
+                  "feedback-evidence.json": write_chunks("feedback-evidence.json", json_chunks(evidence))}
+        hashes["index.html"] = write_chunks("index.html", (render_feedback_report(report),))
         receipt = {"schema_version": "tradeoff.feedback-receipt.v1", "report_id": report["report_id"],
-            "as_of_seq": snapshot["as_of_seq"], "head_hash": snapshot["head_hash"],
-            "files": {name: hashlib.sha256(data.encode()).hexdigest() for name, data in blobs.items()},
+            "as_of_seq": snapshot["as_of_seq"], "head_hash": snapshot["head_hash"], "files": hashes,
             "scope": "Byte-integrity receipt, not a signature or source-authenticity attestation"}
-        blobs["feedback-receipt.json"] = canonical_json(receipt) + "\n"
+        write_chunks("feedback-receipt.json", json_chunks(receipt))
+        staging.rename(target)
     except ValueError:
         raise FeedbackError("UNSAFE_EXPORT", "Feedback export contains invalid or recognized sensitive data") from None
-    target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    staging = Path(tempfile.mkdtemp(prefix=".feedback-export-", dir=target.parent))
-    try:
-        for name, data in blobs.items():
-            path = staging / name
-            path.write_text(data, encoding="utf-8")
-            path.chmod(0o600)
-        staging.rename(target)
     except OSError:
         raise FeedbackError("EXPORT_FAILED", "Feedback export could not be written to a fresh directory") from None
     finally:
-        if staging.exists():
+        if staging is not None and staging.exists():
             shutil.rmtree(staging)
     return {"report_id": report["report_id"], "report": "feedback-report.json", "interface": "index.html",
             "evidence": "feedback-evidence.json", "receipt": "feedback-receipt.json"}

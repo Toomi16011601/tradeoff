@@ -1,6 +1,7 @@
 """Local stdio MCP. SDK imports are optional and never occur on core import."""
 from .api import FeedbackApp, operation_definitions
-from .contracts import FeedbackError, canonical_json
+from .contracts import FeedbackError
+from .serialization import output_json
 from .store import FeedbackStore
 
 
@@ -27,12 +28,12 @@ def serve(project):
             if params.name not in names:
                 raise FeedbackError("UNKNOWN_TOOL", "Unknown feedback operation")
             payload = await asyncio.to_thread(app.dispatch, names[params.name], params.arguments)
-            return CallToolResult(content=[TextContent(type="text", text=canonical_json(payload))], structured_content=payload)
+            return CallToolResult(content=[TextContent(type="text", text=output_json(payload))], structured_content=payload)
         except FeedbackError as exc:
             error = {"status": "ERROR", "error": {"code": exc.code, "message": exc.message}}
         except Exception:
             error = {"status": "ERROR", "error": {"code": "INTERNAL_ERROR", "message": "Feedback tool request failed"}}
-        return CallToolResult(content=[TextContent(type="text", text=canonical_json(error))], structured_content=error, is_error=True)
+        return CallToolResult(content=[TextContent(type="text", text=output_json(error))], structured_content=error, is_error=True)
 
     async def run():
         server = Server("Tradeoff", version="1", on_list_tools=list_tools, on_call_tool=call_tool)

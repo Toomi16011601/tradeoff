@@ -1,6 +1,5 @@
 """One application boundary for Python, CLI and local MCP."""
 from datetime import datetime, timezone
-import hashlib
 import os
 from pathlib import Path
 import re
@@ -8,6 +7,7 @@ import re
 from ..privacy import reject_sensitive_data
 from .contracts import (FeedbackError, ID_PATTERN, canonical_json, schema_for, utc_time,
                         validate_schema)
+from .serialization import output_hash
 from .store import FeedbackStore, _no_symlinks
 from .recorder import Recorder
 from .reconcile import reconcile
@@ -37,7 +37,7 @@ OPERATIONS = {
     "import_evidence": ("Import normalized retrospective evidence, never prospective capture", _schema({"records": {"type": "array", "items": {"type": "object"}}}, ["records"])),
     "register_comparison": ("Record a comparison plan before its evaluation window", _schema({"event_id": _ID, "plan": schema_for("comparison_plan")}, ["event_id", "plan"])),
     "evaluate_decisions": ("Evaluate stored evidence with explicit unknown costs and exclusions", _schema({"as_of": _TIME, "as_of_seq": _SEQ}, ["as_of"])),
-    "compare_versions": ("Describe eligible paired outcomes; does not declare a profitable winner", _schema({"plan_id": _ID, "as_of": _TIME, "as_of_seq": _SEQ}, ["plan_id", "as_of"])),
+    "compare_versions": ("Compare declared observed episodes or explicitly modeled simulated accounts; does not declare a profitable winner", _schema({"plan_id": _ID, "as_of": _TIME, "as_of_seq": _SEQ}, ["plan_id", "as_of"])),
     "sync_paper_evidence": ("GET-only Alpaca paper sync using local credentials", _schema({"source_alias": _ID, "start": _TIME, "end": _TIME}, ["source_alias", "start", "end"])),
     "export_feedback": ("Write a fresh local offline report with pseudonymized evidence", _schema({"output": {"type": "string", "maxLength": 256}, "as_of": _TIME, "as_of_seq": _SEQ,
         "plan_id": _ID, "include_snapshots": {"type": "boolean"}}, ["output", "as_of"])),
@@ -96,17 +96,23 @@ class FeedbackApp:
         a = _arguments("collect_outcomes", args)
         target = self._output(a["output"]) if "output" in a else None
         from .outcomes import collect
-        with FeedbackStore(self.project, clock=self.clock) as store:
+        with FeedbackStore(self.project, clock=self.clock) as store, store.transaction():
             before, after, collection, cutoff = collect(store, as_of=a.get("as_of"))
-        previous = self._evaluate(before, cutoff)
-        evaluation = self._evaluate(after, cutoff)
-        available = lambda result: sum(d["outcome_status"] == "AVAILABLE" for d in result["decisions"])
-        collection["newly_available_outcomes"] = available(evaluation) - available(previous)
-        result = {"status":"COLLECTED", "collection":collection,
-                  "feedback":self._report(after, evaluation, cutoff)}
+            previous = self._evaluate(before, cutoff)
+            evaluation = self._evaluate(after, cutoff)
+            available = lambda result: sum(d["outcome_status"] == "AVAILABLE" for d in result["decisions"])
+            collection["newly_available_outcomes"] = available(evaluation) - available(previous)
+            result = {"status":"COLLECTED", "collection":collection,
+                      "feedback":self._report(after, evaluation, cutoff)}
         if target is not None:
             from .export import export_feedback
-            result.update(export_feedback(after, evaluation, None, target), output=a["output"])
+            try:
+                result.update(export_feedback(after, evaluation, None, target), output=a["output"])
+            except Exception as exc:
+                code = exc.code if isinstance(exc, FeedbackError) else "INTERNAL_ERROR"
+                raise FeedbackError("COLLECTED_EXPORT_FAILED",
+                    "Outcome marks were saved; offline export failed (" + code +
+                    "). Retry collection with a fresh writable output directory") from None
         return result
 
     def bind_order(self, args):
@@ -138,7 +144,7 @@ class FeedbackApp:
             "environments": sorted({e["environment"] for e in snapshot["events"] if not e["kind"].startswith("_")}),
             "as_of": as_of, "evidence": {"as_of_seq": snapshot["as_of_seq"], "head_hash": snapshot["head_hash"]},
             "quality": evaluation["coverage"], "evaluation": evaluation, "comparison": comparison, "artifacts": {}}
-        content["report_id"] = hashlib.sha256(canonical_json(content).encode()).hexdigest()[:24]
+        content["report_id"] = output_hash(content)[:24]
         return content
 
     def evaluate_decisions(self, args):

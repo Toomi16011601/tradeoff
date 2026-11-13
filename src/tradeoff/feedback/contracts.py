@@ -149,6 +149,14 @@ _REFERENCE = _fields("price price_kind observed_at available_at source feed max_
 _SOURCE_TIME = _fields("source feed observed_at available_at", observed_at=_TIME, available_at=_TIME)
 _PREDICTION = _fields("label horizon_end", "confidence", horizon_end=_TIME, confidence=_DECIMAL)
 _COMPONENT = _object({"applicable": {"type": ["boolean", "null"]}, "evidence_ref": _ID})
+_SIMULATION_ACCOUNT = _fields(
+    "baseline_source_alias candidate_source_alias initial_cash currency symbol asset_class "
+    "valuation_source valuation_feed price_kind initial_at terminal_at expected_decisions "
+    "cost_model_id execution_policy_id timestamp_policy acknowledge_assumptions",
+    initial_cash=_DECIMAL, currency=_enum("USD"), asset_class=_enum("us_equity"),
+    price_kind=_REFERENCE["properties"]["price_kind"], initial_at=_TIME, terminal_at=_TIME,
+    expected_decisions={"type":"integer", "minimum":1, "maximum":1000000},
+    timestamp_policy=_enum("declared_historical_ordering"), acknowledge_assumptions={"type":"boolean"})
 SCHEMAS = {
     "decision": _fields("decision_id agent_id agent_version opportunity_id symbol asset_class currency action quantity_delta decision_at horizon_end input_hash reference",
         "reason source_times episode_id prediction input_snapshot", currency=_CURRENCY,
@@ -174,9 +182,11 @@ SCHEMAS = {
     "mark": _fields("mark_id symbol currency price price_kind source feed observed_at available_at", currency=_CURRENCY,
         price=_DECIMAL, price_kind=_REFERENCE["properties"]["price_kind"], observed_at=_TIME, available_at=_TIME),
     "comparison_plan": _fields("plan_id baseline_version candidate_version window_start window_end metric horizon_policy reference_policy cost_policy match_policy minimum_pairs",
-        "supersedes_plan_id", window_start=_TIME, window_end=_TIME, metric=_enum("episode_net_return_bps"),
+        "supersedes_plan_id simulation", window_start=_TIME, window_end=_TIME,
+        metric=_enum("episode_net_return_bps", "simulated_account_return_bps"),
         horizon_policy=_enum("decision_at_declared_end"), reference_policy=_enum("exact_reference"),
-        cost_policy=_enum("complete_observed"), match_policy=_enum("exact_opportunity"),
+        cost_policy=_enum("complete_observed", "complete_modeled"),
+        match_policy=_enum("exact_opportunity", "same_market_calendar"), simulation=_SIMULATION_ACCOUNT,
         minimum_pairs={"type": "integer", "minimum": 1, "maximum": 10000}),
     "source_note": _fields("source_alias note_id code interval_start interval_end", "symbol metadata",
         interval_start=_TIME, interval_end=_TIME, metadata=_object({"activity_type": _ID, "economic_at": _TIME, "source_created_at": _TIME}, [])),
@@ -252,8 +262,22 @@ def validate_payload(kind, payload) -> JsonObject:
         invalid()
     if kind == "cost" and sum(k in item for k in ("fill_id", "order_id", "episode_id")) != 1:
         invalid()
-    if kind == "comparison_plan" and item["window_start"] >= item["window_end"]:
-        invalid()
+    if kind == "comparison_plan":
+        if item["window_start"] >= item["window_end"]:
+            invalid()
+        if item["metric"] == "simulated_account_return_bps":
+            sim = item.get("simulation")
+            if (sim is None or item["cost_policy"] != "complete_modeled"
+                    or item["match_policy"] != "same_market_calendar"):
+                invalid()
+            if (Decimal(sim["initial_cash"]) <= 0 or not sim["acknowledge_assumptions"]
+                    or sim["baseline_source_alias"] == sim["candidate_source_alias"]
+                    or not item["window_start"] <= sim["initial_at"] < sim["terminal_at"] <= item["window_end"]
+                    or item["minimum_pairs"] > sim["expected_decisions"]):
+                invalid()
+        elif ("simulation" in item or item["cost_policy"] != "complete_observed"
+                or item["match_policy"] != "exact_opportunity"):
+            invalid()
     if kind == "inventory" and not item["capture_started_at"] <= item["observed_at"] <= item["capture_completed_at"]:
         invalid()
     return item
