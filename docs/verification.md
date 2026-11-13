@@ -1,8 +1,20 @@
 # Verification
 
-Tradeoff 0.4.0 is a public source alpha. The checks below are local acceptance evidence, not a security or profitability certificate. [Hosted CI results](https://github.com/Toomi16011601/tradeoff/actions/workflows/tests.yml) record runs for published commits. The data-import and integration-check build, recorded before the Tradeoff rename, passed **621 tests** on Python 3.12.14, including native execution, input validation, replay and private diagnostics. That earlier renamed source passed **627 tests** locally; later acceptance checks follow below.
+Tradeoff is public source alpha software. The checks below are local acceptance evidence, not a security or profitability certificate. [Hosted CI results](https://github.com/Toomi16011601/tradeoff/actions/workflows/tests.yml) record runs for published commits. The data-import and integration-check build, recorded before the Tradeoff rename, passed **621 tests** on Python 3.12.14, including native execution, input validation, replay and private diagnostics. That earlier renamed source passed **627 tests** locally; later acceptance checks follow below.
 
 The current future-data investigation screenshots show Tradeoff 0.4.0. Other linked screenshots include earlier-version captures with BacktestWitness branding and document those earlier flows.
+
+## Large histories and modeled account comparisons (0.6.0) — 13 November 2026
+
+The full local Python **3.12.13** suite passed **987 tests**, with **2 explicit paper-account/LLM opt-in skips**. Regression checks cover histories above 1 MiB through Python, the installed CLI, real local MCP, offline report/evidence export and receipt hashes. The incoming record limit remains 1 MiB. Derived histories use bounded-record output validation and streaming hashing/export/stdout; HTML rendering and MCP text transport still materialize complete strings.
+
+Collection report-validation failures roll back pending marks. If a subsequent export fails after valid observations commit, the operation explicitly reports `COLLECTED_EXPORT_FAILED`; retrying preserves saved evidence and does not duplicate marks. Existing small-report canonical bytes and identifiers remain compatible.
+
+A fresh Python environment installed the candidate wheel and the normal pinned FinRL/PPO/MCP packages with **190 compatible packages**. Five policies were freshly trained for **20,032 steps each** using the same fixed seeds and original training slice. All policy tensors and **60** baseline/candidate financial paths matched the earlier frozen experiment. Independent Decimal ledger replay, prefix causality and repeated-inference checks passed. This reuses already inspected historical data for software regression; it is not a fresh unseen-data trading result.
+
+All **five** paired 400-bar FinRL histories completed normal public `collect_outcomes`, `evaluate_decisions`, `compare_versions` and `export_feedback` calls without a research fallback. Each comparison covered **399** common calendar opportunities, including holds and open terminal stock. All five report exports succeeded, including report JSON files of approximately **1.14–1.37 MB**. Installed CLI and real stdio MCP also passed a roughly **1.25 MB** evaluation response, comparison, zero-new-mark retry and report export. Export receipt hashes matched their files; earlier sequence checkpoints still showed unavailable outcomes and blocked premature comparisons. Manual report-layout review was completed.
+
+The explicit account mode is restricted to one USD cash equity, flat starting inventory and long-only positions. It requires complete modeled cost scopes and fill-linked charges, exact shared market references/valuations and a complete adjacent calendar. Missing or conflicting evidence blocks the result. Cost and execution policy IDs are caller-declared labels, not source attestations. Existing episode attribution, unavailable observed net, historical capture labels and observed-cost comparisons remain unchanged. These checks establish working modeled research comparisons, not improved forecasts, authenticated brokerage profits or general trading improvement. [Contract and setup](feedback-integration.md#simulated-account-comparison).
 
 ## Research desk interface — 30 October 2026
 
