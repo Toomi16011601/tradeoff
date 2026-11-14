@@ -14,9 +14,13 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --upgrade 'pip>=26.2'
       - run: python -m pip install '.[dev,mcp]'
+      - name: Verify isolated synthetic MCP protocol with native tracebacks
+        run: >-
+          python -I -c "import os; allowed={'PATH','SYSTEMROOT','WINDIR','TEMP','TMP','TMPDIR','LANG','LC_ALL','LC_CTYPE'}; clean={k:v for k,v in os.environ.items() if k in allowed}; os.environ.clear(); os.environ.update(clean); from tradeoff.feedback._setup_probe import self_test; print(self_test())"
       - name: Verify Windows cleanup and isolated agent setup
         run: >-
           python -m pytest tests/test_feedback_windows_cleanup.py
+          tests/test_feedback_store_lifecycle.py
           tests/test_feedback_onboarding.py::test_setup_generates_private_configuration_and_never_seeds_real_evidence
           tests/test_feedback_onboarding.py::test_generated_config_reaches_the_selected_workspace
           tests/test_feedback_setup_cli.py

@@ -10,6 +10,7 @@
 - Update current MCP integration instructions and add regression coverage for cutoff boundaries, individual historical-record limits and conflicting fill IDs.
 - Require a patched Tornado version in optional engine extras and upgrade pip before first-use installation; the core remains standard-library only.
 - Resolve Windows probe cleanup through the trusted system directory, retain isolated working-directory/environment settings on timeout, and verify setup on a Windows CI runner.
+- Close SQLite staging connections before publishing a new feedback project, avoiding Windows file-lock failures during setup.
 - Document Python 3.11+ for optional engine extras; core and decision feedback retain Python 3.10+ support.
 
 ## 0.6.0 — 2026-11-13
