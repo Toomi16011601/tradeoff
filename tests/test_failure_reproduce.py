@@ -283,3 +283,99 @@ def test_callback_config_repair_can_update_metadata_with_saved_cash(tmp_path, de
     assert receipt['baseline']['result']['initial_cash'] == 100
     assert receipt['stress']['result']['initial_cash'] == 100
     assert fixture == before
+
+
+def test_native_callback_repair_cannot_pass_by_reducing_saved_leverage(tmp_path):
+    pytest.importorskip('backtesting')
+    from backtesting import Strategy
+    from tradeoff.execution import make_backtesting_execution_runner
+
+    class RoundTrip(Strategy):
+        size_fraction = .999
+
+        def init(self):
+            pass
+
+        def next(self):
+            if len(self.data) == 2:
+                self.buy(size=self.size_fraction)
+            if len(self.data) == 3:
+                self.position.close()
+
+    def callback(margin):
+        native = make_backtesting_execution_runner(RoundTrip, engine_settings={'cash': 1000, 'margin': margin})
+
+        def run(rows, config, seed, stress):
+            return native(rows, config, seed, stress)
+
+        run.runner_spec = {'engine': 'callback', 'engine_settings': {}}
+        return run
+
+    original, changed_margin = callback(.1), callback(1)
+    report = lab_api()(original, bars(), scenarios=[scenario(200, spread=10)],
+                       requirements={'min_return_pct': None, 'max_return_drop_pct': 5,
+                                     'min_closed_trades': 1})
+    module = api()
+    assert report['status'] == 'FAILURE_FOUND'
+    module.export_failure_reproducer(report, tmp_path, 'saved_strategy:run')
+    fixture = module.load_failure_fixture(tmp_path / 'failure-fixture.json')
+    # Unchanged commission/spread stress remains comparable to its saved phase.
+    with pytest.raises(module.ResilienceError):
+        module.assert_failure_resilience(original, fixture)
+    with pytest.raises(ValueError, match='effective_settings.*margin'):
+        module.assert_failure_resilience(changed_margin, fixture)
+    repaired = module.assert_failure_resilience(original, fixture, config={'size_fraction': .099})
+    assert repaired['status'] == 'PASS'
+    assert repaired['stress']['result']['effective_settings']['margin'] == .1
+
+
+@pytest.mark.parametrize('field,value', [
+    ('cash', 200), ('commission', .001), ('spread', .001), ('margin', .5),
+    ('trade_on_close', True), ('exclusive_orders', True), ('hedging', True),
+    ('finalize_trades', True),
+])
+def test_callback_replay_binds_recognized_effective_simulation_settings(tmp_path, field, value):
+    module, fixture, _ = exported(tmp_path)
+
+    def changed(rows, config, seed, stress):
+        result = execution(rows, {'repair': True}, seed, stress)
+        result['effective_settings'][field] = value
+        return result
+
+    with pytest.raises(ValueError, match='effective_settings.*' + field):
+        module.assert_failure_resilience(changed, fixture)
+
+
+@pytest.mark.parametrize('settings', [None, {}])
+def test_callback_replay_cannot_drop_saved_effective_settings(tmp_path, settings):
+    module, fixture, _ = exported(tmp_path)
+
+    def missing(rows, config, seed, stress):
+        return dict(execution(rows, {'repair': True}, seed, stress), effective_settings=settings)
+
+    with pytest.raises(ValueError, match='effective_settings'):
+        module.assert_failure_resilience(missing, fixture)
+
+
+@pytest.mark.parametrize('missing_field', [
+    'cash', 'commission', 'spread', 'margin', 'trade_on_close', 'exclusive_orders',
+    'hedging', 'finalize_trades',
+])
+def test_native_fixture_without_required_simulation_metadata_is_not_comparable(tmp_path, missing_field):
+    module, fixture, _ = exported(tmp_path)
+    from tradeoff.validation import canonical_hash
+    for result in fixture['observations'].values():
+        result.update(engine='backtesting', engine_version='0.6.6', effective_settings={
+            'cash': 100, 'commission': 0, 'spread': 0, 'margin': 1,
+            'trade_on_close': False, 'exclusive_orders': False, 'hedging': False,
+            'finalize_trades': False})
+        del result['effective_settings'][missing_field]
+    fixture['runtime'].update(engine='backtesting', engine_version='0.6.6')
+    for field in ('observations', 'runtime'):
+        fixture['content_hashes'][field] = canonical_hash(fixture[field])
+    fixture.pop('fixture_hash')
+    fixture['fixture_hash'] = canonical_hash(fixture)
+    path = tmp_path / 'incomplete-native-fixture.json'
+    path.write_text(json.dumps(fixture))
+    with pytest.raises(ValueError, match='effective_settings.*' + missing_field):
+        module.load_failure_fixture(path)

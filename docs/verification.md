@@ -4,6 +4,19 @@ Tradeoff is public source alpha software. The checks below are local acceptance 
 
 The current future-data investigation screenshots show Tradeoff 0.4.0. Other linked screenshots include earlier-version captures with BacktestWitness branding and document those earlier flows.
 
+## Attribution and replay regression audit (0.6.1) — 14 November 2026
+
+The recreated Python **3.12.13** environment passed **1,054 tests**, with **2 explicit paper-account/LLM opt-in skips**. Actual Backtesting.py 0.6.6, Backtrader and MCP integrations were installed. Independent review reproduced the defects before their fixes and checked the final changes. Main-process Python coverage measured **84.5% of statements** and **79.6% of branches**; this does not include code executed only by isolated subprocesses or browser JavaScript.
+
+- New regressions cover residual native holdings after insolvency, simulator-setting changes hidden behind callback wrappers, impossible fill timing, excessive quantities, replacement/retry chains, conflicting provenance and horizon prices, and future evidence entering historical comparisons. Valid partial fills and strategy/configuration repairs remain supported.
+- **30 selected source mutations** were detected by tests. The first run exposed three coverage gaps; new regressions catch the cutoff-boundary, oversized-history-record and conflicting-fill-ID faults. This is a bounded fault set, not an exhaustive project-wide mutation score.
+- **500 seeded, adequately funded ledger scenarios**, each with 24 bars, matched an independent Decimal cash-flow oracle across long/short/flat positions, reversals, costs, short borrow and execution lags. Maximum equity disagreement was approximately **1.02e-10**. This does not test live liquidity or native broker liquidation rules.
+- Fresh core-only and full-feature wheels completed **35 installed-user scenarios** outside the checkout, including workspaces with spaces, repeated setup, diagnostics, public bug reproduction/repaired replay, native policy-failure replay, both public casebooks and historical engine data. Expected policy-failure and missing-extra exit codes were checked explicitly.
+- **Five previously recorded public FinRL runs** retained their exact earlier account comparisons, zero-new-mark collection retries, valid export hashes and incomplete earlier checkpoints. Real stdio MCP exposed **10 tools** and returned a **1,250,621-byte** evaluation. These are recorded-evidence software replays; no policies were retrained and no new unseen-data performance claim is made.
+- The repaired optional feedback preview passed desktop **1280 × 720**, mobile **390 × 844** and keyboard checks. Packaged styles/scripts loaded without console errors; the three evidence JSON files were served, while database access remained blocked. The normal workflow still opens local report files directly.
+
+Wheel/source archives were inspected for source parity, integrity, normalized ownership metadata and unintended local artifacts. This scoped inspection and the tests are not a universal security guarantee. Live broker access, full paid-model agent runs and profitability remain outside these checks.
+
 ## Large histories and modeled account comparisons (0.6.0) — 13 November 2026
 
 The full local Python **3.12.13** suite passed **987 tests**, with **2 explicit paper-account/LLM opt-in skips**. Regression checks cover histories above 1 MiB through Python, the installed CLI, real local MCP, offline report/evidence export and receipt hashes. The incoming record limit remains 1 MiB. Derived histories use bounded-record output validation and streaming hashing/export/stdout; HTML rendering and MCP text transport still materialize complete strings.

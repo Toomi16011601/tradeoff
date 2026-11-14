@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.1 — 2026-11-14
+
+- Preserve residual native Backtesting.py positions after an insolvency halt in observed-position audits.
+- Bind saved simulator settings during callback repair replay, including margin and execution costs, while permitting strategy and configuration repairs.
+- Exclude inconsistent execution timing, quantities, instrument identity and mixed-environment evidence from clean decision attribution; retain legitimate partial fills and replacement chains.
+- Keep conflicting horizon-price observations unavailable, and prevent future evidence revisions from contaminating historical simulated-account comparisons.
+- Restore feedback report styles, navigation and evidence downloads in the optional secure local preview without widening its file or script restrictions.
+- Update current MCP integration instructions and add regression coverage for cutoff boundaries, individual historical-record limits and conflicting fill IDs.
+
 ## 0.6.0 — 2026-11-13
 
 - Separate bounded input validation from aggregate historical output so large feedback reports, exports, CLI results and MCP responses retain their evidence without sharing the incoming-record 1 MiB cap. Preserve input limits, privacy checks and canonical bytes for existing small reports.

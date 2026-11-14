@@ -339,3 +339,38 @@ def test_leaky_engine_example_also_reproduces_on_default_synthetic_tape(engine):
     report = audit(example.leaky_run, synthetic_rows(), min_history=3,
                    max_probes=2, max_calls=50, trace_kind="observed_position")
     assert report["status"] == "FOUND"
+
+
+@pytest.mark.parametrize("direction,crash_price", [(1, 10), (-1, 100)])
+def test_backtesting_insolvency_halt_records_native_residual_holdings(direction, crash_price):
+    api = require("backtesting")
+    from tradeoff.adapters import make_backtesting_runner
+    from tradeoff.execution import make_backtesting_execution_runner
+
+    class GapLoss(api.Strategy):
+        def init(self):
+            pass
+
+        def next(self):
+            if len(self.data) in (2, 3):
+                if direction > 0:
+                    self.buy(size=4)
+                else:
+                    self.sell(size=4)
+
+    initial_price = 100 if direction > 0 else 10
+    prices = [initial_price] * 4 + [crash_price] * 5
+    tape = [dict(timestamp=f"2026-01-{index + 1:02d}T00:00:00Z", symbol="SYNTH",
+                 open=price, high=price + 1, low=price - 1, close=price, volume=100)
+            for index, price in enumerate(prices)]
+    settings = {"cash": 100, "margin": .1}
+    native = make_backtesting_execution_runner(GapLoss, engine_settings=settings)(tape, {}, 7, {})
+    # Native 0.6.6 halts after closing one trade and retains the other holding.
+    expected = [direction * units for units in [0, 0, 4, 8, 4, 4, 4, 4, 4]]
+    assert [point["position"] for point in native["equity"]] == expected
+    assert [trade["size"] for trade in native["open_trades"]] == [direction * 4]
+    runner = make_backtesting_runner(GapLoss, engine_settings=settings)
+    trace = runner(tape, {}, 7)
+    assert [point["target"] for point in trace] == expected
+    assert runner.trace_kind == "observed_position"
+    assert runner(tape, {}, 7) == trace
