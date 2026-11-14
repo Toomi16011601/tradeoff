@@ -18,10 +18,10 @@ classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Pytho
 [project.optional-dependencies]
 mcp = ["mcp==2.3.0"]
 dev = ["pytest>=9.0.3", "build>=1.2", "setuptools>=83", "wheel"]
-adapters = ["pandas>=2.2", "backtrader==1.9.78.123", "backtesting>=0.6,<0.7"]
-lab = ["backtesting==0.6.6", "pandas>=2.2"]
-audit = ["backtesting==0.6.6", "pandas>=2.2"]
-cases = ["backtesting==0.6.6", "pandas==2.2.3", "numpy==2.3.5"]
+adapters = ["pandas>=2.2", "backtrader==1.9.78.123", "backtesting>=0.6,<0.7", "tornado>=6.6.1"]
+lab = ["backtesting==0.6.6", "pandas>=2.2", "tornado>=6.6.1"]
+audit = ["backtesting==0.6.6", "pandas>=2.2", "tornado>=6.6.1"]
+cases = ["backtesting==0.6.6", "pandas==2.2.3", "numpy==2.3.5", "tornado>=6.6.1"]
 
 [project.scripts]
 tradeoff = "tradeoff.cli:main"

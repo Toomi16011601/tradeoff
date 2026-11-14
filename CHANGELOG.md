@@ -8,6 +8,9 @@
 - Keep conflicting horizon-price observations unavailable, and prevent future evidence revisions from contaminating historical simulated-account comparisons.
 - Restore feedback report styles, navigation and evidence downloads in the optional secure local preview without widening its file or script restrictions.
 - Update current MCP integration instructions and add regression coverage for cutoff boundaries, individual historical-record limits and conflicting fill IDs.
+- Require a patched Tornado version in optional engine extras and upgrade pip before first-use installation; the core remains standard-library only.
+- Resolve Windows probe cleanup through the trusted system directory, retain isolated working-directory/environment settings on timeout, and verify setup on a Windows CI runner.
+- Document Python 3.11+ for optional engine extras; core and decision feedback retain Python 3.10+ support.
 
 ## 0.6.0 — 2026-11-13
 

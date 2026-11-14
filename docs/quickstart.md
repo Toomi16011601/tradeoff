@@ -29,7 +29,7 @@ py -3.12 --version
 
 Git should print a version, and Python should print `Python 3.12.x`. After installing a missing tool, close and reopen your terminal before checking again.
 
-Python 3.12 is the recommended tested setup. Core commands require Python 3.10+; the optional pinned public casebook requires Python 3.11+.
+Python 3.12 is the recommended tested setup. Core and decision-feedback commands require Python 3.10+; optional engine extras (`audit`, `lab`, `adapters`, `cases`) require Python 3.11+ for their patched dependencies.
 
 **macOS / Linux:** copy these commands into Terminal, one line at a time. They download the public source, create a project-local Python environment, install the demo dependencies and run the investigation.
 
@@ -38,6 +38,7 @@ git clone https://github.com/Toomi16011601/tradeoff.git
 cd tradeoff
 python3.12 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade "pip>=26.2"
 python -m pip install '.[audit]'
 tradeoff demo-bug --output bug-output --json
 ```
@@ -48,6 +49,7 @@ tradeoff demo-bug --output bug-output --json
 git clone https://github.com/Toomi16011601/tradeoff.git
 cd tradeoff
 py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade "pip>=26.2"
 .\.venv\Scripts\python.exe -m pip install ".[audit]"
 .\.venv\Scripts\tradeoff.exe demo-bug --output bug-output --json
 ```
@@ -78,6 +80,7 @@ The repair changes indicator warmup and skips the original early trades. Its **P
 Work in your own strategy project and environment. You can install the public source directly there:
 
 ```bash
+python -m pip install --upgrade "pip>=26.2"
 python -m pip install 'tradeoff[audit] @ git+https://github.com/Toomi16011601/tradeoff.git'
 ```
 

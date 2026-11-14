@@ -1,5 +1,7 @@
 # Strategy and engine integrations
 
+Core decision feedback supports Python 3.10+. Engine extras (`audit`, `lab`, `adapters`, `cases`) require Python 3.11+; use Python 3.12 for the tested full setup.
+
 Tradeoff checks a strategy you already provide. A trading agent supplies the decisions; Backtesting.py executes its native orders; Tradeoff reruns it under execution stress and reports policy violations. A coding agent can run the same CLI or Python calls and read structured JSON to guide a repair. The browser is an offline report of a completed run.
 
 Start with the [runnable agent integration](agent-integration.md) for a small decision function, native adapter and local tool wrapper, or the [quickstart](quickstart.md) for the install/run/replay flow. Backtest workflows use Python or CLI calls; the separate [decision-feedback workflow](feedback-integration.md) also provides an optional local MCP server and read-only Alpaca paper sync.

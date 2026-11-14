@@ -1,8 +1,9 @@
 """Private connection bundles and isolated installed-environment self-tests."""
 import hashlib
+from contextlib import suppress
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import shutil
 import signal
 import subprocess
@@ -21,6 +22,21 @@ _CODES = {'MCP_NOT_INSTALLED', 'MCP_VERSION_MISMATCH', 'PROBE_FAILED', 'PROBE_TI
 
 def _conflict():
     raise FeedbackError('CONNECTION_CONFLICT', 'Connection files were edited, moved or are incomplete; preserve them, move the connection folder aside, then rerun connect')
+
+
+def _system_taskkill():
+    """Resolve Windows cleanup through the system API, never PATH or cwd."""
+    import ctypes
+    from ctypes import wintypes
+    lookup = ctypes.WinDLL('kernel32', use_last_error=True, winmode=0x800).GetSystemDirectoryW
+    lookup.argtypes = [wintypes.LPWSTR, wintypes.UINT]
+    lookup.restype = wintypes.UINT
+    buffer = ctypes.create_unicode_buffer(32768)
+    size = lookup(buffer, len(buffer))
+    directory = PureWindowsPath(buffer.value)
+    if not size or size >= len(buffer) or not directory.is_absolute():
+        raise OSError('Cannot resolve the Windows system directory')
+    return str(directory / 'taskkill.exe')
 
 
 def probe(python, *, self_test=False, timeout=45):
@@ -50,8 +66,12 @@ def probe(python, *, self_test=False, timeout=45):
                         if os.name == 'posix':
                             os.killpg(process.pid, signal.SIGKILL)
                         else:
-                            subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
-                                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+                            # If tree cleanup is unavailable, still kill and reap
+                            # the parent; never search a user's workspace for it.
+                            with suppress(OSError, subprocess.SubprocessError):
+                                subprocess.run([_system_taskkill(), '/PID', str(process.pid), '/T', '/F'],
+                                               cwd=root, env=env, stdout=subprocess.DEVNULL,
+                                               stderr=subprocess.DEVNULL, timeout=10)
                             process.kill()
                         process.wait()
                         return dict(status='FAIL', code='PROBE_TIMEOUT')
