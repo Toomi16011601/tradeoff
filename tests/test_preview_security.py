@@ -168,6 +168,54 @@ def test_preview_csp_allows_only_packaged_inline_assets(monkeypatch, report_root
         assert f"'sha256-{digest}'" in policy
 
 
+def test_preview_allows_rendered_feedback_assets(monkeypatch, tmp_path):
+    from html.parser import HTMLParser
+
+    from tradeoff.feedback.demo import run_feedback_demo
+
+    class InlineAssets(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.tag = None
+            self.assets = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "style" or (tag == "script" and not dict(attrs).get("type")):
+                self.tag = tag
+
+        def handle_data(self, data):
+            if self.tag:
+                self.assets.append((self.tag, data))
+
+        def handle_endtag(self, tag):
+            if tag == self.tag:
+                self.tag = None
+
+    folder = tmp_path / "feedback-demo"
+    run_feedback_demo(folder)
+    response, body = request_preview(monkeypatch, folder / "report")
+    assert response.status == 200
+    document = InlineAssets()
+    document.feed(body.decode("utf-8"))
+    directives = dict(item.strip().split(" ", 1)
+                      for item in response.getheader("Content-Security-Policy").split(";"))
+    assert {tag for tag, _content in document.assets} == {"style", "script"}
+    for tag, content in document.assets:
+        digest = base64.b64encode(hashlib.sha256(content.encode()).digest()).decode()
+        assert f"'sha256-{digest}'" in directives["style-src" if tag == "style" else "script-src"]
+
+
+@pytest.mark.parametrize("artifact", [
+    "feedback-report.json", "feedback-evidence.json", "feedback-receipt.json",
+])
+def test_preview_serves_feedback_downloads(monkeypatch, report_root, artifact):
+    (report_root / artifact).write_text('{"synthetic": true}')
+    response, body = request_preview(monkeypatch, report_root, "/" + artifact)
+    assert response.status == 200
+    assert response.getheader("Content-Type") == "application/json; charset=utf-8"
+    assert body == b'{"synthetic": true}'
+
+
 def test_preview_errors_have_security_headers_without_local_paths(monkeypatch, report_root):
     response, body = request_preview(monkeypatch, report_root, "/missing.json")
     assert response.status == 404

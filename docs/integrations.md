@@ -1,8 +1,10 @@
 # Strategy and engine integrations
 
+Core decision feedback supports Python 3.10+. Engine extras (`audit`, `lab`, `adapters`, `cases`) require Python 3.11+; use Python 3.12 for the tested full setup.
+
 Tradeoff checks a strategy you already provide. A trading agent supplies the decisions; Backtesting.py executes its native orders; Tradeoff reruns it under execution stress and reports policy violations. A coding agent can run the same CLI or Python calls and read structured JSON to guide a repair. The browser is an offline report of a completed run.
 
-Start with the [runnable agent integration](agent-integration.md) for a small decision function, native adapter and local tool wrapper, or the [quickstart](quickstart.md) for the install/run/replay flow. There is no agent SDK, MCP server or live broker connection in this release.
+Start with the [runnable agent integration](agent-integration.md) for a small decision function, native adapter and local tool wrapper, or the [quickstart](quickstart.md) for the install/run/replay flow. Backtest workflows use Python or CLI calls; the separate [decision-feedback workflow](feedback-integration.md) also provides an optional local MCP server and read-only Alpaca paper sync.
 
 Execution failure investigation and future-data invariance use separate runner contracts. Backtesting.py 0.6.6 is the first native execution backend; Backtrader, pandas and numeric targets retain their future-data audit scope.
 
@@ -173,6 +175,6 @@ Use `--engine targets` for the first function and `--engine pandas` for the seco
 For derived features in a Backtesting.py strategy, `make_backtesting_runner(MyStrategy, prepare=prepare_features)` reruns preprocessing under the seed on every supplied tape. The engine frame has Titlecase OHLCV, retained extra input columns and a naive DatetimeIndex representing UTC, consistent with the existing engine feeds. `prepare_features(frame)` must retain the exact index and original input columns; it may add feature columns. This differs from the UTC-aware lowercase pandas signal interface. Use an importable callback that reconstructs the factory when exporting custom preprocessing. [Public cases](public-strategies.md) show a complete example.
 ## Decision feedback: Python, CLI and MCP
 
-The [feedback workflow](decision-feedback.md) connects through a once-wired pre-submission recorder and explicit order-ID bindings. It is separate from the backtest adapters below. Python, CLI and eight optional local MCP tools call the same application API. The first network reader supports Alpaca paper GET endpoints; normalized retrospective imports work offline. No order-submission or live endpoint is exposed.
+The [feedback workflow](decision-feedback.md) connects through a once-wired pre-submission recorder and explicit order-ID bindings. It is separate from the backtest adapters above. Python, CLI and ten optional local MCP tools call the same application API. The first network reader supports Alpaca paper GET endpoints; normalized retrospective imports work offline. No order-submission or live endpoint is exposed.
 
 The [TradingAgents example](../examples/decision_feedback/tradingagents_hook.py) treats the public rating as a diagnostic and requires explicit caller-owned intent and size. Its fixtures do not represent a fresh full-model run. The [native Riskkit example](../examples/decision_feedback/agent.py) checks retrospective closed-trade gross parity on public GOOG history using reconstructed normalized IDs; it is not a broker-fill or timing adapter. [Setup and limits](feedback-integration.md) · [Verification](verification.md#agent-feedback-acceptance).

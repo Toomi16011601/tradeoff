@@ -123,17 +123,40 @@ def _episode_costs(episode, episodes, costs, scope):
     return observed if observed_ok else None, modeled if modeled_ok else None, sorted(set(reasons))
 
 
-def evaluate(reconciled, *, marks, costs, cost_scopes, as_of):
+def evaluate(reconciled, *, marks, costs, cost_scopes, as_of, evidence_events=()):
     marks = [validate_payload("mark", item) for item in marks]
     costs = [validate_payload("cost", item) for item in costs]
     cost_scopes = [validate_payload("cost_scope", item) for item in cost_scopes]
     with localcontext() as context:
         context.prec = 128
-        return _evaluate(reconciled, marks=marks, costs=costs, cost_scopes=cost_scopes, as_of=utc_time(as_of))
+        return _evaluate(reconciled, marks=marks, costs=costs, cost_scopes=cost_scopes,
+                         as_of=utc_time(as_of), evidence_events=evidence_events)
 
 
-def _evaluate(reconciled, *, marks, costs, cost_scopes, as_of):
+def _evaluate(reconciled, *, marks, costs, cost_scopes, as_of, evidence_events):
     costs, cost_conflict = _active_costs(costs, as_of)
+    cost_environments, scope_environments, mark_environments = defaultdict(set), defaultdict(set), defaultdict(set)
+    cost_target = lambda c: tuple(c.get(k) for k in ("source_alias", "component", "currency", "fill_id", "order_id", "episode_id"))
+    for event in evidence_events:
+        item = event["payload"]
+        if event["kind"] == "cost" and item["applies_at"] <= as_of:
+            cost_environments[cost_target(item)].add(event["environment"])
+        elif event["kind"] == "cost_scope":
+            scope_environments[item["episode_id"]].add(event["environment"])
+        elif event["kind"] == "mark" and item["available_at"] <= as_of:
+            mark_environments[item["mark_id"]].add(event["environment"])
+    # Conflicting immutable IDs or observations cannot be resolved by import
+    # order or a caller-chosen lexicographically larger mark ID.
+    marks = [m for m in marks if m["available_at"] <= as_of]
+    mark_ids, observations, bad_mark_ids, bad_observations = {}, {}, set(), set()
+    observation_key = lambda m: tuple(m[k] for k in ("symbol", "currency", "source", "feed", "price_kind", "observed_at"))
+    for m in marks:
+        key, value = observation_key(m), (m["price"], m["available_at"])
+        if m["mark_id"] in mark_ids and mark_ids[m["mark_id"]] != m:
+            bad_mark_ids.add(m["mark_id"])
+        if key in observations and observations[key] != value:
+            bad_observations.add(key)
+        mark_ids[m["mark_id"]], observations[key] = m, value
     scope_by_episode, scope_conflict = {}, set()
     for scope in cost_scopes:
         eid = scope["episode_id"]
@@ -157,6 +180,14 @@ def _evaluate(reconciled, *, marks, costs, cost_scopes, as_of):
         if cost_conflict or ep["episode_id"] in scope_conflict:
             reasons.append("COST_REVISION_CONFLICT")
             observed = modeled = None
+        related_costs = [c for c in costs if c["source_alias"] == ep["source_alias"] and
+            (c.get("episode_id") == ep["episode_id"] or c.get("fill_id") in ep["fill_ids"] or c.get("order_id") in ep["order_ids"])]
+        environments = set(scope_environments[ep["episode_id"]])
+        for c in related_costs:
+            environments.update(cost_environments[cost_target(c)])
+        if any(environment != ep["environment"] for environment in environments):
+            reasons.append("ENVIRONMENT_CONFLICT")
+            observed = modeled = None
         row = {k: v for k, v in ep.items() if k != "fills"}
         row.update(gross_cashflow=decimal_text(gross) if gross is not None else None,
             observed_net=decimal_text(gross - observed) if valid and observed is not None else None,
@@ -178,8 +209,15 @@ def _evaluate(reconciled, *, marks, costs, cost_scopes, as_of):
             all(m[k] == ref[k] for k in ("price_kind", "source", "feed")) and
             d["decision_at"] <= m["observed_at"] <= d["horizon_end"] and m["available_at"] <= as_of and
             0 <= (datetime.fromisoformat(d["horizon_end"]) - datetime.fromisoformat(m["observed_at"])).total_seconds() <= ref["max_age_seconds"]]
-        horizon_mark = max(eligible, key=lambda m: (m["observed_at"], m["mark_id"]), default=None)
+        mark_conflict = any(m["mark_id"] in bad_mark_ids or observation_key(m) in bad_observations for m in eligible)
+        environment_conflict = any(any(environment != event["environment"] for environment in mark_environments[m["mark_id"]]) for m in eligible)
+        horizon_mark = None if mark_conflict or environment_conflict else max(eligible, key=lambda m: (m["observed_at"], m["mark_id"]), default=None)
         outcome = "PENDING" if as_of < d["horizon_end"] else "AVAILABLE" if horizon_mark else "UNAVAILABLE"
+        if outcome == "UNAVAILABLE":
+            for code, conflict in (("MARK_OBSERVATION_CONFLICT", mark_conflict), ("ENVIRONMENT_CONFLICT", environment_conflict)):
+                if conflict:
+                    findings.append({"code": code, "decision_id": d["decision_id"],
+                        "action": "Resolve conflicting horizon-price evidence before evaluating this outcome"})
         keyset = {(o["source_alias"], o["order_id"]) for o in orders}
         fills = [f for ep in reconciled["episodes"] for f in ep["fills"] if (f["source_alias"], f["order_id"]) in keyset]
         first_fill = min(fills, key=lambda f: f["occurred_at"], default=None)

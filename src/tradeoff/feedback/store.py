@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 import hashlib
 import hmac
 import json
@@ -90,7 +90,9 @@ class FeedbackStore:
                 "project_id": uuid.uuid4().hex, "recording_environment": self.environment}))
             (staging / "private.key").write_bytes(secrets.token_bytes(32))
             (staging / ".gitignore").write_text("*\n")
-            with sqlite3.connect(staging / "events.sqlite3") as db:
+            # The connection's transaction context does not close its file.
+            # Windows requires that handle released before directory rename.
+            with closing(sqlite3.connect(staging / "events.sqlite3")) as db, db:
                 db.executescript("""
                     CREATE TABLE events (seq INTEGER PRIMARY KEY AUTOINCREMENT,
                     event_id TEXT NOT NULL UNIQUE, kind TEXT NOT NULL, payload_json TEXT NOT NULL,

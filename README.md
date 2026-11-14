@@ -26,6 +26,7 @@ git clone https://github.com/Toomi16011601/tradeoff.git
 cd tradeoff
 python3.12 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade "pip>=26.2"
 python -m pip install '.[mcp]'
 tradeoff feedback demo --output feedback-output-demo
 ```
@@ -37,6 +38,7 @@ tradeoff feedback demo --output feedback-output-demo
 git clone https://github.com/Toomi16011601/tradeoff.git
 cd tradeoff
 py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade "pip>=26.2"
 .\.venv\Scripts\python.exe -m pip install '.[mcp]'
 .\.venv\Scripts\tradeoff.exe feedback demo --output feedback-output-demo
 ```
@@ -54,6 +56,7 @@ To use your own agent, [prepare its local connection](#connect-your-trading-agen
 From your **own trading project's folder**, install once and prepare the local connection:
 
 ```bash
+python -m pip install --upgrade "pip>=26.2"
 python -m pip install 'tradeoff[mcp] @ git+https://github.com/Toomi16011601/tradeoff.git'
 tradeoff connect --project .
 ```
@@ -83,6 +86,7 @@ git clone https://github.com/Toomi16011601/tradeoff.git
 cd tradeoff
 python3.12 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade "pip>=26.2"
 python -m pip install '.[audit]'
 tradeoff demo-bug --output bug-output
 ```
@@ -94,6 +98,7 @@ tradeoff demo-bug --output bug-output
 git clone https://github.com/Toomi16011601/tradeoff.git
 cd tradeoff
 py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade "pip>=26.2"
 .\.venv\Scripts\python.exe -m pip install '.[audit]'
 .\.venv\Scripts\tradeoff.exe demo-bug --output bug-output
 ```
@@ -134,6 +139,7 @@ Tradeoff has no built-in upload or AI key requirement. Your chosen coding agent 
 Prefer to set it up yourself? Install Tradeoff into your strategy project's test environment. Keep your strategy and data in that project:
 
 ```bash
+python -m pip install --upgrade "pip>=26.2"
 python -m pip install 'tradeoff[audit] @ git+https://github.com/Toomi16011601/tradeoff.git'
 ```
 
@@ -186,6 +192,7 @@ Related projects: [Freqtrade lookahead analysis](https://www.freqtrade.io/en/sta
 ## Develop
 
 ```bash
+python -m pip install --upgrade "pip>=26.2"
 python -m pip install -e '.[dev,adapters,cases,audit]'
 python -m pytest
 python -m build

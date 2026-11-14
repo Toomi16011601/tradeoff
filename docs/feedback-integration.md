@@ -7,6 +7,7 @@ Tradeoff is a local tool your agent calls. Your existing agent and broker integr
 Open a terminal in **your trading project's folder**. Use its Python environment, or a separate tool environment if dependencies conflict. The following installs from this GitHub repository, not a similarly named package on PyPI:
 
 ```bash
+python -m pip install --upgrade "pip>=26.2"
 python -m pip install 'tradeoff[mcp] @ git+https://github.com/Toomi16011601/tradeoff.git'
 tradeoff connect --project .
 ```
@@ -18,6 +19,7 @@ If you need a separate environment, create it first. Keep `.venv-tradeoff/` out 
 ```bash
 python3.12 -m venv .venv-tradeoff
 source .venv-tradeoff/bin/activate
+python -m pip install --upgrade "pip>=26.2"
 python -m pip install 'tradeoff[mcp] @ git+https://github.com/Toomi16011601/tradeoff.git'
 tradeoff connect --project .
 ```
@@ -26,6 +28,7 @@ On Windows (PowerShell), use the environment directly:
 
 ```powershell
 py -3.12 -m venv .venv-tradeoff
+.\.venv-tradeoff\Scripts\python.exe -m pip install --upgrade "pip>=26.2"
 .\.venv-tradeoff\Scripts\python.exe -m pip install 'tradeoff[mcp] @ git+https://github.com/Toomi16011601/tradeoff.git'
 .\.venv-tradeoff\Scripts\tradeoff.exe connect --project .
 .\.venv-tradeoff\Scripts\tradeoff.exe doctor --project .

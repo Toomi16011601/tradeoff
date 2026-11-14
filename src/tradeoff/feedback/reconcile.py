@@ -6,8 +6,8 @@ import hashlib
 from .contracts import canonical_json, decimal_text, utc_time
 
 
-def _baseline_info(alias, symbol, first_fill_at, fills, kinds, *, last_fill_at=None):
-    observations = [e["payload"] for e in kinds["inventory"] if e["payload"]["source_alias"] == alias
+def _baseline_info(alias, symbol, first_fill_at, fills, kinds, *, instrument, last_fill_at=None):
+    observations = [{**e["payload"], "environment": e["environment"]} for e in kinds["inventory"] if e["payload"]["source_alias"] == alias
                     and e["payload"]["symbol"] == symbol]
     initial = [p for p in observations if p["observed_at"] <= first_fill_at]
     baseline = max(initial, key=lambda p: p["observed_at"], default=None)
@@ -22,6 +22,10 @@ def _baseline_info(alias, symbol, first_fill_at, fills, kinds, *, last_fill_at=N
         for inv in observations:
             if inv["observed_at"] < baseline["observed_at"] or inv["observed_at"] > (last_fill_at or first_fill_at):
                 continue
+            if any(inv[k] != instrument[k] for k in ("currency", "asset_class")):
+                reasons.add("INVENTORY_INSTRUMENT_CONFLICT")
+            if inv["environment"] != instrument["environment"]:
+                reasons.update(("INVENTORY_ENVIRONMENT_CONFLICT", "ENVIRONMENT_CONFLICT"))
             expected = Decimal(baseline["quantity"]) + sum((Decimal(f["quantity_delta"]) for f in fills if
                 baseline["observed_at"] < f["occurred_at"] <= inv["observed_at"]), Decimal("0"))
             if expected != Decimal(inv["quantity"]):
@@ -50,17 +54,19 @@ def _reconcile(snapshot, *, as_of):
         if key in decisions:
             duplicate_decisions.add(key)
         decisions[key] = e
-    bindings, conflicting_bindings = {}, set()
+    bindings, conflicting_bindings, binding_environments = {}, set(), defaultdict(set)
     for e in kinds["order_binding"]:
         p = e["payload"]
         key = (p["source_alias"], p["order_id"])
         if key in bindings and bindings[key] != p["decision_id"]:
             conflicting_bindings.add(key)
         bindings[key] = p["decision_id"]
-    orders = {}
+        binding_environments[key].add(e["environment"])
+    orders, order_environments = {}, defaultdict(set)
     for e in kinds["order"]:
         p = e["payload"]
         key = (p["source_alias"], p["order_id"])
+        order_environments[key].add(e["environment"])
         old = orders.get(key)
         if old is None or (p.get("source_updated_at", p["submitted_at"]), e["seq"]) >= (old.get("source_updated_at", old["submitted_at"]), old["seq"]):
             orders[key] = {**p, "seq": e["seq"], "environment": e["environment"]}
@@ -71,12 +77,14 @@ def _reconcile(snapshot, *, as_of):
             parent = (key[0], p.get("replaces_order_id"))
             if key not in bindings and parent in bindings and parent in orders and orders[parent].get("replaced_by_order_id") == key[1]:
                 bindings[key], changed = bindings[parent], True
+                binding_environments[key].update(binding_environments[parent])
         if not changed:
             break
-    grouped, seen, bad_fills = defaultdict(list), {}, set()
+    grouped, seen, bad_fills, fill_environments = defaultdict(list), {}, set(), defaultdict(set)
     for e in kinds["fill"]:
         p = e["payload"]
         key = (p["source_alias"], p["fill_id"])
+        fill_environments[key].add(e["environment"])
         if key in seen:
             if seen[key] != p:
                 bad_fills.add(key)
@@ -84,9 +92,42 @@ def _reconcile(snapshot, *, as_of):
         seen[key] = p
         grouped[(p["source_alias"], p["symbol"])].append({**p, "environment": e["environment"]})
     order_totals = defaultdict(lambda: Decimal("0"))
+    intent_fills, intent_orders, intent_largest = (defaultdict(lambda: Decimal("0")) for _ in range(3))
     for fills in grouped.values():
         for f in fills:
             order_totals[(f["source_alias"], f["order_id"])] += abs(Decimal(f["quantity_delta"]))
+            intent_fills[bindings.get((f["source_alias"], f["order_id"]))] += abs(Decimal(f["quantity_delta"]))
+    chains = {key: key for key in orders}
+
+    def chain_root(key):
+        while chains[key] != key:
+            chains[key] = chains[chains[key]]
+            key = chains[key]
+        return key
+
+    for key, order in orders.items():
+        replacement = (key[0], order.get("replaced_by_order_id"))
+        if replacement in orders and orders[replacement].get("replaces_order_id") == key[1]:
+            chains[chain_root(replacement)] = chain_root(key)
+    chain_quantities, chain_filled = defaultdict(lambda: Decimal("0")), defaultdict(lambda: Decimal("0"))
+    live_chains, ambiguous_chains = set(), set()
+    chain_environments, chain_instruments = defaultdict(set), defaultdict(set)
+    for key, order in orders.items():
+        did, root = bindings.get(key), chain_root(key)
+        chain = (did, root)
+        chain_quantities[chain] = max(chain_quantities[chain], Decimal(order["quantity"]))
+        chain_filled[chain] += Decimal(order["filled_quantity"])
+        intent_largest[did] = max(intent_largest[did], Decimal(order["quantity"]))
+        if order["status"] not in {"canceled", "expired", "rejected", "filled", "replaced"}:
+            live_chains.add(chain)
+        if key in conflicting_bindings:
+            ambiguous_chains.add(root)
+        chain_environments[root].update(order_environments[key] | binding_environments[key])
+        chain_instruments[root].add(tuple(order[k] for k in ("symbol", "currency", "asset_class", "side")))
+    # A corroborated replacement is one evolving order, whether its size names
+    # the total or remaining shares. Actual fills stay bounded separately.
+    for chain, quantity in chain_quantities.items():
+        intent_orders[chain[0]] += quantity if chain in live_chains else chain_filled[chain]
     episodes, excluded = [], []
     for (alias, symbol), fills in sorted(grouped.items()):
         fills.sort(key=lambda f: (f["occurred_at"], f["fill_id"]))
@@ -94,7 +135,7 @@ def _reconcile(snapshot, *, as_of):
         current, owners, reasons = [], set(), set()
         for i, f in enumerate(fills):
             if not current:
-                baseline, reasons = _baseline_info(alias, symbol, f["occurred_at"], fills, kinds)
+                baseline, reasons = _baseline_info(alias, symbol, f["occurred_at"], fills, kinds, instrument=f)
                 position = Decimal(baseline["quantity"]) if baseline else Decimal("0")
                 if baseline and any((alias, oid) not in bindings for oid in baseline["open_order_ids"]):
                     reasons.add("OPEN_ORDER_UNRESOLVED")
@@ -103,7 +144,7 @@ def _reconcile(snapshot, *, as_of):
             owner_event = decisions.get(bindings.get(key))
             if not order:
                 reasons.add("ORDER_MISSING")
-            if not owner_event or key in conflicting_bindings:
+            if not owner_event or key in conflicting_bindings or (key in orders and chain_root(key) in ambiguous_chains):
                 reasons.add("UNBOUND_FILL")
             else:
                 d = owner_event["payload"]
@@ -114,17 +155,31 @@ def _reconcile(snapshot, *, as_of):
                     reasons.add("INTENT_FILL_CONFLICT")
                 if d["symbol"] != symbol or d["currency"] != f["currency"] or d["asset_class"] != f["asset_class"]:
                     reasons.add("INSTRUMENT_CONFLICT")
+                if max(intent_fills[d["decision_id"]], intent_orders[d["decision_id"]], intent_largest[d["decision_id"]]) > abs(Decimal(d["quantity_delta"])):
+                    reasons.add("INTENT_QUANTITY_CONFLICT")
+                if order and not d["decision_at"] <= order["submitted_at"] <= f["occurred_at"]:
+                    reasons.add("EXECUTION_TIME_CONFLICT")
+            if any(environment != f["environment"] for environment in binding_environments[key]):
+                reasons.add("ENVIRONMENT_CONFLICT")
+            if len(fill_environments[(alias, f["fill_id"])]) > 1:
+                reasons.add("ENVIRONMENT_CONFLICT")
             if (alias, f["fill_id"]) in bad_fills:
                 reasons.add("FILL_ID_CONFLICT")
             if f["asset_class"] != "us_equity" or f["currency"] != "USD":
                 reasons.add("UNSUPPORTED_INSTRUMENT")
             if order:
+                if any(environment != f["environment"] for environment in chain_environments[chain_root(key)]):
+                    reasons.add("ENVIRONMENT_CONFLICT")
+                if len(chain_instruments[chain_root(key)]) > 1:
+                    reasons.add("ORDER_FILL_CONFLICT")
                 if order.get("parent_order_id"):
                     reasons.add("UNSUPPORTED_CHILD_ORDER")
                 if order["currency"] != f["currency"] or order["asset_class"] != f["asset_class"] or order["symbol"] != symbol or ((order["side"] == "sell") != f["quantity_delta"].startswith("-")):
                     reasons.add("ORDER_FILL_CONFLICT")
                 if Decimal(order["filled_quantity"]) != order_totals[key]:
                     reasons.add("FILL_QUANTITY_CONFLICT")
+                if order["status"] == "filled" and Decimal(order["quantity"]) != Decimal(order["filled_quantity"]):
+                    reasons.add("FILLED_ORDER_QUANTITY_CONFLICT")
                 for link, back in (("replaces_order_id", "replaced_by_order_id"), ("replaced_by_order_id", "replaces_order_id")):
                     if link in order:
                         other = orders.get((alias, order[link]))
@@ -136,14 +191,15 @@ def _reconcile(snapshot, *, as_of):
             current.append(f)
             position = after
             reset_after = i + 1 < len(fills) and any(e["payload"]["source_alias"] == alias and
-                e["payload"]["symbol"] == symbol and Decimal(e["payload"]["quantity"]) == 0 and
+                e["payload"]["symbol"] == symbol and all(e["payload"][k] == f[k] for k in ("currency", "asset_class")) and
+                e["environment"] == f["environment"] and Decimal(e["payload"]["quantity"]) == 0 and
                 f["occurred_at"] < e["payload"]["observed_at"] and
                 e["payload"]["capture_completed_at"] < fills[i+1]["occurred_at"] for e in kinds["inventory"])
             if position == 0 or i == len(fills) - 1 or reset_after:
                 if reset_after and position != 0:
                     reasons.add("INVENTORY_BASELINE_RESET")
                 _, interval_reasons = _baseline_info(alias, symbol, current[0]["occurred_at"], fills, kinds,
-                                                      last_fill_at=current[-1]["occurred_at"])
+                                                      instrument=current[0], last_fill_at=current[-1]["occurred_at"])
                 reasons.update(interval_reasons)
                 for note_event in kinds["source_note"]:
                     note = note_event["payload"]
@@ -197,7 +253,7 @@ def _reconcile(snapshot, *, as_of):
             "episode_ids": [ep["episode_id"] for ep in episodes if did in ep["decision_ids"]]})
     aliases = {k[0] for k in grouped}
     coverage = {"fetch_complete": bool(aliases) and all(snapshot["sync_state"].get(a, {}).get("fetch_complete") is True for a in aliases),
-        "inventory_resolved": bool(episodes) and not any(any(r in ep["reasons"] for r in ("OPENING_INVENTORY_UNKNOWN", "EXTERNAL_INVENTORY", "INVENTORY_WINDOW_CONFLICT", "INVENTORY_SNAPSHOT_CONFLICT")) for ep in episodes),
+        "inventory_resolved": bool(episodes) and not any(any(r in ep["reasons"] for r in ("OPENING_INVENTORY_UNKNOWN", "EXTERNAL_INVENTORY", "INVENTORY_WINDOW_CONFLICT", "INVENTORY_SNAPSHOT_CONFLICT", "INVENTORY_INSTRUMENT_CONFLICT", "INVENTORY_ENVIRONMENT_CONFLICT")) for ep in episodes),
         "bindings_complete": not any("UNBOUND_FILL" in e["reasons"] for e in episodes),
         "attribution_complete": bool(episodes) and all(e["status"] == "ATTRIBUTABLE_CLOSED" for e in episodes),
         "decision_count": len(decisions), "fill_count": len(seen), "excluded_episodes": len(excluded)}

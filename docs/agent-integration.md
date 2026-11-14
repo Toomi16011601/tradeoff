@@ -33,7 +33,7 @@ There are two useful meanings of “agent” here:
 | Trading agent | Supplies the strategy's historical trading decisions. The small example uses a deterministic Python function. |
 | Coding agent | Runs the local checker, reads JSON evidence, edits the strategy and replays the saved failure. |
 
-A coding agent can call an ordinary subprocess or Python function as a tool. This release has no dedicated agent SDK, MCP server, universal connector or live broker integration. The browser UI explores the completed evidence; new simulations run through the CLI or Python API.
+A coding agent can call an ordinary subprocess or Python function as a tool. This backtest example uses the CLI or Python API for simulations and an offline browser report for completed evidence. The separate [decision-feedback workflow](feedback-integration.md) provides an optional local MCP server and read-only Alpaca paper sync; it still requires an explicit hook into your agent.
 
 ## Run the complete small example
 

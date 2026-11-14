@@ -18,6 +18,7 @@ REPORT_ARTIFACTS = frozenset({
     "index.html", "report.json", "receipt.json", "reproducer.json",
     "test_future_invariance.py", "failure-fixture.json", "failure-receipt.json",
     "test_failure_resilience.py", "case-results.json",
+    "feedback-report.json", "feedback-evidence.json", "feedback-receipt.json",
 })
 
 
@@ -31,13 +32,15 @@ def preview_content_security_policy():
     """Authorize the packaged inline assets, never scripts from report contents."""
     assets = files("tradeoff.report").joinpath("assets")
 
-    def hashes(names):
+    def hashes(bundles):
         return " ".join("'sha256-" + base64.b64encode(hashlib.sha256(
-            assets.joinpath(name).read_text(encoding="utf-8").encode("utf-8")
-        ).digest()).decode("ascii") + "'" for name in names)
+            "".join(assets.joinpath(name).read_text(encoding="utf-8")
+                    for name in bundle).encode("utf-8")
+        ).digest()).decode("ascii") + "'" for bundle in bundles)
 
-    return ("default-src 'none'; script-src " + hashes(("report.js", "failure.js"))
-            + "; style-src " + hashes(("report.css", "failure.css"))
+    # Feedback combines the shared and feedback CSS in one inline style block.
+    return ("default-src 'none'; script-src " + hashes((("report.js",), ("failure.js",), ("feedback.js",)))
+            + "; style-src " + hashes((("report.css",), ("failure.css",), ("report.css", "feedback.css")))
             + "; connect-src 'none'; img-src 'none'; object-src 'none'; "
               "base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
 

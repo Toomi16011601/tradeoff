@@ -16,6 +16,8 @@ def make_backtesting_runner(strategy_class, *, engine_settings=None, prepare=Non
     the first next() callback remain zero because the engine has not processed
     broker orders. Open terminal positions remain open. Positions are net and
     hedging is disabled. Margin is in (0, 1], with one meaning no leverage.
+    If native insolvency halts processing, preserve its terminal holdings on
+    the halted bar and the remaining unprocessed input rows.
     exclusive_orders defaults to False, matching upstream accumulation and
     partial-cover behavior; explicitly True replaces positions on each order.
     Extra row fields are not supplied to the OHLCV feed; availability is audited
@@ -44,11 +46,14 @@ def make_backtesting_runner(strategy_class, *, engine_settings=None, prepare=Non
             raise ValueError("strategy_class must be a Backtesting.py Strategy subclass")
         trace = [{"timestamp": row["timestamp"], "target": 0,
                   "features": {"capture": "warmup_flat"}} for row in rows]
+        last_strategy_bar = None
 
         class RecordingStrategy(strategy_class):
             def next(self):
+                nonlocal last_strategy_bar
                 super().next()
                 index = len(self.data) - 1
+                last_strategy_bar = index
                 trace[index] = {"timestamp": rows[index]["timestamp"],
                                 "target": position_target(self.position.size),
                                 "features": {"capture": "observed_position"}}
@@ -74,7 +79,17 @@ def make_backtesting_runner(strategy_class, *, engine_settings=None, prepare=Non
             backtest = Backtest(frame, RecordingStrategy, **options,
                                 hedging=False,
                                 finalize_trades=False)
-            backtest.run(**config)
+            stats = backtest.run(**config)
+        broker = stats["_strategy"]._broker
+        processed_bar = getattr(broker, "_i", None)
+        if processed_bar is not None and processed_bar != last_strategy_bar:
+            # Native insolvency stops before next() and can retain a holding.
+            # Keep the broker's actual terminal state instead of warmup zeros.
+            terminal_position = position_target(broker.position.size)
+            for index in range(processed_bar, len(rows)):
+                trace[index] = {"timestamp": rows[index]["timestamp"],
+                                "target": terminal_position,
+                                "features": {"capture": "observed_position"}}
         return validate_trace(trace, rows)
 
     run.trace_kind = "observed_position"

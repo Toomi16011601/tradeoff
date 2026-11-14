@@ -136,7 +136,7 @@ class FeedbackApp:
     def _evaluate(snapshot, as_of):
         payloads = lambda kind: [e["payload"] for e in snapshot["events"] if e["kind"] == kind]
         return evaluate(reconcile(snapshot, as_of=as_of), marks=payloads("mark"), costs=payloads("cost"),
-                        cost_scopes=payloads("cost_scope"), as_of=as_of)
+                        cost_scopes=payloads("cost_scope"), as_of=as_of, evidence_events=snapshot["events"])
 
     @staticmethod
     def _report(snapshot, evaluation, as_of, comparison=None):

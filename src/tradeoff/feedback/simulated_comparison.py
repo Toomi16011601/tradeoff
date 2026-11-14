@@ -129,6 +129,13 @@ def _compare(snapshot, evaluation, plan_event, as_of):
     kinds = defaultdict(list)
     for event in events:
         kind, p = event["kind"], event["payload"]
+        economic_at = next((p[k] for k in ("occurred_at", "source_updated_at", "submitted_at", "observed_at", "applies_at") if k in p), None)
+        if kind == "mark":
+            economic_at = max(p["observed_at"], p["available_at"])
+        if economic_at is not None and economic_at > as_of:
+            continue
+        if kind == "source_note" and (p["interval_start"] > end or p["interval_end"] < start):
+            continue
         related = (id(event) in selected_event_ids if kind == "decision" else
             p.get("source_alias") in aliases or
             (kind == "order_binding" and p["decision_id"] in dids) or

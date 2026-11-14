@@ -1,3 +1,3 @@
 """Tradeoff: local evidence for trading decisions and strategy changes."""
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"

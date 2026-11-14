@@ -10,15 +10,59 @@ from . import __version__
 from .failure_lab import (SCHEMA_VERSION as LAB_SCHEMA, ZERO_SCENARIO, execution_metrics,
                           requirement_violations, validate_execution_result,
                           validate_requirements, validate_runner_spec, validate_scenario)
-from .validation import canonical_hash, validate_config, validate_rows
+from .validation import canonical_hash, normalize_target, validate_config, validate_rows
 
 FIXTURE_SCHEMA = 'backtest-witness.failure-fixture.v1'
 _HASH_FIELDS = ('rows', 'config', 'seed', 'settings', 'runner_spec', 'baseline', 'scenario',
                 'requirements', 'runtime', 'observations')
+_SIMULATION_SETTINGS = frozenset({'cash', 'commission', 'spread', 'margin', 'trade_on_close',
+                                  'exclusive_orders', 'hedging', 'finalize_trades'})
 
 
 class ResilienceError(AssertionError):
     """Repeated comparable executions breach the saved requirements."""
+
+
+def _simulation_settings(result):
+    """Bind known simulator settings without binding strategy metadata."""
+    settings = result.get('effective_settings')
+    if not isinstance(settings, dict):
+        raise ValueError('Execution effective_settings must be a JSON object; comparison refused')
+    selected = {key: deepcopy(value) for key, value in settings.items() if key in _SIMULATION_SETTINGS}
+    if result['engine'] == 'backtesting':
+        missing = _SIMULATION_SETTINGS - selected.keys()
+        if missing:
+            raise ValueError('Backtesting effective_settings is missing ' + ', '.join(sorted(missing)) +
+                             '; saved simulation is not comparable')
+        from .execution import _settings
+        flags = ('hedging', 'finalize_trades')
+        if any(type(selected[key]) is not bool for key in flags):
+            raise ValueError('Backtesting effective_settings hedging/finalize_trades must be booleans')
+        try:
+            selected.update(_settings({key: value for key, value in selected.items() if key not in flags}))
+        except ValueError as exc:
+            raise ValueError(f'Backtesting effective_settings is invalid: {exc}') from None
+        if not isinstance(selected['commission'], list):
+            selected['commission'] = [0, selected['commission']]
+    return selected
+
+
+def _normalized_setting(value):
+    if type(value) in (int, float):
+        return normalize_target(value, 'effective_settings')
+    if isinstance(value, list):
+        return [_normalized_setting(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _normalized_setting(item) for key, item in value.items()}
+    return value
+
+
+def _same_simulation_settings(current, saved):
+    before, after = _simulation_settings(saved), _simulation_settings(current)
+    for key in sorted(before.keys() | after.keys()):
+        if (key not in before or key not in after or
+                canonical_hash(_normalized_setting(before[key])) != canonical_hash(_normalized_setting(after[key]))):
+            raise ValueError(f'Execution effective_settings.{key} differs from saved simulation; comparison refused')
 
 
 def _reference(value):
@@ -63,6 +107,7 @@ def _validated_fixture(value):
     stressed = validate_execution_result(observations.get('stress'), rows, stress)
     _comparable(baseline, stressed)
     for result in (baseline, stressed):
+        _simulation_settings(result)
         _runtime_matches(result, runtime)
     baseline_metrics = execution_metrics(baseline)
     if requirement_violations(baseline_metrics, requirements):
@@ -135,6 +180,7 @@ def assert_failure_resilience(run, fixture, *, config=None):
                 _runtime_matches(result, runtime)
                 if result['initial_cash'] != saved['initial_cash']:
                     raise ValueError('Execution initial_cash differs from saved simulation; comparison refused')
+                _same_simulation_settings(result, saved)
                 results.append(result)
         except Exception as exc:
             raise ValueError(f'Failure replay is not comparable: {type(exc).__name__}: {exc}') from None
