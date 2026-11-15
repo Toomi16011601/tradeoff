@@ -38,9 +38,10 @@ def preview_content_security_policy():
                     for name in bundle).encode("utf-8")
         ).digest()).decode("ascii") + "'" for bundle in bundles)
 
-    # Feedback combines the shared and feedback CSS in one inline style block.
+    # Workstation reports combine shared and family CSS in one inline block.
     return ("default-src 'none'; script-src " + hashes((("report.js",), ("failure.js",), ("feedback.js",)))
-            + "; style-src " + hashes((("report.css",), ("failure.css",), ("report.css", "feedback.css")))
+            + "; style-src " + hashes((("report.css",), ("failure.css",),
+                                       ("report.css", "failure.css"), ("report.css", "feedback.css")))
             + "; connect-src 'none'; img-src 'none'; object-src 'none'; "
               "base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
 

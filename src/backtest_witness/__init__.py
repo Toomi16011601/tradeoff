@@ -19,7 +19,7 @@ _MODULES = (
     "demos", "diagnostics", "economics", "execution", "failure_cli",
     "failure_lab", "failure_reproduce", "integration", "mutations",
     "preview", "privacy", "report", "report.failure_renderer",
-    "report.renderer", "reproduce", "sizing", "strategy_onboarding", "validation",
+    "report.renderer", "report.workstation", "reproduce", "sizing", "strategy_onboarding", "validation",
     "feedback", "feedback.contracts", "feedback.store", "feedback.recorder", "feedback.reconcile", "feedback.metrics", "feedback.comparison",
     "feedback.api", "feedback.cli", "feedback.serialization", "feedback.simulated_comparison",
     "feedback.alpaca",

@@ -2,6 +2,8 @@
 
 For a first setup, open your trading project in a coding agent with terminal access and use the [copyable setup prompt in the README](../README.md#let-your-agent-set-it-up). It includes installation, finding the strategy and historical data, checking supported adapters and returning the first report. No separate agent service is needed.
 
+For a reusable workflow, use the [Tradeoff audit skill and setup guide](../skills/tradeoff-audit/references/setup.md). It covers the existing future-data CLI, input discovery, honest blockers and replaying a repair. The complete skill folder can be read directly by an agent without registering MCP.
+
 ## Start with future-data debugging
 
 Install Tradeoff in the strategy project's environment, then tell your coding agent:

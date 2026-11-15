@@ -9,16 +9,19 @@
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to report</a>
-<header>
-  <a class="brand" href="#main" aria-label="Tradeoff, execution report">
-    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h24v6h-9v20h-6V10H4V4z" fill="currentColor"/></svg>
-    <span>Tradeoff<span class="brand-period">.</span></span>
+<div class="page-shell @@SHELL_CLASS@@">
+<header class="masthead">
+  <a class="brand wordmark" href="#main" aria-label="Tradeoff, execution report">
+    <svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="17" width="5" height="9" rx="1" fill="currentColor"/><rect x="11" y="9" width="5" height="17" rx="1" fill="currentColor"/><rect x="20" y="2" width="5" height="24" rx="1" fill="currentColor"/></svg>
+    <span>Tradeoff</span>
   </a>
-  <span class="brand-description">Evidence for trading decisions</span>
-  <span class="header-meta">LOCAL EXECUTION REPORT<span>SELF-CONTAINED / OFFLINE</span></span>
+  <span class="brand-description">EXECUTION LAB</span>
 </header>
+<div class="terminal-topbar"><strong>Native execution</strong><span>SIMULATED / POLICY CHECKS</span><span class="offline-indicator">Offline report</span></div>
+@@NAV@@
 <main id="main" tabindex="-1">@@CONTENT@@</main>
-<footer><span>Tradeoff · @@VERSION@@</span><span>SELF-CONTAINED / OFFLINE</span></footer>
+<footer class="site-footer"><span>Tradeoff · @@VERSION@@</span><span>SELF-CONTAINED / OFFLINE</span></footer>
+</div>
 <script id="failure-data" type="application/json">@@DATA@@</script>
 <script>@@JS@@</script>
 </body>

@@ -20,7 +20,7 @@ def _table(caption, headers, rows):
 
 
 def _section(key, number, title, subtitle, content):
-    return f'<section class="fb-section" id="{key}" aria-labelledby="{key}-title"><div class="fb-section-head"><div><span class="fb-kicker">{number} / RESEARCH RECORD</span><h2 id="{key}-title">{title}</h2></div><p>{subtitle}</p></div>{content}</section>'
+    return f'<section class="fb-section" id="{key}" aria-labelledby="{key}-title"><div class="fb-section-head"><div><span class="fb-kicker">{number} / DECISION REVIEW</span><h2 id="{key}-title">{title}</h2></div><p>{subtitle}</p></div>{content}</section>'
 
 
 def _chart(episodes):
@@ -54,21 +54,20 @@ def render_feedback_report(report):
     label = "PAPER / SIMULATED" if "paper" in environments else "SIMULATED" if "simulated" in environments else "IMPORTED / RETROSPECTIVE" if environments else "NO EVIDENCE YET"
     if decisions and all(d["reference"]["source"] == "synthetic_demo" for d in decisions):
         label += " / SYNTHETIC DEMO"
-    hero = f'''<div class="fb-hero"><div><span class="fb-kicker">AGENT FEEDBACK / DECISION REVIEW</span><h1>Decisions.<br><span>Measured in context.</span></h1><p>Trace recorded intent to execution and outcomes. See missing evidence before changing your agent.</p></div><aside><strong>Evidence has limits.</strong><p>Paper fills are simulated. Descriptive differences do not prove better live trading. Local receipts are not authenticated proof that an agent never saw future data.</p></aside></div>
-    <div class="fb-meta"><span class="fb-badge">{_escape(label)}</span><span>AS OF {_escape(report['as_of'])}</span><span>REPORT {_escape(report['report_id'])}</span></div>'''
+    hero = f'''<div class="fb-summary"><h1>Decision review</h1><span class="fb-badge">{_escape(label)}</span><span class="fb-as-of">AS OF {_escape(report['as_of'])}</span></div>'''
     stats = '<div class="fb-stats">' + "".join(f'<div class="fb-stat"><span class="fb-label">{title}</span><strong class="{tone}">{value}</strong><small>{caption}</small></div>' for title, value, caption, tone in [
-        ("RECORDED DECISIONS", len(decisions), "includes holds and skips", ""),
-        ("ATTRIBUTABLE CLOSED", f"{closed} / {len(episodes)}", "episodes with resolved ownership", "fb-green"),
-        ("OBSERVED NET KNOWN", f"{known} / {len(episodes)}", "requires applicable cost coverage", "fb-green" if known == len(episodes) and episodes else "fb-amber"),
-        ("PROSPECTIVE CAPTURE", f"{prospective} / {len(decisions)}", "under the declared local clock policy", "")]) + "</div>"
+        ("RECORDED DECISIONS", len(decisions), "holds and skips included", ""),
+        ("ATTRIBUTABLE CLOSED", f"{closed} / {len(episodes)}", "resolved ownership", ""),
+        ("OBSERVED NET KNOWN", f"{known} / {len(episodes)}", "applicable cost coverage required", "" if known == len(episodes) and episodes else "fb-amber"),
+        ("PROSPECTIVE CAPTURE", f"{prospective} / {len(decisions)}", "declared local clock policy", "")]) + "</div>"
     checks = [("Inventory baseline", quality.get("inventory_resolved", False)),
               ("Order bindings", quality.get("bindings_complete", False)),
               ("Episode attribution", quality.get("attribution_complete", False)),
               ("Broker fetch for interval", quality.get("fetch_complete", False))]
-    check_html = "".join(f'<div class="fb-check"><span>{name}</span><b class="{"complete" if value else ""}">{"Resolved in supplied evidence" if value else "Incomplete / not verified"}</b></div>' for name, value in checks)
+    check_html = "".join(f'<div class="fb-check"><span>{name}</span><b class="{"complete" if value else ""}">{"Resolved" if value else "Incomplete / unverified"}</b></div>' for name, value in checks)
     findings = ev["findings"]
-    finding_html = "".join(f'<div class="fb-finding"><code>{_escape(f["code"])}</code><p>{_escape(f["action"])}</p></div>' for f in findings[:16]) or '<p class="fb-green">No supported evidence issue was detected in these records.</p>'
-    quality_html = f'<div class="fb-columns"><div class="fb-panel"><h3>Evidence coverage</h3>{check_html}</div><div class="fb-panel"><h3>Investigate next <span class="subtle">/ {len(findings)} findings</span></h3><div class="fb-findings" tabindex="0" role="region" aria-label="Evidence findings">{finding_html}</div></div></div>'
+    finding_html = "".join(f'<div class="fb-finding"><code>{_escape(f["code"])}</code><p>{_escape(f["action"])}</p></div>' for f in findings[:16]) or '<p class="fb-green">No supported evidence issue detected.</p>'
+    quality_html = f'<div class="fb-columns"><div class="fb-panel"><h3>Evidence coverage</h3>{check_html}</div><div class="fb-panel"><h3>Next checks <span class="subtle">/ {len(findings)} findings</span></h3><div class="fb-findings" tabindex="0" role="region" aria-label="Evidence findings">{finding_html}</div></div></div>'
     if known < len(episodes):
         comparison = report.get("comparison")
         if (comparison and comparison.get("schema_version") == "tradeoff.simulated-account-comparison.v1"
@@ -77,16 +76,16 @@ def render_feedback_report(report):
         else:
             quality_html += '<p class="fb-note"><strong>Cost coverage incomplete.</strong> Unknown net results stay unknown. Fee schedules and assumptions are modeled evidence.</p>'
     if not decisions:
-        quality_html += '<p class="fb-note">Connect the Python recorder or local MCP tools, record an intent before submission, then bind the actual order ID. The demo uses synthetic evidence.</p>'
-    decision_html = _table("Recorded decisions — exact quantities, separate capture and outcome states",
+        quality_html += '<p class="fb-note">Connect your recorder. Capture intent before submission, then bind the actual order ID. Demo evidence is synthetic.</p>'
+    decision_html = _table("Recorded decisions · exact quantities",
         ["Decision / version", "Intent", "Quantity", "Capture", "Horizon outcome", "Price change"],
         [[d["decision_id"] + " / " + d["agent_version"], d["symbol"] + " · " + d["action"], d["intended_quantity"],
-          d["capture"]["classification"], d["outcome_status"], d["horizon_price_change"]] for d in decisions]) if decisions else '<div class="fb-empty">No decisions recorded. Start with the included feedback demo or connect your agent hook.</div>'
-    decision_html += '<p class="fb-note">Horizon price change is a market observation. A sell may close a long; a hold or skip has no invented realized trading profit.</p>'
-    outcome_html = '<div class="fb-panel"><h3>Observed net / USD</h3>' + _chart(episodes) + '<span class="fb-label">ELIGIBLE VALUES ONLY · UP TO EIGHT EPISODES · EXACT LABELS BELOW</span></div>'
-    outcome_html += _table("Execution episodes — gross cash flow, observed net and modeled net are separate",
+          d["capture"]["classification"], d["outcome_status"], d["horizon_price_change"]] for d in decisions]) if decisions else '<div class="fb-empty">No decisions recorded. Run the feedback demo or connect your agent hook.</div>'
+    decision_html += '<p class="fb-note">Price change is a market observation. Sell may close a long. Hold and skip receive no invented realized profit.</p>'
+    workstation = f'''<div class="feedback-workstation audit-workstation" role="group" aria-label="Decision workstation"><div class="workstation-topline"><h2>Observed net cash flow</h2><span class="fb-label">USD · KNOWN NET ONLY</span></div><div class="workstation-layout"><div class="feedback-chart-stage">{_chart(episodes)}<p class="fb-chart-note">Up to 8 eligible episodes. Unknown costs remain unknown.</p></div><aside class="feedback-inspector bar-inspector" role="group" aria-label="Evidence summary"><h3>Evidence summary</h3><dl class="inspector-facts"><div><dt>Known observed net</dt><dd>{known} / {len(episodes)}</dd></div><div><dt>Unknown observed net</dt><dd class="{'fb-amber' if known < len(episodes) else ''}">{len(episodes) - known} / {len(episodes)}</dd></div><div><dt>Attributable closed</dt><dd>{closed} / {len(episodes)}</dd></div><div><dt>Prospective capture</dt><dd>{prospective} / {len(decisions)}</dd></div></dl><p class="fb-note">Paper fills are simulated. Descriptive differences do not establish better live trading.</p><details><summary>Receipt limits</summary><p class="fb-code">Local receipts do not authenticate source records or prove an agent never saw future data.</p></details><a class="text-link" href="#quality">Review evidence coverage <span aria-hidden="true">→</span></a></aside></div></div>'''
+    outcome_html = _table("Execution episodes · observed and modeled net shown separately",
         ["Episode", "Direction", "Status", "Gross / USD", "Observed net / USD", "Modeled net / USD", "Cost coverage"],
-        [[e["episode_id"], e["direction"], e["status"], e["gross_cashflow"], e["observed_net"], e["modeled_net"], e["cost_coverage"]] for e in episodes]) if episodes else '<div class="fb-empty">No execution episodes yet. Current flat positions do not establish historical opening inventory.</div>'
+        [[e["episode_id"], e["direction"], e["status"], e["gross_cashflow"], e["observed_net"], e["modeled_net"], e["cost_coverage"]] for e in episodes]) if episodes else '<div class="fb-empty">No execution episodes. A flat position does not establish historical opening inventory.</div>'
     outcome_html += ''.join(f'<span class="fb-code" data-net-state="{"unknown" if e["observed_net"] is None else "known"}">{_escape(e["episode_id"])} / {_escape(", ".join(e["reasons"]) or "Complete supported evidence")}</span>' for e in episodes)
     comp = report.get("comparison")
     if comp and comp.get("schema_version") == "tradeoff.simulated-account-comparison.v1":
@@ -120,10 +119,10 @@ def render_feedback_report(report):
             compare_html += _table("Modeled cash-stock accounts — same market calendar and starting cash",
                 ["Account measure", "Baseline", "Candidate"],
                 [[title, accounts["baseline"][key], accounts["candidate"][key]] for title, key in account_rows])
-            compare_html += '<p class="fb-note">Open holdings are valued at the terminal mark. Account return includes cash, terminal holdings and explicit modeled fill charges. Turnover is filled notional divided by initial cash. Maximum drawdown uses the declared valuation calendar. These results depend on the recorded cost, execution and historical-ordering assumptions.</p>'
+            compare_html += '<details class="data-disclosure"><summary>Account conventions <span aria-hidden="true">+</span></summary><p class="fb-note">Open holdings are valued at the terminal mark. Return includes cash, holdings and explicit modeled fill charges. Turnover = filled notional / initial cash. Drawdown uses the declared valuation calendar. Cost, execution and historical-ordering assumptions apply.</p></details>'
         else:
-            compare_html += '<div class="fb-empty"><strong>Account results unavailable.</strong><br>Resolve the comparison exclusions and evidence gaps before interpreting account returns.</div>'
-        compare_html += _table("Recorded comparison population — includes holds and skips", ["Agent version", "Decisions"],
+            compare_html += '<div class="fb-empty"><strong>Account results unavailable.</strong><br>Resolve exclusions and evidence gaps before interpreting returns.</div>'
+        compare_html += _table("Recorded comparison population — holds and skips included", ["Agent version", "Decisions"],
             [[version, count] for version, count in comp.get("population_counts", {}).items()])
         compare_html += _table("Modeled simulation warnings", ["Warning"], [[warning] for warning in comp.get("warnings", [])])
         compare_html += _table("Comparison exclusions — unresolved evidence remains visible",
@@ -138,14 +137,14 @@ def render_feedback_report(report):
         compare_html += _table("Comparison exclusions — all recorded opportunities remain visible", ["Opportunity", "Decision", "Reason"],
             [[e.get("opportunity_id", "—"), e.get("decision_id", "—"), e["reason"]] for e in comp["exclusions"]])
     else:
-        compare_html = '<div class="fb-empty"><strong>No comparison plan selected.</strong><br>Register a plan before its evaluation window. Record both versions on matching opportunities, then compare eligible observed outcomes. Tradeoff does not declare an automatic winner.</div>'
+        compare_html = '<div class="fb-empty"><strong>No comparison plan selected.</strong><br>Register a plan before evaluation. Record both versions on matching opportunities. Eligible outcomes support a scoped comparison; no automatic winner.</div>'
     evidence_html = f'<div class="fb-panel"><h3>Evaluation checkpoint</h3><span class="fb-code">Sequence: {report["evidence"]["as_of_seq"]}<br>Head: {_escape(report["evidence"]["head_hash"])}<br>Report: {_escape(report["report_id"])}</span></div>'
-    evidence_html += '<div class="fb-actions"><a href="feedback-report.json" download>Report JSON ↗</a><a href="feedback-evidence.json" download>Normalized evidence ↗</a><a href="feedback-receipt.json" download>Integrity receipt ↗</a><button type="button" data-print hidden>Print report</button></div><p class="fb-note">Exports can contain proprietary trading records. Review before sharing. Broker identifiers use local pseudonyms; receipts bind bytes and retained checkpoints, not source authenticity. Your external agent controls what it sends to its provider.</p>'
-    body = hero + stats + _section("quality", "01", "Data quality", "Start with what the evidence can support.", quality_html)
-    body += _section("decisions", "02", "Decisions", "Intended action, recorder timing and outcome maturity.", decision_html)
-    body += _section("outcomes", "03", "Outcomes", "Execution episodes, with exact quantities and explicit unknown costs.", outcome_html)
-    body += _section("compare", "04", "Compare", "Matched evidence for a declared agent change.", compare_html)
-    body += _section("evidence", "05", "Evidence", "Portable records with a reproducible evaluation checkpoint.", evidence_html)
+    evidence_html += '<div class="fb-actions"><a href="feedback-report.json" download>Report JSON ↗</a><a href="feedback-evidence.json" download>Normalized evidence ↗</a><a href="feedback-receipt.json" download>Integrity receipt ↗</a><button type="button" data-print hidden>Print report</button></div><details class="data-disclosure"><summary>Export scope <span aria-hidden="true">+</span></summary><p class="fb-note">Review records before sharing. Broker IDs use local pseudonyms. Receipts bind bytes and checkpoints; they do not authenticate source. Your external agent controls provider submissions.</p></details>'
+    body = hero + stats + workstation + _section("quality", "01", "Data quality", "Coverage, gaps and next checks.", quality_html)
+    body += _section("decisions", "02", "Decisions", "Intent, capture and outcome state.", decision_html)
+    body += _section("outcomes", "03", "Outcomes", "Exact quantities. Unknown costs remain unknown.", outcome_html)
+    body += _section("compare", "04", "Compare", "Matched evidence for a declared change.", compare_html)
+    body += _section("evidence", "05", "Evidence", "Records and evaluation checkpoint.", evidence_html)
     root = files("tradeoff.report")
     values = {"BODY": body, "CSS": root.joinpath("assets/report.css").read_text() + root.joinpath("assets/feedback.css").read_text(),
               "JS": root.joinpath("assets/feedback.js").read_text()}

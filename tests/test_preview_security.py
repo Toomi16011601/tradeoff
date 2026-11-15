@@ -4,6 +4,7 @@ import hashlib
 from http.client import HTTPResponse
 from io import BytesIO
 import os
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -203,6 +204,29 @@ def test_preview_allows_rendered_feedback_assets(monkeypatch, tmp_path):
     for tag, content in document.assets:
         digest = base64.b64encode(hashlib.sha256(content.encode()).digest()).decode()
         assert f"'sha256-{digest}'" in directives["style-src" if tag == "style" else "script-src"]
+
+
+@pytest.mark.parametrize("family", ["temporal", "native"])
+def test_preview_authorizes_actual_rendered_report_assets(monkeypatch, report_root, family):
+    """A rendered asset bundle must work under the exact HTTP hash policy."""
+    if family == "native":
+        from test_failure_report import sample_report
+        from tradeoff.report.failure_renderer import render_failure_report
+        page = render_failure_report(sample_report())
+    else:
+        from test_report import report
+        from tradeoff.report import render_report
+        page = render_report(report())
+    (report_root / "index.html").write_text(page, encoding="utf-8")
+    response, body = request_preview(monkeypatch, report_root)
+    assert response.status == 200
+    assets = re.findall(r"<(style|script)>(.*?)</\1>", body.decode(), re.S)
+    assert {tag for tag, _ in assets} == {"style", "script"}
+    policy = response.getheader("Content-Security-Policy")
+    assert "'unsafe-inline'" not in policy
+    for _tag, content in assets:
+        digest = base64.b64encode(hashlib.sha256(content.encode()).digest()).decode()
+        assert f"'sha256-{digest}'" in policy
 
 
 @pytest.mark.parametrize("artifact", [

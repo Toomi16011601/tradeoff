@@ -4,4 +4,5 @@ recursive-include src/tradeoff/cases/sources *.py *.json *_LICENSE
 recursive-include docs *.md *.jpg *.png *.gif
 recursive-include examples *.py
 recursive-include tests *.py
+recursive-include skills *.md *.yaml LICENSE
 prune docs/superpowers

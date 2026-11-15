@@ -9,18 +9,19 @@
 </head>
 <body class="@@BODY_CLASS@@">
   <a class="skip-link" href="#main">Skip to report</a>
-  <div class="page-shell">
+  <div class="page-shell @@SHELL_CLASS@@">
     <header class="masthead">
       <a class="wordmark" href="#overview" aria-label="Tradeoff, report overview">
-        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h24v6h-9v20h-6V10H4V4z" fill="currentColor"/></svg>
-        <span>Tradeoff<span class="brand-period">.</span></span>
+        <svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true"><rect x="2" y="17" width="5" height="9" rx="1" fill="currentColor"/><rect x="11" y="9" width="5" height="17" rx="1" fill="currentColor"/><rect x="20" y="2" width="5" height="24" rx="1" fill="currentColor"/></svg>
+        <span>Tradeoff</span>
       </a>
-      <p class="brand-description">Strategy diagnostics<br>Local research</p>
+      <p class="brand-description">RESEARCH DESK</p>
       <div class="masthead-meta"><span class="local-mark">LOCAL · OFFLINE</span><span>@@HEADER_META@@</span></div>
     </header>
+    <div class="terminal-topbar"><strong>Audit workstation</strong><span>@@HEADER_META@@</span><span class="offline-indicator">Offline replay</span></div>
     @@NAV@@
     <main id="main" tabindex="-1">@@CONTENT@@</main>
-    <footer class="site-footer"><span>Tradeoff <span class="mono">@@VERSION@@</span> · alpha</span><span>Local strategy diagnostics</span><span class="mono">@@FOOTER_META@@</span></footer>
+    <footer class="site-footer"><span>Tradeoff <span class="mono">@@VERSION@@</span> · alpha</span><span>Decision integrity</span><span class="mono">@@FOOTER_META@@</span></footer>
   </div>
   <script id="report-data" type="application/json">@@DATA@@</script>
   <script>@@JS@@</script>
