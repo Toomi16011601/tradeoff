@@ -69,7 +69,7 @@ def _policy(report):
     labels = [('min_return_pct', 'Minimum return', '%'), ('max_drawdown_pct', 'Maximum drawdown', '%'),
               ('max_return_drop_pct', 'Maximum return drop vs baseline', ' percentage points'), ('min_closed_trades', 'Minimum closed trades', '')]
     values = [(label, str(requirements[key]) + unit if requirements.get(key) is not None else 'Disabled') for key, label, unit in labels]
-    return f'<article class="panel policy"><span class="eyebrow">YOUR REQUIREMENTS</span><h2>A declared policy.</h2>{_facts(values)}<p class="subtle">A failure is a policy breach under simulated assumptions. A passing result covers only the completed declared scenarios.</p></article>'
+    return f'<article class="panel policy"><span class="eyebrow">YOUR REQUIREMENTS</span><h2>Policy thresholds.</h2>{_facts(values)}<p class="subtle">Simulated policy checks. Passing covers completed declared scenarios only.</p></article>'
 
 
 def _input_checks(report):
@@ -80,10 +80,10 @@ def _input_checks(report):
     warnings.extend(item.get('message', 'Input limitation recorded')
                     for item in checks.get('data_warnings') or [])
     return ('<section id="input-checks" class="panel"><span class="eyebrow">INPUT CHECKS</span>'
-            '<h2>Input limitations and declarations.</h2>'
+            '<h2>Input limitations.</h2>'
             + _list(warnings, 'No input limitations reported by these bounded checks.')
-            + '<p>Direct attribute checks do not verify helper functions, dynamic features or companion-data semantics. '
-              'A completed simulation does not establish faithful strategy integration.</p>'
+            + '<p>Bounded checks exclude helpers, dynamic features and companion-data semantics. '
+              'Simulation alone does not verify faithful integration.</p>'
             + '<details><summary>Declared fields and static inspection scope</summary>'
             + _pre(checks) + '</details></section>')
 
@@ -97,7 +97,7 @@ def _matrix(report):
         note = '; '.join(entry.get('violations') or []) or entry.get('reason') or 'No violations recorded'
         rows.append([name, _stress(scenario), entry.get('status', 'UNAVAILABLE'), _pct(metrics.get('return_pct')),
                      _pct(metrics.get('max_drawdown_pct')), metrics.get('closed_trades', 'Unavailable'), note])
-    return '<section id="scenarios" class="panel"><span class="eyebrow">DECLARED SCENARIOS</span><h2>The full test matrix.</h2><p>Costs are additional to native settings. 1 basis point (bps) = 0.01%. Delay means extra bars beyond normal next-open execution.</p>' + _table(['Scenario', 'Additional stress', 'Status', 'Native return', 'Max drawdown', 'Closed trades', 'Violations / reason'], rows, table_id='scenario-table', caption='All declared native execution scenarios, including unavailable and not-run cases') + '</section>'
+    return '<section id="scenarios" class="panel"><span class="eyebrow">DECLARED SCENARIOS</span><h2>Scenario matrix.</h2><p>Additional costs and extra bars beyond native next-open execution. 1 bps = 0.01%.</p>' + _table(['Scenario', 'Additional stress', 'Status', 'Native return', 'Max drawdown', 'Closed trades', 'Violations / reason'], rows, table_id='scenario-table', caption='All declared native execution scenarios, including unavailable and not-run cases') + '</section>'
 
 
 def _selected(report):
@@ -164,32 +164,32 @@ def _comparison(report):
     count = len(before or after)
     b, a = (before[0] if before else {}), (after[0] if after else {})
     disabled = ' disabled' if not count else ''
-    return f'''<section id="comparison" class="panel"><div class="section-top"><div><span class="eyebrow">PAIRED EXECUTION</span><h2>Native engine equity.</h2></div><div class="select-wrap"><label for="scenario-select">Compare with baseline</label><select id="scenario-select">{options}</select></div></div>
-    <p>Each scenario reruns the strategy and broker. Cash, sizing, fills and positions come from the engine. Open holdings and pending tail orders remain visible.</p>
+    return f'''<section id="comparison" class="panel native-workstation" role="group" aria-label="Execution workstation"><div class="section-top"><div><span class="eyebrow">PAIRED EXECUTION</span><h2>Native engine equity.</h2></div><div class="select-wrap"><label for="scenario-select">Compare with baseline</label><select id="scenario-select">{options}</select></div></div>
+    <p>Native strategy and broker reruns. Open holdings and pending terminal orders are retained.</p>
     <div class="metric-pair"><div>{_metrics(report.get('baseline') or {}, 'Baseline')}</div><div id="selected-metrics">{_metrics(selected, selected.get('name', 'Selected scenario'))}</div></div>
-    <p id="selected-stress" class="stress-description">{_escape(_stress(selected.get('scenario')))}</p>
+    <div class="native-canvas"><div class="native-chart-stage"><p id="selected-stress" class="stress-description">{_escape(_stress(selected.get('scenario')))}</p>
     <div class="legend"><span><i class="base-key"></i>Baseline</span><span><i class="stress-key"></i>Selected scenario</span></div>
-    <div id="chart-container">{_chart(before, after)}</div><p id="comparison-note" class="subtle">{_escape(selected.get('reason') or '')}</p>
-    <div class="inspection"><div class="section-top"><label for="bar-cursor" class="eyebrow">INSPECT A BAR</label><span id="bar-counter">{'1' if count else '0'} / {count}</span></div>
+    <div id="chart-container" tabindex="0" role="region" aria-label="Native equity chart; scroll horizontally">{_chart(before, after)}</div><p id="comparison-note" class="subtle">{_escape(selected.get('reason') or '')}</p>
+    </div><aside class="native-inspector"><h3>Selected bar</h3><div class="inspection"><div class="section-top"><label for="bar-cursor" class="eyebrow">INSPECT A BAR</label><span id="bar-counter">{'1' if count else '0'} / {count}</span></div>
     <div class="cursor-controls"><button type="button" id="bar-prev" aria-label="Inspect previous bar" disabled>←</button><input type="range" id="bar-cursor" min="0" max="{max(count-1, 0)}" value="0" aria-label="Inspection bar"{disabled}><button type="button" id="bar-next" aria-label="Inspect next bar"{' disabled' if count<2 else ''}>→</button></div>
     <div id="bar-detail" aria-live="polite" aria-atomic="true"><p id="bar-timestamp" class="mono">{_escape(b.get('timestamp') or a.get('timestamp') or 'No observed bars')}</p><div class="bar-pair"><p>Baseline equity <strong id="bar-base-equity">{_number(b.get('equity'))}</strong><br>Position <strong id="bar-base-position">{_escape(_quantity(b.get('position')))}</strong></p><p>Scenario equity <strong id="bar-stress-equity">{_number(a.get('equity'))}</strong><br>Position <strong id="bar-stress-position">{_escape(_quantity(a.get('position')))}</strong></p></div></div>
-    <button type="button" id="first-change" class="text-button">Inspect earliest divergence</button><p id="divergence-note" class="subtle"></p></div>
+    <button type="button" id="first-change" class="text-button">Inspect earliest divergence</button><p id="divergence-note" class="subtle"></p></div></aside></div>
     <details><summary>Accessible paired equity and positions</summary>{_table(['Bar', 'Timestamp', 'Baseline equity', 'Baseline position', 'Scenario equity', 'Scenario position'], _equity_rows(before, after), table_id='equity-table', caption='Native engine equity and observed positions on the full input tape')}</details>
     <div class="ledger-pair"><details><summary>Baseline native ledger</summary>{_ledger(report.get('baseline') or {})}</details><details><summary>Selected scenario native ledger</summary><div id="selected-ledger">{_ledger(selected)}</div></details></div>
-    <p class="subtle">Changed observations locate divergence; they do not allocate lost profit causally to individual trades.</p></section>'''
+    <p class="subtle">Divergence locates changed observations; it does not establish causal profit attribution.</p></section>'''
 
 
 def _failure(report):
     failure = report.get('failure')
     if not failure:
-        return '<section id="failure" class="panel"><span class="eyebrow">FAILURE EVIDENCE</span><h2>No verified stress failure.</h2><p>No reduced failure or replay fixture is established by this report. Inspect the baseline outcome and scenario coverage above.</p></section>'
+        return '<section id="failure" class="panel"><span class="eyebrow">FAILURE EVIDENCE</span><h2>No verified stress failure.</h2><p>No reduced failure or replay fixture. Review baseline status and scenario coverage.</p></section>'
     differences = failure.get('differences') or []
     position = next((point['timestamp'] for point in differences if point.get('before_position') != point.get('after_position')), 'No changed position observed')
     equity = next((point['timestamp'] for point in differences if point.get('before_equity') != point.get('after_equity')), 'No changed equity observed')
     reduction = failure.get('reduction') or {}
-    return f'''<section id="failure" class="panel"><span class="eyebrow">VERIFIED FAILURE</span><h2>A reduced, tested stress.</h2><p>{_escape(_stress(failure.get('scenario')))}</p>{_list(failure.get('violations') or [])}
+    return f'''<section id="failure" class="panel"><span class="eyebrow">VERIFIED FAILURE</span><h2>Verified reduced stress.</h2><p>{_escape(_stress(failure.get('scenario')))}</p>{_list(failure.get('violations') or [])}
     {_facts([('Earliest changed position', position), ('Earliest changed equity', equity), ('Reduction runs', reduction.get('runs', 'Unavailable')), ('Declared reduction complete', 'Yes' if reduction.get('complete') else 'No')])}
-    <p>{_escape(reduction.get('scope') or reduction.get('reason') or 'No reduction scope supplied.')}</p><p class="subtle">Full history is retained. Search over declared levels is bounded and may be nonmonotonic; this is not a global break-even threshold.</p>
+    <p>{_escape(reduction.get('scope') or reduction.get('reason') or 'No reduction scope supplied.')}</p><p class="subtle">Full history retained. Reduction is bounded and may be nonmonotonic; no global break-even threshold is established.</p>
     <details><summary>All changed paired observations · {len(differences)}</summary>{_table(['Timestamp', 'Baseline position', 'Failure position', 'Baseline equity', 'Failure equity'], [[p.get('timestamp'), _quantity(p.get('before_position')), _quantity(p.get('after_position')), _number(p.get('before_equity')), _number(p.get('after_equity'))] for p in differences], caption='Verified reduced failure paired native observations')}</details></section>'''
 
 
@@ -198,20 +198,20 @@ def _replay(report, artifacts):
     has_failure = bool(report.get('failure'))
     links = ''.join(f'<a class="download" href="{_escape(path)}" download>{_escape(labels.get(key, key))} ↗</a>' for key, path in artifacts.items() if key == 'json' or has_failure)
     command = f"python -m pytest {artifacts['test']}" if has_failure and artifacts.get('test') else None
-    replay = f'''<div class="command"><span class="eyebrow">RUN WITH YOUR STRATEGY IMPORTABLE</span><pre><code>{_escape(command)}</code></pre><p>Install your strategy project, its exact engine version and pytest. The command above uses the exported test's filename. For checkout examples, run from the repository root and prefix that filename with the output folder. The generated test imports <code>{_escape(report.get('strategy_ref') or 'the saved runner')}</code> and loads the sibling fixture.</p></div><ol class="replay-steps"><li><strong>Reproduce the policy breach.</strong> The saved strategy should fail this test under the verified stress.</li><li><strong>Repair and replay.</strong> Adjust the strategy, then rerun both baseline and stress against the same full tape and requirements. Use explicit runner or config overrides for repairs.</li><li><strong>Keep the evidence.</strong> Retain fixture hashes and the original receipt. Version mismatch refuses comparison; a passing replay is a scoped policy result.</li></ol>''' if command else '<p>No regression test was exported. A verified stress failure and an importable runner are required for a replay fixture.</p>'
-    return f'<section id="replay" class="panel"><span class="eyebrow">REPLAY & REPAIR</span><h2>Make the failure reproducible.</h2>{replay}<div class="downloads">{links}</div><p class="subtle">Keep sibling files together. Content hashes detect changes; receipts are not signed source-authenticity attestations.</p></section>'
+    replay = f'''<div class="command"><span class="eyebrow">RUN WITH YOUR STRATEGY IMPORTABLE</span><pre><code>{_escape(command)}</code></pre><details><summary>Run setup</summary><p>Install your strategy, its exact engine version and pytest. Run with <code>{_escape(report.get('strategy_ref') or 'the saved runner')}</code> importable. From a checkout, prefix the test filename with the output directory. Keep its sibling fixture beside it.</p></details></div><ol class="replay-steps"><li><strong>Reproduce.</strong> The saved strategy should fail under the verified stress.</li><li><strong>Repair &amp; replay.</strong> Use explicit runner or config overrides. Rerun baseline and stress on the same full tape and policy.</li><li><strong>Retain.</strong> Keep hashes and the original receipt. Versions must match. A passing replay is scoped to this policy.</li></ol>''' if command else '<p>No regression test exported. Replay requires a verified stress failure and an importable runner.</p>'
+    return f'<section id="replay" class="panel"><span class="eyebrow">REPLAY & REPAIR</span><h2>Replay the failure.</h2>{replay}<div class="downloads">{links}</div><p class="subtle">Keep sibling files together. Hashes detect changes; receipts do not authenticate source.</p></section>'
 
 
 def _method(report):
     coverage = report.get('coverage') or {}
     settings = report.get('settings') or {}
-    return f'''<section id="method" class="panel"><span class="eyebrow">SCOPE & PROVENANCE</span><h2>Know what was run.</h2>{_facts([('Engine invocations / budget', f"{coverage.get('runs', 0)} / {settings.get('max_calls', 'Unavailable')}"), ('Completed / declared scenarios', f"{coverage.get('completed', 0)} / {coverage.get('total', 0)}"), ('Declared suite complete', 'Yes' if coverage.get('complete') else 'No'), ('Seed', settings.get('seed', 'Unavailable')), ('Schema', report.get('schema_version')), ('Input SHA-256', (report.get('dataset') or {}).get('input_hash'))])}{_list(coverage.get('notes') or [], 'No coverage notes recorded')}
-    <p>Protective contingent stop-loss and take-profit orders keep native timing. Extra delay applies to discretionary market entries and manual market closes. Unsupported delayed order types and trade-on-close execution remain unavailable.</p>
+    return f'''<section id="method" class="panel"><span class="eyebrow">SCOPE & PROVENANCE</span><h2>Run scope.</h2>{_facts([('Engine invocations / budget', f"{coverage.get('runs', 0)} / {settings.get('max_calls', 'Unavailable')}"), ('Completed / declared scenarios', f"{coverage.get('completed', 0)} / {coverage.get('total', 0)}"), ('Declared suite complete', 'Yes' if coverage.get('complete') else 'No'), ('Seed', settings.get('seed', 'Unavailable')), ('Schema', report.get('schema_version')), ('Input SHA-256', (report.get('dataset') or {}).get('input_hash'))])}{_list(coverage.get('notes') or [], 'No coverage notes recorded')}
+    <p>Protective SL/TP orders keep native timing. Delay adds extra bars to discretionary market entries and manual closes. Unsupported delayed orders and trade-on-close remain unavailable.</p>
     <details><summary>Runner and native engine settings</summary>{_pre(report.get('runner_spec') or {})}</details><details><summary>Exact callback configuration</summary>{_pre(report.get('config') or {})}</details><details><summary>Search settings and coverage</summary>{_pre({'settings': settings, 'coverage': coverage})}</details>
-    <details><summary>Source and input provenance</summary>{_pre(report.get('provenance')) if report.get('provenance') else '<p>No provenance supplied.</p>'}</details><p class="subtle">Simulated execution on the declared tape. This report does not certify profitability or resilience outside the tested scenarios.</p></section>'''
+    <details><summary>Source and input provenance</summary>{_pre(report.get('provenance')) if report.get('provenance') else '<p>No provenance supplied.</p>'}</details><p class="subtle">Simulated execution on the declared tape. No profitability or wider resilience claim.</p></section>'''
 
 
-def _document(content, *, title, report=None):
+def _document(content, *, title, report=None, nav=''):
     resources = files('tradeoff.report')
     data = dict(report or {})
     if report:
@@ -235,7 +235,8 @@ def _document(content, *, title, report=None):
         }
     encoded = _json(data).replace('&', '\\u0026').replace('<', '\\u003c').replace('>', '\\u003e').replace('\u2028', '\\u2028').replace('\u2029', '\\u2029')
     replacements = {'TITLE': _escape(title), 'VERSION': _escape(__version__), 'CONTENT': content, 'DATA': encoded,
-                    'CSS': resources.joinpath('assets/failure.css').read_text(encoding='utf-8'),
+                    'CSS': (resources.joinpath('assets/report.css').read_text(encoding='utf-8') if report else '') + resources.joinpath('assets/failure.css').read_text(encoding='utf-8'),
+                    'SHELL_CLASS': 'terminal-shell' if report else '', 'NAV': nav,
                     'JS': resources.joinpath('assets/failure.js').read_text(encoding='utf-8') if report else ''}
     template = resources.joinpath('failure_template.html').read_text(encoding='utf-8')
     return re.sub(r'@@([A-Z_]+)@@', lambda match: replacements[match.group(1)], template)
@@ -248,9 +249,14 @@ def render_failure_report(report: dict) -> str:
     _json(report)  # Validate every field before formatting or emitting files.
     artifacts = {key: _safe_path(path) for key, path in (report.get('artifacts') or {}).items() if path is not None}
     data = report.get('dataset') or {}
-    hero = f'''<section class="hero"><div class="report-ribbon"><span class="eyebrow">STRATEGY FAILURE LAB / {_escape(data.get('symbol', 'DATASET'))}</span><span class="mono">{_escape(report.get('report_id'))}</span></div><span class="status {tone}">{_escape(label)}</span><h1>{_escape(title)}</h1><p class="hero-description">{_escape(report.get('headline') or '')}</p><p>{_escape(report.get('reason') or '')}</p><div class="hero-facts">{_facts([('Strategy', report.get('strategy_ref') or 'Local execution callback'), ('Full tape', f"{data.get('row_count', 0)} bars"), ('Period', f"{data.get('start', 'Unavailable')} → {data.get('end', 'Unavailable')}"), ('Created', report.get('created_at'))])}</div></section>'''
-    nav = '<nav aria-label="Report sections">' + ''.join(f'<a href="#{key}">{label}</a>' for key, label in [('scenarios', 'Scenarios'), ('comparison', 'Equity'), ('failure', 'Failure'), ('replay', 'Replay'), ('method', 'Scope')]) + '</nav>'
-    return _document(hero + nav + _policy(report) + _input_checks(report) + _matrix(report) + _comparison(report) + _failure(report) + _replay(report, artifacts) + _method(report), title=f'Tradeoff · {label}', report=report)
+    hero = f'''<section class="native-summary"><span class="status {tone}">{_escape(label)}</span><h1>Native execution</h1><p>{_escape(report.get('headline') or title)}</p><div class="summary-meta">SIMULATED · {_escape(data.get('symbol', 'DATASET'))} / {_escape(data.get('row_count', 0))} BARS · {_escape(report.get('strategy_ref') or 'Local execution callback')}</div></section>'''
+    coverage, settings = report.get('coverage') or {}, report.get('settings') or {}
+    coverage_strip = f'''<div class="execution-coverage" role="group" aria-label="Execution coverage"><div><span class="eyebrow">COMPLETED / DECLARED SCENARIOS</span><strong>{_escape(coverage.get('completed', 0))} / {_escape(coverage.get('total', 0))}</strong></div><div><span class="eyebrow">ENGINE RUNS / BUDGET</span><strong>{_escape(coverage.get('runs', 0))} / {_escape(settings.get('max_calls', '—'))}</strong></div><div class="coverage-state{' complete' if coverage.get('complete') else ''}">{'Complete' if coverage.get('complete') else 'Partial'} declared suite</div></div>'''
+    blocker = (f'<div class="native-blocker" role="group" aria-label="Execution blocker"><strong>Run blocker</strong><p role="status">{_escape(report["reason"])}</p></div>'
+               if report.get('status') in {'INCONCLUSIVE', 'BASELINE_FAILED'} and report.get('reason') else '')
+    nav = '<nav class="view-nav" aria-label="Report sections">' + ''.join(f'<a href="#{key}"><span class="mono">0{i}</span>{label}</a>' for i, (key, label) in enumerate([('scenarios', 'Scenarios'), ('comparison', 'Equity'), ('failure', 'Failure'), ('replay', 'Replay'), ('method', 'Scope')], 1)) + '</nav>'
+    scope_details = '<section class="panel"><details><summary>Run identity and period</summary>' + _facts([('Report', report.get('report_id')), ('Reason', report.get('reason') or ''), ('Strategy', report.get('strategy_ref') or 'Local execution callback'), ('Full tape', f"{data.get('row_count', 0)} bars"), ('Period', f"{data.get('start', 'Unavailable')} → {data.get('end', 'Unavailable')}"), ('Created', report.get('created_at'))]) + '</details></section>'
+    return _document(hero + coverage_strip + blocker + _input_checks(report) + _comparison(report) + _matrix(report) + _policy(report) + _failure(report) + _replay(report, artifacts) + _method(report) + scope_details, title=f'Tradeoff · {label}', report=report, nav=nav)
 
 
 def write_failure_report(report: dict, output_dir: str | Path) -> Path:
@@ -273,7 +279,7 @@ def write_failure_gallery(output_dir: str | Path, entries: list[dict]) -> Path:
         tone, label, _ = _state(entry['status'])
         path = _safe_path(entry['path'])
         cards += f'<a class="case-card" href="{_escape(path)}"><span class="eyebrow">CASE {index:02d}</span><span class="status {tone}">{_escape(label)}</span><h2>{_escape(entry.get("name"))}</h2><p>{_escape(entry.get("description") or "")}</p><span class="case-open">Inspect execution report ↗</span></a>'
-    content = '<section class="hero"><span class="eyebrow">PUBLIC STRATEGY CASEBOOK</span><h1>What breaks<br><em>under stress?</em></h1><p class="hero-description">Pinned public strategy code. Synthetic full tapes. Native execution reruns.</p><p>Inspect the baseline, declared cost and delay scenarios, policy failures and replay evidence. Every outcome remains visible.</p></section><div class="case-grid">' + cards + '</div><section class="panel"><h2>Evidence you can replay.</h2><p>These cases illustrate simulated execution and scoped user requirements. Synthetic inputs do not measure historical or live market performance. A baseline failure is visible as its own outcome.</p></section>'
+    content = '<section class="hero"><span class="eyebrow">PUBLIC STRATEGY CASEBOOK</span><h1>Execution stress<br><em>casebook.</em></h1><p class="hero-description">Pinned public strategy code. Synthetic full tapes. Native execution reruns.</p><p>Baseline, cost, delay and policy outcomes. Saved replay evidence.</p></section><div class="case-grid">' + cards + '</div><section class="panel"><h2>Synthetic inputs. Scoped results.</h2><p>These native reruns test declared policies, not historical or live market performance. Baseline failures remain explicit.</p></section>'
     markup = _document(content, title='Tradeoff · Execution casebook')
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)

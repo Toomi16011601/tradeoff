@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tradeoff Audit"
+  short_description: "Audit a trading strategy and verify a repair"
+  default_prompt: "Use $tradeoff-audit to check this project's strategy for future-data dependencies and explain the local report."

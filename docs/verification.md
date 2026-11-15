@@ -2,7 +2,39 @@
 
 Tradeoff is public source alpha software. The checks below are local acceptance evidence, not a security or profitability certificate. [Hosted CI results](https://github.com/Toomi16011601/tradeoff/actions/workflows/tests.yml) record runs for published commits. The data-import and integration-check build, recorded before the Tradeoff rename, passed **621 tests** on Python 3.12.14, including native execution, input validation, replay and private diagnostics. That earlier renamed source passed **627 tests** locally; later acceptance checks follow below.
 
-The current future-data investigation screenshots show Tradeoff 0.4.0. Other linked screenshots include earlier-version captures with BacktestWitness branding and document those earlier flows.
+The workstation previews below show Tradeoff 0.6.1. Older linked captures document earlier versions and branding.
+
+## Workstation interface and concise setup — 15 November 2026
+
+The README leads with one agent prompt and one demo path, reducing its word count by approximately **73%**. Optional setup details are collapsed in the skill guide. Audit, native execution and decision feedback share a compact workstation layout: results first, evidence beside them, explanations in disclosures.
+
+The audit plots recorded OHLC and paired position steps, with bar selection, changed-row inspection and optional playback of the saved trace. Playback does not rerun an engine. Missing prices, missing pairs, partial coverage and unknown costs stay explicit. Exact numeric strings remain available; unsafe chart scales are labeled unavailable. Trading calculations and stored JSON schemas are unchanged.
+
+The full local suite passed **1,087 tests**, with **3 existing account/model/platform skips**, while Documents reads were denied and account/model opt-ins were excluded. Final navigation changes then passed **57 focused report and JavaScript checks**, including direct and repeated repair links and destination focus. Independent review found and verified fixes for numeric precision, extreme chart ranges and keyboard navigation.
+
+The installed wheel generated fresh synthetic demos. Actual browser checks covered all three report families at **1440 × 1000**, **390 × 844** and **360 × 844**, without page-level horizontal overflow. Bar controls, requested playback and manual pause, mobile cursor visibility, copied commands, native scenario selection, view navigation, skip links and repair keyboard progression passed. Negative and inconclusive states stayed honest. Ten report pages matched the restricted preview's exact nonempty CSS/JS hashes; three feedback JSON downloads matched disk. Temporary previews were stopped. Browser print-preview was not exercised; existing print and reduced-motion rules remain.
+
+| Synthetic report | Desktop | Mobile |
+| --- | --- | --- |
+| Future-data audit | [Preview](assets/tradeoff-audit-desktop.jpg) | [Preview](assets/tradeoff-audit-mobile.jpg) |
+| Native execution | [Preview](assets/tradeoff-native-desktop.jpg) | [Preview](assets/tradeoff-native-mobile.jpg) |
+| Decision feedback | [Preview](assets/tradeoff-feedback-desktop.jpg) | [Preview](assets/tradeoff-feedback-mobile.jpg) |
+
+The **11-second README GIF** records actual bar inspection, a changed future row and saved-fixture repair evidence on synthetic input. Its seven captured states contain no fabricated UI. Screenshots contain no EXIF data. The skill remains four text files; research data and private project files are excluded.
+
+## Agent audit skill — 14 November 2026
+
+An independent agent followed the [skill and setup guide](../skills/tradeoff-audit/references/setup.md) from a fresh Python **3.12.13** environment. The candidate wheel was installed normally with its audit extra; imports resolved inside that environment's `site-packages`, without an editable installation, inherited packages or source `PYTHONPATH`. Dependency checks passed with Backtesting.py **0.6.6**, pandas **3.1.1**, NumPy **2.5.4** and yfinance **1.8.0**.
+
+The public project was [PaulKapschitzki/backtestingPy_first_Setup at `7058bb4`](https://github.com/PaulKapschitzki/backtestingPy_first_Setup/tree/7058bb463dd309eb7ecfdf969dc080932b022bb0), using its unchanged `app.py:SmaCross`, 10/20 periods, native cash **10,000** and commission **0.002**. The input was **744 real hourly ETHUSDT bars from January 2024**, downloaded from the [official Binance archive](https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1h/ETHUSDT-1h-2024-01.zip) and verified against its published checksum. Normalization preserved OHLCV strings and converted millisecond UTC bar-open labels into aware ISO timestamps; the declared duration was one hour. The normalized CSV SHA-256 was `f39407be38d8b81d28d5fd37bd5986e68838fee78c49c7c80534fc5feeb385e8`. This is a declared alternative dataset, not a reproduction of the author's daily-equity experiment. The data and third-party checkout remain outside Tradeoff and its skill package.
+
+The result was **`NO_DEPENDENCY_OBSERVED`**: 24 interventions at **12 of 741** eligible cutoffs, using **50 of 96** allowed callback runs. No witness was found, so no repair was invented. Native verification retained one open short, zero closed trades and **42 margin-cancellation warnings**. The report's independent illustrative ledger rejected its attempted rebalances; those modeled rejections do not describe the native position or establish native performance. The tracked upstream source diff remained empty. The HTML report opened in Chrome; this Mac's default command-line file opener failed, so the guide uses ordinary direct-file opening.
+
+A separate missing-data/ambiguous-clock scenario returned **`NEEDS_INPUT` with exit 0** after saving the incomplete manifest. The agent asked for the actual inputs instead of choosing demo data or inventing a clock. Review also clarified strategy parameters (`--config`), the native naive-UTC bar-close index and private capture of repetitive warnings.
+
+The clean installation separately completed the built-in public Riskkit demonstration on its **explicitly synthetic** tape. Original saved-case replay exited **1**, the disclosed repair exited **0**, and fixture bytes remained unchanged. This positive demo is separate from the real-data negative result above.
+
+The whole local suite passed **1,062 tests**, with **3 existing account/model/platform skips**, while Documents reads were blocked. Skill validation and text-only ZIP/source-archive checks passed. The skill was tested through one local terminal-capable agent; marketplace delivery and every agent client's discovery behavior were not tested or published. These checks do not establish profitable trading or global absence of future-data bugs.
 
 ## Attribution and replay regression audit (0.6.1) — 14 November 2026
 
