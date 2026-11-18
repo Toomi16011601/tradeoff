@@ -42,6 +42,88 @@ def initialize(tmp_path, *options):
     return invoke(tmp_path, 'init', '--strategy', 'strategy.py', '--data', 'bars.csv', '--json', '--timestamp-kind', 'close', *options)
 
 
+def git(cwd, *args):
+    return subprocess.run(['git', *args], cwd=cwd, check=True, capture_output=True).stdout
+
+
+@pytest.mark.parametrize('layout', ['nested', 'linked-worktree', 'git-init-after-audit', 'git-init-after-cr-only'])
+def test_private_default_audit_files_survive_git_add(tmp_path, layout):
+    checkout = tmp_path / 'checkout'
+    checkout.mkdir()
+    init_after = layout.startswith('git-init-after-')
+    if not init_after:
+        git(checkout, 'init', '-q')
+    if layout == 'linked-worktree':
+        git(checkout, '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
+            '-c', 'commit.gpgsign=false', 'commit', '--allow-empty', '-qm', 'base')
+        linked = tmp_path / 'linked'
+        git(checkout, 'worktree', 'add', '--detach', str(linked))
+        checkout = linked
+    scope = checkout / 'strategies'
+    scope.mkdir()
+    gitignore = scope / '.gitignore'
+    existing = b'# user rules\r\ncache/\r\n!tradeoff.json'
+    if layout == 'git-init-after-cr-only':
+        existing = b'# user rules\r/tradeoff.json\r/.tradeoff/'
+    gitignore.write_bytes(existing)
+    project(scope, 'def positions(rows, config, seed):\n    return [rows[-1]["close"]] * len(rows)\n')
+    initialized = initialize(scope, '--adapter', 'strategy:positions', '--engine', 'targets', '--review-imports')
+    assert initialized.returncode == 0, initialized.stdout + initialized.stderr
+    after_init = gitignore.read_bytes()
+    assert after_init.startswith(existing)
+    checked = invoke(scope, 'check', '--json')
+    assert checked.returncode == 1, checked.stdout + checked.stderr
+    assert Path(json.loads(checked.stdout)['report']).with_name('reproducer.json').is_file()
+    assert gitignore.read_bytes() == after_init
+    (checkout / 'tradeoff.json').write_text('independent namesake')
+    if init_after:
+        git(checkout, 'init', '-q')
+    git(checkout, 'add', '.')
+    staged = git(checkout, 'ls-files', '-z').split(b'\0')
+    assert b'strategies/tradeoff.json' not in staged
+    assert not any(name.startswith(b'strategies/.tradeoff/') for name in staged)
+    assert b'tradeoff.json' in staged and b'strategies/strategy.py' in staged
+
+
+@pytest.mark.parametrize('tracked', ['tradeoff.json', '.tradeoff/old-report.json'])
+def test_check_refuses_tracked_default_artifacts_before_running(tmp_path, tracked):
+    project(tmp_path, 'def positions(rows, config, seed):\n    return [0] * len(rows)\n')
+    assert initialize(tmp_path, '--adapter', 'strategy:positions', '--engine', 'targets',
+                      '--review-imports').returncode == 0
+    git(tmp_path, 'init', '-q')
+    path = tmp_path / tracked
+    if not path.exists():
+        path.parent.mkdir(exist_ok=True)
+        path.write_text('existing artifact')
+    git(tmp_path, 'add', '-f', '--', tracked)
+    original = path.read_bytes()
+    checked = invoke(tmp_path, 'check', '--json')
+    assert checked.returncode == 2, checked.stdout
+    assert json.loads(checked.stdout)['error']['code'] == 'GIT_PRIVACY'
+    assert git(tmp_path, 'ls-files', '--', tracked).strip() and path.read_bytes() == original
+    assert not list((tmp_path / '.tradeoff').glob('check-*'))
+
+
+def test_init_refuses_unusable_gitignore_before_writing_manifest(tmp_path):
+    project(tmp_path)
+    (tmp_path / '.gitignore').mkdir()
+    initialized = initialize(tmp_path)
+    assert initialized.returncode == 2, initialized.stdout
+    assert json.loads(initialized.stdout)['error']['code'] == 'GIT_PRIVACY'
+    assert not (tmp_path / 'tradeoff.json').exists()
+
+
+def test_check_protects_preexisting_manifest_even_if_audit_needs_input(tmp_path):
+    project(tmp_path)
+    assert initialize(tmp_path).returncode == 0
+    (tmp_path / '.gitignore').unlink(missing_ok=True)
+    git(tmp_path, 'init', '-q')
+    checked = invoke(tmp_path, 'check', '--json')
+    assert json.loads(checked.stdout)['error']['code'] == 'PROJECT_NEEDS_INPUT'
+    git(tmp_path, 'add', '.')
+    assert b'tradeoff.json' not in git(tmp_path, 'ls-files', '-z').split(b'\0')
+
+
 def test_init_never_imports_strategy_and_requires_explicit_review(tmp_path):
     project(tmp_path, "raise RuntimeError('must never import during init')\n" + NATIVE)
     result = initialize(tmp_path)

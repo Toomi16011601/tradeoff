@@ -103,7 +103,7 @@ Review the module and its imports before passing `--review-imports`. Recognized 
 
 After setup, rerun **`tradeoff check`**. Default runs use fresh `.tradeoff/check-…` folders, so repeated checks do not overwrite evidence. The summary gives `report`, `interface` and `replay` paths/commands; a coding agent can consume the JSON.
 
-From another directory, use `tradeoff check --project /path/to/project/tradeoff.json`. Source, data and explicit relative output paths resolve from the manifest's directory. Keep strategy credentials out of the environment: a check executes ordinary reviewed Python, not a sandbox.
+From another directory, use `tradeoff check --project /path/to/project/tradeoff.json`. Source, data and explicit relative output paths resolve from the manifest's directory. By default, `init` and `check` append missing rules for `/tradeoff.json` and `/.tradeoff/` to the project's `.gitignore`. Already tracked default paths need your attention; Tradeoff does not untrack them. Protect any custom output paths yourself. Keep strategy credentials out of the environment: a check executes ordinary reviewed Python, not a sandbox.
 
 An audit exits **1** for `FOUND`, **0** for `NO_DEPENDENCY_OBSERVED`, and **2** for invalid or inconclusive evidence. A finding is a useful result, not an installation crash. No observation is a bounded negative result, not a global absence-of-leakage certificate.
 

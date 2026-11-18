@@ -2,19 +2,17 @@
 
 **Ask your agent. Get a local audit. Verify a repair.**
 
-Needs a terminal-capable agent, Python 3.12, a Backtesting.py 0.6.6 strategy and historical OHLCV data.
+Start with a terminal-capable agent. It can check project fit by reading files alone. Running the audit needs Python 3.12, a Backtesting.py 0.6.6 strategy and historical OHLCV data.
 
 ## Start here
 
 Give your agent this prompt:
 
 ```text
-Install the Tradeoff audit skill from:
-https://github.com/Toomi16011601/tradeoff/tree/main/skills/tradeoff-audit
-
-Use it to audit this project. Find the strategy and historical data,
-set up the local tool, and show me the report. Ask for missing inputs.
-Propose repairs before editing strategy code. Leave live trading alone.
+Clone https://github.com/Toomi16011601/tradeoff.git into a temporary folder
+and follow skills/tradeoff-audit/SKILL.md to audit my current project.
+Check fit before installing anything. Explain the result or what’s missing.
+Leave strategy code and live trading alone.
 ```
 
 Already loaded? **“Use Tradeoff to audit this project.”**
@@ -29,7 +27,7 @@ In a checkout, the path is `skills/tradeoff-audit/SKILL.md`. Keep `references`, 
 
 ## What the agent does
 
-1. Reviews the selected strategy, imports, data and native settings.
+1. Reads the strategy, imports, data and native settings. If unsupported or missing inputs, it stops here without installing anything.
 2. Uses a compatible installation or creates an isolated tool environment.
 3. Runs `init` and `check`, resolving actual inputs instead of guessing.
 4. Opens the report file and explains the finding, coverage or blocker.
@@ -62,7 +60,7 @@ py -3.12 -m venv tradeoff-env
 
 Record that interpreter's absolute path; use it for later commands from the strategy project. Install reviewed offline strategy dependencies there. Initial installation needs internet; auditing local files does not require a market-data service.
 
-For a local candidate, install `'/absolute/path/to/tradeoff[audit]'` instead of the GitHub requirement. The skill folder is distributed separately from the Python installation.
+If you already cloned Tradeoff to read this skill, use that checkout instead of the GitHub requirement: `python -m pip install "/absolute/path/to/tradeoff[audit]"` with the isolated environment's Python. This keeps the CLI and skill in sync without a second clone.
 
 </details>
 
@@ -101,8 +99,8 @@ Replace files and conventions with actual inputs. Add `--strategy-class ActualCl
 
 | Check result | Meaning |
 | --- | --- |
-| Exit 1 · `FOUND` | Inspect the paired witness. |
-| Exit 0 · `NO_DEPENDENCY_OBSERVED` | No dependency observed within the tested scope. |
+| Exit 1 · `FOUND` | The earlier position changed. Finishing the search or narrowing it to one bar isn't required to verify that change. |
+| Exit 0 · `NO_DEPENDENCY_OBSERVED` | The tested price and volume changes didn't change an earlier position. Mention a flat baseline or relevant fields the audit didn't change. |
 | Exit 2 | Invalid, blocked or inconclusive; read the status. |
 
 Open the returned `interface` file. New checks use fresh `.tradeoff/check-…` directories; retain earlier evidence.
@@ -144,4 +142,4 @@ Exit **0** verifies the saved case; **1** means the dependency remains; **2** me
 
 </details>
 
-Reports and logs can retain private inputs. Keep them uncommitted and review before sharing. The checker has no built-in upload; your agent's provider controls its context. A local tool does not make a cloud agent offline. Results are bounded debugging evidence, not profitability claims.
+Default audit settings (`tradeoff.json`) and reports (`.tradeoff/`) are ignored for normal Git staging. If a default path is already tracked, stop and tell the user; don't change their Git history or index. Choose private locations for custom outputs and logs. Reports contain inputs; Git ignore rules do not encrypt them. Your agent's provider controls its context.
