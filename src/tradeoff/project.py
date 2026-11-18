@@ -259,7 +259,7 @@ def _protect_default_paths(root, manifest, reports):
             raise _error('GIT_PRIVACY', 'The project .gitignore must be a regular file, not a link or directory.')
         rules = [('/' + name + ('/' if name == '.tradeoff' else '')).encode() for name in names]
         existing = path.read_bytes() if path.exists() else b''
-        lines = existing.splitlines()
+        lines = [line.removesuffix(b'\r') for line in existing.split(b'\n')]
         last_negation = max((index for index, line in enumerate(lines) if line.startswith(b'!')), default=-1)
         missing = [rule for rule in rules if rule not in lines[last_negation + 1:]]
         if missing:

@@ -46,11 +46,12 @@ def git(cwd, *args):
     return subprocess.run(['git', *args], cwd=cwd, check=True, capture_output=True).stdout
 
 
-@pytest.mark.parametrize('layout', ['nested', 'linked-worktree', 'git-init-after-audit'])
+@pytest.mark.parametrize('layout', ['nested', 'linked-worktree', 'git-init-after-audit', 'git-init-after-cr-only'])
 def test_private_default_audit_files_survive_git_add(tmp_path, layout):
     checkout = tmp_path / 'checkout'
     checkout.mkdir()
-    if layout != 'git-init-after-audit':
+    init_after = layout.startswith('git-init-after-')
+    if not init_after:
         git(checkout, 'init', '-q')
     if layout == 'linked-worktree':
         git(checkout, '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
@@ -62,6 +63,8 @@ def test_private_default_audit_files_survive_git_add(tmp_path, layout):
     scope.mkdir()
     gitignore = scope / '.gitignore'
     existing = b'# user rules\r\ncache/\r\n!tradeoff.json'
+    if layout == 'git-init-after-cr-only':
+        existing = b'# user rules\r/tradeoff.json\r/.tradeoff/'
     gitignore.write_bytes(existing)
     project(scope, 'def positions(rows, config, seed):\n    return [rows[-1]["close"]] * len(rows)\n')
     initialized = initialize(scope, '--adapter', 'strategy:positions', '--engine', 'targets', '--review-imports')
@@ -73,7 +76,7 @@ def test_private_default_audit_files_survive_git_add(tmp_path, layout):
     assert Path(json.loads(checked.stdout)['report']).with_name('reproducer.json').is_file()
     assert gitignore.read_bytes() == after_init
     (checkout / 'tradeoff.json').write_text('independent namesake')
-    if layout == 'git-init-after-audit':
+    if init_after:
         git(checkout, 'init', '-q')
     git(checkout, 'add', '.')
     staged = git(checkout, 'ls-files', '-z').split(b'\0')
