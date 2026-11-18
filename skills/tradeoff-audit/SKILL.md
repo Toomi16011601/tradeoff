@@ -10,9 +10,15 @@ Help the user reach a useful local audit result, including a clear explanation w
 
 Use [the setup guide](references/setup.md) for installation, command examples, timestamp choices and troubleshooting. You need a terminal-capable agent and a local Python environment; no broker, AI key or marketplace tool is required.
 
-## Inspect the selected project
+## Check fit first — no installation
 
-Stay within the project the user selected. Find the actual strategy class, its imports/helpers, historical OHLCV data and declared native engine settings. Start with an importable Backtesting.py `Strategy` class; other frameworks need their own supported adapter. Do not translate a different framework into Backtesting.py and present it as the original strategy.
+Read the selected strategy project's files: strategy, imports, runner, dependencies and data provenance. The checkout containing this skill is the tool, not the audit target. Check fit **before** creating a venv, installing packages, importing project code, running a project script or writing a manifest. A dependency name alone doesn't identify the strategy's engine.
+
+- **Unsupported:** If the selected strategy runs on another engine, name the engine and the source evidence. Stop without installing or running anything. This skill's automatic setup is for Backtesting.py; don't port the strategy or claim it passed.
+- **Need input:** If you can't identify the intended strategy, find usable price data, establish its clock, or run the original logic safely with its actual settings, say what's missing and ask the smallest question that unblocks it. Stop before setup. In a mixed repo, inspect the selected target or ask which one; don't reject the whole repo based on an unrelated import.
+- **Ready:** If you can identify a Backtesting.py strategy compatible with 0.6.6, usable OHLCV data and the execution settings, proceed with setup and the audit in this turn. Fit is a source-based assessment, not an audit result.
+
+## Review inputs
 
 Read relevant source before execution. `tradeoff inspect-script FILE --json` and `tradeoff init` inspect source without importing it; static inspection does not establish that imports are safe. Unguarded downloads, backtests, plots, model calls and broker connections need attention before execution. If an importable extraction is needed, preserve decision logic and helpers and disclose the extraction; make source edits only within the user's authorization.
 
@@ -22,7 +28,7 @@ Check whether the strategy uses its timestamp index for trading decisions. The n
 
 ## Set up and check
 
-Use a working Tradeoff installation with its `audit` extra, or follow the guide to create an isolated tool environment. Keep the same interpreter for setup, checks and replay. Prefer `python -m tradeoff` when the command on PATH belongs to another environment.
+Use the CLI and `audit` extra from the same Tradeoff checkout as this skill when available. Follow the guide to install into an isolated environment outside the strategy project. Keep the same interpreter for setup, checks and replay; use its absolute path with `-m tradeoff`.
 
 From the strategy project root, initialize the actual files with `init --strategy FILE --data FILE --json` and the confirmed data options. Supply the actual `--strategy-class` and `--engine-settings` when required. Preserve explicit `Backtest.run(...)` strategy-parameter overrides in a JSON object passed through `--config FILE`; those parameters are separate from the `Backtest(...)` engine settings. Add `--review-imports` only after reviewing the selected source and relevant dependencies. If a manifest exists, resolve it with `check --project FILE`; do not overwrite it to erase earlier settings or a blocker.
 
@@ -47,6 +53,12 @@ When the user has authorized a repair, fix the decision logic while retaining th
 
 ## Return a useful result
 
-Give the user the status, strategy/data scope, relevant findings or blockers, report filename and exact next command. For a repair, distinguish original reproduction, saved-case repair verification and the new audit. Disclose extraction, data conversion, settings changes and missing coverage.
+Lead with what happened in trading terms. Use the audit status for the verdict:
+
+- `FOUND`: “Changing [later input] changed the earlier position from [A] to [B].” A verified change is a finding even if the search stopped early or ran out of time narrowing the example. Don't describe the remaining changed bars as all necessary.
+- `NO_DEPENDENCY_OBSERVED`: “Earlier positions stayed the same under the tested price and volume changes.” Read the native baseline trace: if every position was zero, say the strategy held no position on the original tape. Name material inputs the audit left unchanged (for example sentiment) from the strategy and coverage notes. Neither result clears the whole strategy.
+- `INCONCLUSIVE`: Say what prevented a reliable comparison. If setup stopped before execution, say “No audit ran,” explain why, and give the next step.
+
+Give one next step and, if produced, the local report path. Distinguish source suspicions from observed changes, and an original replay from a verified repair. Mention material limitations or changes to the tested strategy/data without dumping logs.
 
 Keep reports and fixtures local: they can contain the full input history. Do not upload project files, reports, credentials or raw diagnostics to a marketplace or external tool as part of this workflow. The user's chosen agent/provider determines where its context goes; a local CLI does not make that agent offline. Do not place orders or start the project's live runner. Report bounded debugging evidence without promising profitable trading or a globally clean strategy.

@@ -13,12 +13,10 @@ Local Python CLI · Agent skill · Optional MCP · MIT
 Give this to a coding agent with local terminal access:
 
 ```text
-Install the Tradeoff audit skill from:
-https://github.com/Toomi16011601/tradeoff/tree/main/skills/tradeoff-audit
-
-Use it to audit this project's strategy and historical data.
-Set up the local tool, ask for missing inputs, and show me the report.
-Propose repairs before editing strategy code. Leave live trading alone.
+Clone https://github.com/Toomi16011601/tradeoff.git into a temporary folder
+and follow skills/tradeoff-audit/SKILL.md to audit my current project.
+Check fit before installing anything. Explain the result or what’s missing.
+Leave strategy code and live trading alone.
 ```
 
 Already installed? **“Use Tradeoff to audit this project.”**
@@ -102,7 +100,7 @@ Use the actual path from your report. Exit **0**: saved case passes. **1**: depe
 
 ## Local execution and privacy
 
-Runs on your device. Reports open as files. No built-in uploads or AI key required.
+Runs on your device. Reports open as files. The audit setup keeps its default settings and reports out of normal Git staging. No built-in uploads or AI key required.
 
 Imported strategies execute ordinary Python. Reports retain inputs; your chosen agent controls its provider context. Findings and passes are bounded evidence, not profit guarantees. [Security](SECURITY.md)
 

@@ -4,6 +4,31 @@ Tradeoff is public source alpha software. The checks below are local acceptance 
 
 The workstation previews below show Tradeoff 0.6.1. Older linked captures document earlier versions and branding.
 
+## README acceptance and Git privacy — 18 November 2026
+
+Three fresh terminal agents received **only the README prompt**. No skill, CLI or answer was preloaded. Each received a separate public checkout, home and temporary directory. Their Git clients resolved the public clone URL to a local mirror of the unpublished candidate; package dependencies came from a local wheel cache. This tests first use from the README, not marketplace delivery or the availability of GitHub.
+
+| Selected project | What the agent did |
+| --- | --- |
+| [Riskkit](https://github.com/HasibVortex369/riskkit/tree/99d1d167dc55c8a564526ef42d87e298f3e74fad), 400 supplied synthetic hourly bars | Cloned Tradeoff, checked source and data, installed in a fresh environment, found and replayed the earlier change from 29 to 31 units. Explained the reduction budget without downgrading the finding. |
+| [Freqtrade Strategies](https://github.com/freqtrade/freqtrade-strategies/tree/f3340ce11f5bdf62f598522e64d1f5638eaa13f5) | Identified the unsupported engine from the actual strategy class. No package installation or strategy run. |
+| Same Riskkit checkout, timezone omitted from its supplied data | Asked which timezone the exporter used. No package installation or strategy run. |
+
+On a separate scratch copy, removing the backward fill made the **identical** saved fixture pass (SHA-256 `24159195c068e914c9f66a05372bafd6db3cd229c3d4fbd0a32d271b7e13ed9c`). Engine settings and input hash stayed unchanged; a fresh repaired run tested 24 interventions and held a nonzero position on 95 bars after warmup. A separate flat-strategy control confirmed the agent reported six zero positions and identified sentiment as untested.
+
+An ordinary `git add .` staged the scratch project changes but neither the root settings nor any audit artifacts. Regression tests also exercise nested and linked checkouts, a later `git init`, existing tracked files and an incomplete legacy manifest. These checks do not protect custom export paths or force-added files.
+
+## Earlier loaded-skill trial — 18 November 2026
+
+Two fresh terminal-agent sessions received the candidate skill, a public checkout, and the same prompt: **“Audit this project.”** Neither was told the expected result.
+
+| Project | Inputs | Observed result |
+| --- | --- | --- |
+| [Riskkit @ 99d1d16](https://github.com/HasibVortex369/riskkit/tree/99d1d167dc55c8a564526ef42d87e298f3e74fad) | Unchanged Backtesting.py example; a supplied CSV of 400 synthetic hourly bars and a note identifying the target, symbol and UTC close labels. | Found the intended example among several engines. With its original cash and commission, changing later inputs changed the January 2 position from 29 to 31 units. An independent replay reproduced it. |
+| [Freqtrade Strategies @ f3340ce](https://github.com/freqtrade/freqtrade-strategies/tree/f3340ce11f5bdf62f598522e64d1f5638eaa13f5) | Unmodified checkout; no extra inputs. | Identified Freqtrade from the strategy class and runner, explained that the automatic audit was unsupported, and stopped without installation, execution or writes. |
+
+The Riskkit agent used a locally built 0.6.1 wheel with the audit extra in a fresh Python 3.12 environment. A separate clean environment installed the CLI from public GitHub, passed `pip check` and reproduced the same saved case. The [synthetic tape](future-data-case-study.md) was chosen to exercise a known defect, not to measure how frequently it affects historical trades. With default audit settings the witness retained 286 changed bars when reduction reached its budget. Neither trial modified upstream strategy code. These runs exercised a loaded skill, not marketplace delivery or automatic skill discovery.
+
 ## Workstation interface and concise setup — 15 November 2026
 
 The README leads with one agent prompt and one demo path, reducing its word count by approximately **73%**. Optional setup details are collapsed in the skill guide. Audit, native execution and decision feedback share a compact workstation layout: results first, evidence beside them, explanations in disclosures.

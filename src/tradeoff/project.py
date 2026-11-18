@@ -17,6 +17,8 @@ import os
 from pathlib import Path
 import re
 import shlex
+import stat
+import subprocess
 import tempfile
 from types import SimpleNamespace
 from uuid import uuid4
@@ -231,12 +233,63 @@ def _write_new(path, settings):
         stream.write('\n')
 
 
+def _protect_default_paths(root, manifest, reports):
+    names = (['tradeoff.json'] if manifest else []) + (['.tradeoff'] if reports else [])
+    if not names:
+        return
+    if reports and (root / '.tradeoff').is_symlink():
+        raise _error('GIT_PRIVACY', 'The private .tradeoff directory must not be a symbolic link.')
+    in_checkout = any(os.path.lexists(parent / '.git') for parent in (root, *root.parents))
+
+    def git(*args):
+        result = subprocess.run(['git', *args], cwd=root, capture_output=True, timeout=10,
+                                env={key: value for key, value in os.environ.items()
+                                     if not key.upper().startswith('GIT_')})
+        if result.returncode:
+            raise _error('GIT_PRIVACY', 'Cannot verify Git protection for the default audit paths. '
+                         'Check the local repository, Git installation and ignore rules before retrying.')
+        return result.stdout
+
+    try:
+        if in_checkout and git('ls-files', '-z', '--', *names):
+            raise _error('GIT_PRIVACY', 'Git already tracks a default audit path. Review the Git index and '
+                         'history before continuing in an untracked audit workspace; Tradeoff did not untrack anything.')
+        path = root / '.gitignore'
+        if os.path.lexists(path) and not stat.S_ISREG(path.lstat().st_mode):
+            raise _error('GIT_PRIVACY', 'The project .gitignore must be a regular file, not a link or directory.')
+        rules = [('/' + name + ('/' if name == '.tradeoff' else '')).encode() for name in names]
+        existing = path.read_bytes() if path.exists() else b''
+        lines = existing.splitlines()
+        last_negation = max((index for index, line in enumerate(lines) if line.startswith(b'!')), default=-1)
+        missing = [rule for rule in rules if rule not in lines[last_negation + 1:]]
+        if missing:
+            flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_BINARY', 0)
+            with os.fdopen(os.open(path, flags, 0o666), 'ab') as stream:
+                opened = os.fstat(stream.fileno())
+                if (not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1
+                        or not os.path.samestat(opened, path.lstat())):
+                    raise _error('GIT_PRIVACY', 'Cannot safely append to the project .gitignore.')
+                newline = b'\r\n' if b'\r\n' in existing else b'\n'
+                prefix = newline if existing and not existing.endswith(b'\n') else b''
+                stream.write(prefix + newline.join(missing) + newline)
+        if in_checkout:
+            for name in names:
+                git('check-ignore', '-q', '--', name + '/report.json' if name == '.tradeoff' else name)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise _error('GIT_PRIVACY', 'Could not establish Git privacy before writing audit files. '
+                     'Check Git and the project .gitignore permissions.') from exc
+
+
 def _persist(path, settings, original):
     # Do not replace a manifest changed by another local process during preflight.
     if path.is_symlink() or path.read_bytes() != original:
         raise _error('PROJECT_CHANGED', 'Project manifest changed during validation; rerun check')
     content = json.dumps(settings, indent=2, allow_nan=False) + '\n'
-    fd, temporary = tempfile.mkstemp(prefix='.tradeoff-', suffix='.json', dir=path.parent)
+    staging = path.parent
+    if path.name == 'tradeoff.json':
+        staging = staging / '.tradeoff'
+        staging.mkdir(mode=0o700, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix='.tradeoff-', suffix='.json', dir=staging)
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as stream:
             stream.write(content)
@@ -282,6 +335,7 @@ def _init(args):
                 'review': {'acknowledged': False, 'source_sha256': None}}
     _validate(settings)
     scan, issues = _assess(settings, root, acknowledge=args.review_imports, selected_class=args.strategy_class)
+    _protect_default_paths(root, manifest=path.name == 'tradeoff.json', reports=True)
     _write_new(path, settings)
     summary = _summary(path, scan, issues)
     if args.json:
@@ -304,6 +358,8 @@ def _check(args):
     original = path.read_bytes()
     settings = _validate(json.loads(original))
     root = path.parent.resolve()
+    default_manifest = path.name == 'tradeoff.json'
+    _protect_default_paths(root, manifest=default_manifest, reports=not args.output or default_manifest)
     overrides = data_options(args)
     for key, value in overrides.items():
         if value is not None:
